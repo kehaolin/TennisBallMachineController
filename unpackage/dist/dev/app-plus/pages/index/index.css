@@ -1,0 +1,107 @@
+
+.container[data-v-1cf27b2a] {
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+}
+.modal[data-v-1cf27b2a] {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+}
+.modal-content[data-v-1cf27b2a] {
+		background-color: white;
+		border-radius: 10px;
+		width: 80%;
+		max-width: 500px;
+		padding: 20px;
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+.modal-header[data-v-1cf27b2a] {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 15px;
+}
+.modal-body[data-v-1cf27b2a] {
+		max-height: 400px;
+		overflow-y: auto;
+}
+.device-item[data-v-1cf27b2a] {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 10px;
+}
+.device-item uni-text[data-v-1cf27b2a] {
+		flex: 1;
+}
+.header[data-v-1cf27b2a] {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 10px;
+}
+.btn-bluetooth[data-v-1cf27b2a],
+	.btn-lang[data-v-1cf27b2a] {
+		margin: 0 10px;
+}
+.battery-icon[data-v-1cf27b2a] {
+		width: 30px;
+		height: 30px;
+}
+.mode-selection[data-v-1cf27b2a] {
+		margin: 10px;
+}
+.court-container[data-v-1cf27b2a] {
+		position: relative;
+		width: 100%;
+		height: 300px;
+}
+.tennis-court[data-v-1cf27b2a] {
+		width: 100%;
+		height: 100%;
+}
+.tennis-ball[data-v-1cf27b2a] {
+		position: absolute;
+		border-radius: 50%;
+}
+.controls[data-v-1cf27b2a] {
+		display: flex;
+		justify-content: space-between;
+		padding: 10px;
+}
+.btn-start[data-v-1cf27b2a] {
+		margin-right: 20px;
+}
+.direction-buttons[data-v-1cf27b2a] {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+}
+.left-right[data-v-1cf27b2a] {
+		display: flex;
+}
+.slider-container[data-v-1cf27b2a] {
+		padding: 10px;
+}
+.slider[data-v-1cf27b2a] {
+		margin-bottom: 10px;
+}
+.param-label[data-v-1cf27b2a] {
+		display: flex;
+		justify-content: space-between;
+}
+.param-value[data-v-1cf27b2a] {
+		font-weight: bold;
+}
+.range-label[data-v-1cf27b2a] {
+		display: flex;
+		justify-content: space-between;
+}
