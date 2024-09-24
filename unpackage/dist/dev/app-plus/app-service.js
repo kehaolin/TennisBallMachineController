@@ -11,19 +11,19 @@ if (typeof Promise !== "undefined" && !Promise.prototype.finally) {
 }
 ;
 if (typeof uni !== "undefined" && uni && uni.requireGlobal) {
-  const global2 = uni.requireGlobal();
-  ArrayBuffer = global2.ArrayBuffer;
-  Int8Array = global2.Int8Array;
-  Uint8Array = global2.Uint8Array;
-  Uint8ClampedArray = global2.Uint8ClampedArray;
-  Int16Array = global2.Int16Array;
-  Uint16Array = global2.Uint16Array;
-  Int32Array = global2.Int32Array;
-  Uint32Array = global2.Uint32Array;
-  Float32Array = global2.Float32Array;
-  Float64Array = global2.Float64Array;
-  BigInt64Array = global2.BigInt64Array;
-  BigUint64Array = global2.BigUint64Array;
+  const global = uni.requireGlobal();
+  ArrayBuffer = global.ArrayBuffer;
+  Int8Array = global.Int8Array;
+  Uint8Array = global.Uint8Array;
+  Uint8ClampedArray = global.Uint8ClampedArray;
+  Int16Array = global.Int16Array;
+  Uint16Array = global.Uint16Array;
+  Int32Array = global.Int32Array;
+  Uint32Array = global.Uint32Array;
+  Float32Array = global.Float32Array;
+  Float64Array = global.Float64Array;
+  BigInt64Array = global.BigInt64Array;
+  BigUint64Array = global.BigUint64Array;
 }
 ;
 if (uni.restoreGlobal) {
@@ -38,9 +38,6 @@ if (uni.restoreGlobal) {
       console[type].apply(console, [...args, filename]);
     }
   }
-  const _imports_0 = "/static/image/battery.png";
-  const _imports_1 = "/static/image/tennis-court.jpg";
-  const _imports_2 = "/static/image/tennis-ball.jpg";
   const _export_sfc = (sfc, props) => {
     const target = sfc.__vccOpts || sfc;
     for (const [key, val] of props) {
@@ -48,10 +45,517 @@ if (uni.restoreGlobal) {
     }
     return target;
   };
+  const _sfc_main$2 = {
+    data() {
+      return {
+        devices: [],
+        deviceId: "",
+        connectedDeviceId: null,
+        currentDevice: null,
+        batteryLevel: null,
+        batteryInterval: null,
+        isTraining: false,
+        commandHistory: [],
+        receivedMessages: [],
+        trainingMode: "moonball",
+        speed: 10,
+        frequency: 5,
+        angle: 0,
+        serviceId: "55535343-FE7D-4AE5-8FA9-9FAFD205E455",
+        // characteristicId: '0000FFF2-0000-1000-8000-00805F9B34FB',
+        TX_UUID: "49535343884143f4a8d4ecbe34729bb3",
+        // 接收指令UUID
+        RX_UUID: "495353431e4d4bd9ba6123c647249616"
+        // 发送指令UUID
+      };
+    },
+    methods: {
+      openBluetoothAdapter() {
+        uni.openBluetoothAdapter({
+          success: (res) => {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:93", "蓝牙模块初始化成功", res);
+            this.checkBluetoothState();
+          },
+          fail: (err) => {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:97", "蓝牙模块初始化失败", err);
+            uni.showToast({
+              title: "请打开蓝牙",
+              icon: "none"
+            });
+          }
+        });
+      },
+      startBluetoothDevicesDiscovery() {
+        if (this.connectedDeviceId)
+          return;
+        this.devices = [];
+        uni.startBluetoothDevicesDiscovery({
+          success: (res) => {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:110", "开始搜索附近的蓝牙设备", res);
+            this.onBluetoothDeviceFound();
+          },
+          fail: (err) => {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:114", "搜索蓝牙设备失败", err);
+          }
+        });
+      },
+      checkBluetoothState() {
+        uni.getBluetoothAdapterState({
+          success: (res) => {
+            if (res.available) {
+              formatAppLog("log", "at pages/bluetooth/bluetooth.vue:122", "蓝牙模块可用");
+            } else {
+              formatAppLog("log", "at pages/bluetooth/bluetooth.vue:124", "蓝牙模块不可用");
+            }
+          },
+          fail: (err) => {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:128", "获取蓝牙状态失败", err);
+          }
+        });
+      },
+      onBluetoothDeviceFound() {
+        uni.onBluetoothDeviceFound((res) => {
+          res.devices.forEach((device) => {
+            this.devices.push(device);
+          });
+          formatAppLog("log", "at pages/bluetooth/bluetooth.vue:139", "发现的新设备", this.devices);
+        });
+      },
+      connectToDevice(deviceId) {
+        uni.createBLEConnection({
+          deviceId,
+          success: (res) => {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:147", "连接成功", res);
+            this.connectedDeviceId = deviceId;
+            this.currentDevice = this.devices.find((d2) => d2.deviceId === deviceId);
+            this.devices = [];
+            this.deviceId = deviceId;
+            this.stopBluetoothDevicesDiscovery();
+            let This = this;
+            setTimeout(() => {
+              uni.getBLEDeviceServices({
+                deviceId,
+                success(res2) {
+                  formatAppLog("log", "at pages/bluetooth/bluetooth.vue:160", "device services:", res2.services);
+                  This.receiveBLEData();
+                }
+              });
+            }, 1e3);
+            uni.navigateTo({
+              url: `/pages/index/index?bluetoothName=${res.deviceName}`
+            });
+          },
+          fail: (err) => {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:170", "连接失败", err);
+          }
+        });
+        this.batteryLevel = 100;
+        this.batteryInterval = setInterval(() => {
+          this.writeBLECharacteristicValue("getBattery\n", this.RX_UUID);
+        }, 6e4);
+      },
+      toggleTraining() {
+        if (this.isTraining) {
+          this.sendEndTrainingCommand();
+        } else {
+          this.sendStartTrainingCommand();
+        }
+        this.isTraining = !this.isTraining;
+      },
+      sendStartTrainingCommand() {
+        const command = `AT+START=${this.trainingMode},${this.speed},${this.frequency},${this.angle}
+`;
+        this.writeBLECharacteristicValue(command, this.RX_UUID);
+        this.addCommandToHistory(command);
+      },
+      handleSliderChange(param, event) {
+        this[param] = event.detail.value;
+        if (this.isTraining) {
+          this.sendUpdateCommand();
+        }
+      },
+      sendUpdateCommand() {
+        const command = `AT+UPDATE=${this.trainingMode},${this.speed},${this.frequency},${this.angle}
+`;
+        this.writeBLECharacteristicValue(command);
+        this.addCommandToHistory(command);
+      },
+      sendEndTrainingCommand() {
+        const command = "AT+END\n";
+        this.writeBLECharacteristicValue(command, this.RX_UUID);
+        this.addCommandToHistory(command);
+        this.commandHistory = [];
+        this.receivedMessages = [];
+      },
+      receiveBLEData() {
+        uni.notifyBLECharacteristicValueChange({
+          state: true,
+          deviceId: this.deviceId,
+          serviceId: this.serviceId,
+          characteristicId: "49535343-8841-43F4-A8D4-ECBE34729BB3",
+          state: true,
+          success: () => {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:218", "成功启用接收通知");
+          },
+          fail: (err) => {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:221", "启用接收通知失败", err, this.serviceId);
+          }
+        });
+        uni.onBLECharacteristicValueChange((res) => {
+          const receivedData = this.arrayBufferToString(res.value);
+          formatAppLog("log", "at pages/bluetooth/bluetooth.vue:228", "收到的数据:", receivedData);
+          if (receivedData.startsWith("battery:")) {
+            this.batteryLevel = receivedData.split(":")[1];
+          }
+          this.receivedMessages.push({
+            text: `收: ${receivedData}`,
+            color: "#008000"
+            // 可以根据需要自定义颜色
+          });
+          this.updateCommandHistoryDisplay();
+          this.processReceivedCommand(receivedData);
+        });
+      },
+      processReceivedCommand(command) {
+        if (command.startsWith("training:start")) {
+          formatAppLog("log", "at pages/bluetooth/bluetooth.vue:244", "this.isTraining++++++", this.isTraining);
+          if (this.isTraining)
+            return;
+          this.sendStartTrainingCommand();
+          this.isTraining = true;
+        } else if (command.startsWith("training:end")) {
+          if (this.isTraining) {
+            this.sendEndTrainingCommand();
+            this.isTraining = false;
+          }
+        }
+      },
+      writeBLECharacteristicValue(command, characteristicId) {
+        if (!this.connectedDeviceId)
+          return;
+        let buffer = new ArrayBuffer(command.length);
+        let dataview = new DataView(buffer);
+        for (let i2 = 0; i2 < command.length; i2++) {
+          dataview.setUint8(i2, command.charAt(i2).charCodeAt());
+        }
+        uni.writeBLECharacteristicValue({
+          deviceId: this.deviceId,
+          serviceId: "55535343-FE7D-4AE5-8FA9-9FAFD205E455",
+          characteristicId: "49535343-1E4D-4BD9-BA61-23C647249616",
+          value: buffer,
+          success(res) {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:272", "发送数据成功", res);
+          },
+          fail(err) {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:276", "发送数据失败", err);
+          }
+        });
+      },
+      disconnectDevice() {
+        if (!this.connectedDeviceId) {
+          uni.showToast({
+            title: "未连接设备",
+            icon: "none"
+          });
+          return;
+        }
+        if (this.batteryInterval) {
+          clearInterval(this.batteryInterval);
+          this.batteryInterval = null;
+        }
+        uni.closeBLEConnection({
+          deviceId: this.connectedDeviceId,
+          success: (res) => {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:295", "断开连接成功", res);
+            this.connectedDeviceId = null;
+            this.currentDevice = null;
+            this.batteryLevel = null;
+          },
+          fail: (err) => {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:301", "断开连接失败", err);
+          }
+        });
+      },
+      stopBluetoothDevicesDiscovery() {
+        uni.stopBluetoothDevicesDiscovery({
+          success: (res) => {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:308", "停止搜索蓝牙设备成功", res);
+          },
+          fail: (err) => {
+            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:311", "停止搜索蓝牙设备失败", err);
+          }
+        });
+      },
+      stringToArrayBuffer(str) {
+        const base64 = btoa(unescape(encodeURIComponent(str)));
+        const len = base64.length;
+        const bytes = new Uint8Array(len);
+        for (let i2 = 0; i2 < len; i2++) {
+          bytes[i2] = base64.charCodeAt(i2);
+        }
+        return bytes.buffer;
+      },
+      arrayBufferToString(buffer) {
+        const bytes = new Uint8Array(buffer);
+        const binary = bytes.reduce((str, byte) => str + String.fromCharCode(byte), "");
+        return decodeURIComponent(escape(binary));
+      },
+      updateCommandHistoryDisplay() {
+        const commandHistoryEl = this.$refs.commandHistory;
+        if (commandHistoryEl) {
+          commandHistoryEl.scrollTop = commandHistoryEl.scrollHeight;
+        }
+      },
+      addCommandToHistory(command) {
+        this.commandHistory.push(`发送: ${command}`);
+        this.updateCommandHistoryDisplay();
+      }
+    }
+  };
+  function _sfc_render$2(_ctx, _cache, $props, $setup, $data, $options) {
+    return vue.openBlock(), vue.createElementBlock(
+      vue.Fragment,
+      null,
+      [
+        $data.batteryLevel !== null ? (vue.openBlock(), vue.createElementBlock("view", { key: 0 }, [
+          vue.createElementVNode(
+            "text",
+            null,
+            "当前电量: " + vue.toDisplayString($data.batteryLevel) + "%",
+            1
+            /* TEXT */
+          )
+        ])) : vue.createCommentVNode("v-if", true),
+        vue.createElementVNode("view", null, [
+          vue.createElementVNode("button", {
+            onClick: _cache[0] || (_cache[0] = (...args) => $options.openBluetoothAdapter && $options.openBluetoothAdapter(...args))
+          }, "打开蓝牙"),
+          !$data.connectedDeviceId ? (vue.openBlock(), vue.createElementBlock("button", {
+            key: 0,
+            onClick: _cache[1] || (_cache[1] = (...args) => $options.startBluetoothDevicesDiscovery && $options.startBluetoothDevicesDiscovery(...args))
+          }, "搜索蓝牙设备")) : vue.createCommentVNode("v-if", true),
+          !$data.connectedDeviceId ? (vue.openBlock(), vue.createElementBlock("button", {
+            key: 1,
+            onClick: _cache[2] || (_cache[2] = (...args) => $options.stopBluetoothDevicesDiscovery && $options.stopBluetoothDevicesDiscovery(...args))
+          }, "停止搜索蓝牙设备")) : vue.createCommentVNode("v-if", true),
+          $data.connectedDeviceId ? (vue.openBlock(), vue.createElementBlock("view", { key: 2 }, [
+            vue.createElementVNode("text", null, "当前连接的设备："),
+            $data.currentDevice ? (vue.openBlock(), vue.createElementBlock("view", { key: 0 }, [
+              vue.createElementVNode(
+                "text",
+                null,
+                vue.toDisplayString($data.currentDevice.name || "未命名设备"),
+                1
+                /* TEXT */
+              ),
+              vue.createElementVNode(
+                "text",
+                null,
+                "设备 ID: " + vue.toDisplayString($data.currentDevice.deviceId),
+                1
+                /* TEXT */
+              )
+            ])) : vue.createCommentVNode("v-if", true),
+            vue.createElementVNode("button", {
+              onClick: _cache[3] || (_cache[3] = (...args) => $options.disconnectDevice && $options.disconnectDevice(...args))
+            }, "断开连接")
+          ])) : $data.devices.length > 0 ? (vue.openBlock(), vue.createElementBlock("view", { key: 3 }, [
+            vue.createElementVNode("text", null, "发现的蓝牙设备："),
+            (vue.openBlock(true), vue.createElementBlock(
+              vue.Fragment,
+              null,
+              vue.renderList($data.devices, (device) => {
+                return vue.openBlock(), vue.createElementBlock("view", {
+                  key: device.deviceId,
+                  style: { "margin": "10px 0" }
+                }, [
+                  vue.createElementVNode(
+                    "text",
+                    null,
+                    vue.toDisplayString(device.name || "未命名设备"),
+                    1
+                    /* TEXT */
+                  ),
+                  vue.createElementVNode("button", {
+                    onClick: ($event) => $options.connectToDevice(device.deviceId)
+                  }, "连接设备", 8, ["onClick"])
+                ]);
+              }),
+              128
+              /* KEYED_FRAGMENT */
+            ))
+          ])) : vue.createCommentVNode("v-if", true),
+          vue.createElementVNode("view", null, [
+            vue.createElementVNode(
+              "text",
+              null,
+              "速度数值: " + vue.toDisplayString($data.speed),
+              1
+              /* TEXT */
+            ),
+            vue.createElementVNode("slider", {
+              value: $data.speed,
+              min: "0",
+              max: "100",
+              step: "1",
+              onChange: _cache[4] || (_cache[4] = ($event) => $options.handleSliderChange("speed", $event))
+            }, null, 40, ["value"]),
+            vue.createElementVNode(
+              "text",
+              null,
+              "频率数值: " + vue.toDisplayString($data.frequency),
+              1
+              /* TEXT */
+            ),
+            vue.createElementVNode("slider", {
+              value: $data.frequency,
+              min: "0",
+              max: "100",
+              step: "1",
+              onChange: _cache[5] || (_cache[5] = ($event) => $options.handleSliderChange("frequency", $event))
+            }, null, 40, ["value"]),
+            vue.createElementVNode(
+              "text",
+              null,
+              "角度数值: " + vue.toDisplayString($data.angle),
+              1
+              /* TEXT */
+            ),
+            vue.createElementVNode("slider", {
+              value: $data.angle,
+              min: "0",
+              max: "360",
+              step: "1",
+              onChange: _cache[6] || (_cache[6] = ($event) => $options.handleSliderChange("angle", $event))
+            }, null, 40, ["value"])
+          ]),
+          $data.connectedDeviceId ? (vue.openBlock(), vue.createElementBlock(
+            "button",
+            {
+              key: 4,
+              onClick: _cache[7] || (_cache[7] = (...args) => $options.toggleTraining && $options.toggleTraining(...args))
+            },
+            vue.toDisplayString($data.isTraining ? "结束训练" : "开始训练"),
+            1
+            /* TEXT */
+          )) : vue.createCommentVNode("v-if", true),
+          vue.createElementVNode("button", {
+            onClick: _cache[8] || (_cache[8] = (...args) => _ctx.closeBluetoothAdapter && _ctx.closeBluetoothAdapter(...args))
+          }, "关闭蓝牙"),
+          $data.commandHistory.length > 0 ? (vue.openBlock(), vue.createElementBlock("view", {
+            key: 5,
+            class: "command-history"
+          }, [
+            vue.createElementVNode("text", null, "发送的指令历史："),
+            vue.createElementVNode(
+              "view",
+              { ref: "commandHistory" },
+              [
+                (vue.openBlock(true), vue.createElementBlock(
+                  vue.Fragment,
+                  null,
+                  vue.renderList($data.commandHistory, (command, index2) => {
+                    return vue.openBlock(), vue.createElementBlock(
+                      "text",
+                      {
+                        key: index2,
+                        class: "command"
+                      },
+                      vue.toDisplayString(command),
+                      1
+                      /* TEXT */
+                    );
+                  }),
+                  128
+                  /* KEYED_FRAGMENT */
+                ))
+              ],
+              512
+              /* NEED_PATCH */
+            )
+          ])) : vue.createCommentVNode("v-if", true),
+          $data.receivedMessages.length > 0 ? (vue.openBlock(), vue.createElementBlock("view", {
+            key: 6,
+            class: "received-messages"
+          }, [
+            vue.createElementVNode("text", null, "接收到的消息："),
+            vue.createElementVNode(
+              "view",
+              { ref: "receivedMessages" },
+              [
+                (vue.openBlock(true), vue.createElementBlock(
+                  vue.Fragment,
+                  null,
+                  vue.renderList($data.receivedMessages, (message, index2) => {
+                    return vue.openBlock(), vue.createElementBlock(
+                      "text",
+                      {
+                        key: index2,
+                        style: vue.normalizeStyle({ color: message.color }),
+                        class: "message"
+                      },
+                      vue.toDisplayString(message.text),
+                      5
+                      /* TEXT, STYLE */
+                    );
+                  }),
+                  128
+                  /* KEYED_FRAGMENT */
+                ))
+              ],
+              512
+              /* NEED_PATCH */
+            )
+          ])) : vue.createCommentVNode("v-if", true)
+        ])
+      ],
+      64
+      /* STABLE_FRAGMENT */
+    );
+  }
+  const PagesBluetoothBluetooth = /* @__PURE__ */ _export_sfc(_sfc_main$2, [["render", _sfc_render$2], ["__file", "E:/work/TennisBallMachineController/pages/bluetooth/bluetooth.vue"]]);
+  const _imports_0 = "/static/image/battery.png";
+  const _imports_1 = "/static/image/tennis-court.jpg";
   const _sfc_main$1 = {
     data() {
       return {
+        bluetoothName: "",
         currentLanguage: "zh",
+        showDirectionButtons: true,
+        // 控制方向按钮的显示与隐藏
+        upDownButtonsDisabled: false,
+        // 控制上下方向按钮的禁用状态
+        leftRightButtonsDisabled: false,
+        // 控制左右方向按钮的禁用状态
+        showAngleControl: true,
+        // 控制角度调整功能的显示与隐藏
+        showHeightSelector: false,
+        // 控制发球高度选择功能的显示与隐藏
+        showInputWithClear: false,
+        // 控制输入框和清除按钮的显示与隐藏
+        inputData: "",
+        // 输入框显示的数据
+        angle: 30,
+        // 初始角度				
+        heights: 30,
+        minAngle: 20,
+        // 角度最小值
+        maxAngle: 50,
+        // 角度最大值
+        heightOptions: ["低", "中", "高"],
+        // 发球高度选项
+        selectedHeight: "中",
+        // 默认选择的发球高度
+        selectedBall: 1,
+        showBallNumbers: false,
+        // 默认生成35个网球
+        balls: Array.from({
+          length: 35
+        }, () => ({
+          color: "gray"
+        })),
+        courtWidth: 300,
+        courtHeight: 200,
         BluetoothList: [],
         // 存储发现的蓝牙设备
         showActionSheet: false,
@@ -99,6 +603,30 @@ if (uni.restoreGlobal) {
             zh: "左",
             en: "Left"
           },
+          angle: {
+            zh: "角度",
+            en: "Angle"
+          },
+          selectedHeight: {
+            zh: "设置发球高度",
+            en: "SelectedHeight"
+          },
+          low: {
+            zh: "低",
+            en: "Low"
+          },
+          medium: {
+            zh: "中",
+            en: "Medium"
+          },
+          height: {
+            zh: "高",
+            en: "High"
+          },
+          selectBall: {
+            zh: "选择球",
+            en: "selectBall"
+          },
           right: {
             zh: "右",
             en: "Right"
@@ -111,14 +639,14 @@ if (uni.restoreGlobal) {
             zh: "速度",
             en: "Speed"
           },
-          angle: {
-            zh: "角度",
-            en: "Angle"
+          rotate: {
+            zh: "旋转程度",
+            en: "Rotate"
           }
         },
         modes: [
           {
-            zh: "定点练习模式",
+            zh: "定点练习",
             en: "Fixed Point Practice"
           },
           {
@@ -146,7 +674,7 @@ if (uni.restoreGlobal) {
             en: "Full Court Random"
           },
           {
-            zh: "程序练习",
+            zh: "编程练习",
             en: "Program Practice"
           },
           {
@@ -158,20 +686,276 @@ if (uni.restoreGlobal) {
             en: "Moon Ball"
           }
         ],
+        modeConfig: {
+          0: {
+            ballCount: 1,
+            positions: [
+              [2, 2]
+            ]
+          },
+          // 定点练习
+          1: {
+            ballCount: 2,
+            positions: [
+              [2, 2],
+              [3, 4]
+            ]
+          },
+          // 交叉循环
+          2: {
+            ballCount: 2,
+            positions: [
+              [2, 0],
+              [2, 4]
+            ]
+          },
+          // 水平循环
+          3: {
+            ballCount: 2,
+            positions: [
+              [0, 2],
+              [3, 2]
+            ]
+          },
+          // 垂直循环
+          4: {
+            ballCount: 1,
+            positions: [
+              [2, 2]
+            ]
+          },
+          // 截击练习
+          5: {
+            ballCount: 1,
+            positions: [
+              [2, 2]
+            ]
+          },
+          // 高压练习
+          6: {
+            ballCount: 1,
+            positions: [
+              [2, 2]
+            ]
+          },
+          // 全场随机
+          7: {
+            ballCount: 35,
+            positions: [
+              // 编程练习
+              [0, 0],
+              [0, 1],
+              [0, 2],
+              [0, 3],
+              [0, 4],
+              [1, 0],
+              [1, 1],
+              [1, 2],
+              [1, 3],
+              [1, 4],
+              [2, 0],
+              [2, 1],
+              [2, 2],
+              [2, 3],
+              [2, 4],
+              [3, 0],
+              [3, 1],
+              [3, 2],
+              [3, 3],
+              [3, 4],
+              [4, 0],
+              [4, 1],
+              [4, 2],
+              [4, 3],
+              [4, 4],
+              [5, 0],
+              [5, 1],
+              [5, 2],
+              [5, 3],
+              [5, 4],
+              [6, 0],
+              [6, 1],
+              [6, 2],
+              [6, 3],
+              [6, 4]
+            ]
+          },
+          // 编程练习
+          8: {
+            ballCount: 1,
+            positions: [
+              [2, 2]
+            ]
+          },
+          // 入门练习
+          9: {
+            ballCount: 1,
+            positions: [
+              [2, 2]
+            ]
+          }
+          // 月亮球
+        },
+        modeParams: [
+          {
+            frequency: 7,
+            speed: 80,
+            rotate: 0,
+            heights: "",
+            angle: 20
+          },
+          // 定点练习
+          {
+            frequency: 7,
+            speed: 80,
+            rotate: 0,
+            heights: "中",
+            angle: null
+          },
+          // 交叉循环
+          {
+            frequency: 7,
+            speed: 80,
+            rotate: 0,
+            heights: "",
+            angle: 30
+          },
+          // 水平循环
+          {
+            frequency: 7,
+            speed: 80,
+            rotate: 0,
+            heights: "中",
+            angle: null
+          },
+          // 垂直循环
+          {
+            frequency: 7,
+            speed: 80,
+            rotate: 0,
+            heights: "",
+            angle: 30
+          },
+          // 截击练习
+          {
+            frequency: 7,
+            speed: 50,
+            rotate: 0,
+            heights: "",
+            angle: 30
+          },
+          // 高压练习
+          {
+            frequency: 7,
+            speed: 80,
+            rotate: 0,
+            heights: "中",
+            angle: null
+          },
+          // 全场随机
+          {
+            frequency: 7,
+            speed: 80,
+            rotate: 0,
+            heights: "",
+            angle: null
+          },
+          // 编程练习
+          {
+            frequency: 7,
+            speed: 20,
+            rotate: 0,
+            heights: "",
+            angle: 30
+          },
+          // 入门练习
+          {
+            frequency: 7,
+            speed: 80,
+            rotate: 0,
+            heights: "",
+            angle: 30
+          }
+          // 月亮球
+        ],
+        modeSettings: {
+          0: {
+            upDown: true,
+            leftRight: true
+          },
+          // 定点练习
+          1: {
+            upDown: true,
+            leftRight: true
+          },
+          // 交叉循环
+          2: {
+            upDown: true,
+            leftRight: true
+          },
+          // 水平循环
+          3: {
+            upDown: true,
+            leftRight: true
+          },
+          // 垂直循环
+          4: {
+            upDown: true,
+            leftRight: true
+          },
+          // 截击练习
+          5: {
+            upDown: true,
+            leftRight: true
+          },
+          // 高压练习
+          6: {
+            upDown: false,
+            leftRight: false
+          },
+          // 全场随机
+          7: {
+            upDown: false,
+            leftRight: false
+          },
+          // 编程练习
+          8: {
+            upDown: true,
+            leftRight: true
+          },
+          // 入门练习
+          9: {
+            upDown: true,
+            leftRight: true
+          }
+          // 月亮球
+        },
         selectedMode: 0,
         frequency: 5,
         speed: 20,
-        angle: 0,
+        rotate: 0,
+        ballCount: 1,
+        // 网球个数
+        selectedBalls: [],
+        // 记录被点击的网球索引
+        selectedSequence: [],
+        // 用于记录选中的网球序号
+        ballColors: [],
+        // 用于记录每个网球的颜色状态
+        defaultPositions: [],
+        // 网球默认位置
         ballPosition: {
-          x: 0,
-          y: 0
+          x: 2,
+          y: 2
         },
         // 记录网球的位置
         trainingActive: false,
         initialParams: {
           frequency: 5,
           speed: 20,
-          angle: 0
+          rotate: 0,
+          heights: "",
+          angle: null
         },
         initialBallPosition: {
           x: 0,
@@ -184,157 +968,169 @@ if (uni.restoreGlobal) {
         return this.modes.map((mode) => mode[this.currentLanguage]);
       },
       ballStyle() {
-        const cellSize = Math.min(300 / 5, 50);
+        const cellSize = Math.min(300 / 5, 400 / 7);
+        const backgroundColor = this.selectedMode === 7 ? this.ballColors[index] || "gray" : "red";
         return {
           top: `${this.ballPosition.y * cellSize}px`,
+          // 更新top坐标，基于7行布局
           left: `${this.ballPosition.x * cellSize}px`,
+          // left坐标仍基于5列
           width: `${cellSize * 0.8}px`,
-          // 增大网球的大小
-          height: `${cellSize * 0.8}px`
+          // 增大网球的大小，保持比例
+          height: `${cellSize * 0.8}px`,
+          backgroundColor
+          // 根据颜色状态设置背景颜色
         };
       }
     },
+    watch: {
+      selectedBall(newValue) {
+        this.updateButtonStates();
+      },
+      selectedMode(newValue) {
+        this.updateButtonStates();
+      }
+    },
+    onLoad(options) {
+      if (options.bluetoothName) {
+        this.bluetoothName = options.bluetoothName;
+      }
+    },
     methods: {
-      player() {
-        uni.openBluetoothAdapter({
-          success: (res) => {
-            uni.showToast({
-              title: "初始化成功",
-              icon: "success",
-              duration: 800
-            });
-            this.findBlue();
-          },
-          fail: () => {
-            uni.showToast({
-              title: "请打开蓝牙",
-              icon: "none"
-            });
-          }
+      navigateToBluetooth() {
+        uni.navigateTo({
+          url: "/pages/bluetooth/bluetooth"
         });
       },
-      // 搜索蓝牙设备
-      findBlue() {
-        uni.startBluetoothDevicesDiscovery({
-          allowDuplicatesKey: false,
-          interval: 0,
-          success: () => {
-            uni.showLoading({
-              title: "正在搜索设备"
-            });
-            this.getBlue();
-          }
-        });
-        setTimeout(() => {
-          uni.stopBluetoothDevicesDiscovery({
-            success: () => {
-              formatAppLog("log", "at pages/index/index.vue:274", "停止蓝牙搜索");
-            }
+      updateButtonStates() {
+        this.upDownButtonsDisabled = this.selectedMode === 2 && this.selectedBall === 2;
+        this.leftRightButtonsDisabled = this.selectedMode === 3 && this.selectedBall === 2;
+      },
+      // 获取网球场大小
+      getCourtSize() {
+        const query = uni.createSelectorQuery().in(this);
+        query.select(".tennis-court").boundingClientRect((rect) => {
+          this.courtWidth = rect.width;
+          this.courtHeight = rect.height;
+          this.updateBallPositions(0);
+        }).exec();
+      },
+      selectBall(ballNumber) {
+        this.selectedBall = ballNumber;
+      },
+      // 计算网球在网球场上的位置（基于4x5网格）
+      calculatePosition(row, col) {
+        const ballSize = 30;
+        const numCols = 5;
+        const numRows = 7;
+        const horizontalPadding = (this.courtWidth - numCols * ballSize) / (numCols + 1);
+        const verticalPadding = (this.courtHeight - numRows * ballSize) / (numRows + 1);
+        const top = verticalPadding + row * (ballSize + verticalPadding);
+        const left = horizontalPadding + col * (ballSize + horizontalPadding);
+        return {
+          top,
+          left
+        };
+      },
+      // 获取网球的样式
+      getBallPosition(index2) {
+        const ball = this.balls[index2];
+        if (!ball) {
+          return {
+            top: "0px",
+            left: "0px",
+            width: "20px",
+            height: "20px",
+            backgroundColor: "gray"
+          };
+        }
+        return {
+          top: ball.top || "0px",
+          left: ball.left || "0px",
+          width: ball.width || "20px",
+          height: ball.height || "20px",
+          backgroundColor: ball.color || "gray"
+        };
+      },
+      handleBallInteraction(index2) {
+        if (this.selectedMode !== 7)
+          return;
+        const ball = this.balls[index2];
+        if (ball.color === "gray") {
+          this.$set(this.balls, index2, {
+            ...ball,
+            color: "red"
           });
-        }, 1e4);
+          formatAppLog("log", "at pages/index/index.vue:646", `球 ${index2 + 1} 变为红色`);
+          this.selectedBalls.push(index2 + 1);
+        } else {
+          this.$set(this.balls, index2, {
+            ...ball,
+            color: "gray"
+          });
+          formatAppLog("log", "at pages/index/index.vue:655", `球 ${index2 + 1} 变为灰色`);
+          this.selectedBalls = this.selectedBalls.filter((ballIndex) => ballIndex !== index2 + 1);
+        }
+        this.inputData = this.selectedBalls.join(",");
       },
-      // 获取搜索到的设备信息
-      getBlue() {
-        uni.getBluetoothDevices({
-          success: (res) => {
-            uni.hideLoading();
-            this.BluetoothList = res.devices;
-            formatAppLog("log", "at pages/index/index.vue:286", "-----------" + res.devices);
-            this.showActionSheet = true;
-          },
-          fail: () => {
-            formatAppLog("log", "at pages/index/index.vue:290", "搜索蓝牙设备失败");
-          }
+      clearInputData() {
+        this.inputData = [];
+        this.selectedBalls = [];
+        this.balls = this.balls.map((ball) => ({
+          ...ball,
+          color: "gray"
+        }));
+      },
+      updateBallPositions(mode) {
+        let modeConfig = this.modeConfig;
+        const config = modeConfig[mode] || {
+          ballCount: 1,
+          positions: [
+            [2, 2]
+          ]
+        };
+        const {
+          ballCount,
+          positions
+        } = config;
+        this.balls = positions.map(([row, col]) => {
+          const position = this.calculatePosition(row, col);
+          return {
+            width: "20px",
+            height: "20px",
+            top: `${position.top}px`,
+            left: `${position.left}px`,
+            color: mode === 7 ? "gray" : "red"
+            // 模式7下为灰色，其他模式为红色
+          };
         });
-      },
-      // 处理设备点击事件
-      connectDevice(deviceId) {
-        uni.createBLEConnection({
-          deviceId,
-          success: () => {
-            uni.showToast({
-              title: "连接成功",
-              icon: "success",
-              duration: 800
+        if (mode === 7) {
+          while (this.balls.length < 35) {
+            this.balls.push({
+              width: "20px",
+              height: "20px",
+              top: "0px",
+              left: "0px",
+              color: mode === 7 ? "gray" : "red"
+              // 模式7下为灰色，其他模式为红色
             });
-            uni.stopBluetoothDevicesDiscovery({
-              success: () => {
-                formatAppLog("log", "at pages/index/index.vue:307", "连接蓝牙成功之后关闭蓝牙搜索");
-              }
-            });
-            this.deviceId = deviceId;
-            this.getServiceId();
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/index/index.vue:314", "连接失败", err);
           }
-        });
+        }
+        this.ballColors = new Array(this.balls.length).fill("gray");
       },
-      // 获取服务ID
-      getServiceId() {
-        uni.getBLEDeviceServices({
-          deviceId: this.deviceId,
-          success: (res) => {
-            formatAppLog("log", "at pages/index/index.vue:324", res);
-            this.readyservices = res.services[0].uuid;
-            this.services = res.services[1].uuid;
-            this.getCharacteId();
-          }
-        });
-      },
-      // 获取特征值ID
-      getCharacteId() {
-        uni.getBLEDeviceCharacteristics({
-          deviceId: this.deviceId,
-          serviceId: this.services,
-          success: (res) => {
-            formatAppLog("log", "at pages/index/index.vue:338", res);
-            for (let i2 = 0; i2 < res.characteristics.length; i2++) {
-              const model = res.characteristics[i2];
-              if (model.properties.write) {
-                this.sendMy(model.uuid);
-              }
-              if (model.properties.notify) {
-                this.notifyUuid = model.uuid;
-              }
-            }
-          }
-        });
-      },
-      // 写入数据到蓝牙设备
-      sendMy(buffer) {
-        const buff = this.string2buffer("3a0a0b0c0d02423122");
-        uni.writeBLECharacteristicValue({
-          deviceId: this.deviceId,
-          serviceId: this.services,
-          characteristicId: buffer,
-          value: buff,
-          success: () => {
-            formatAppLog("log", "at pages/index/index.vue:361", "写入成功");
-            this.startNotice();
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/index/index.vue:365", err);
-          }
-        });
-      },
-      // 启用通知功能，接收设备返回的数据
-      startNotice() {
-        uni.notifyBLECharacteristicValueChange({
-          state: true,
-          deviceId: this.deviceId,
-          serviceId: this.services,
-          characteristicId: this.notifyUuid,
-          success: () => {
-            uni.onBLECharacteristicValueChange((res) => {
-              const nonceId = this.ab2hex(res.value);
-              formatAppLog("log", "at pages/index/index.vue:380", "返回数据:", nonceId);
-            });
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/index/index.vue:384", err);
-          }
-        });
+      // 计算网球在网球场上的位置（基于4x5网格）
+      calculatePosition(row, col) {
+        const ballSize = 30;
+        const numCols = 5;
+        const numRows = 7;
+        const horizontalPadding = (this.courtWidth - numCols * ballSize) / (numCols + 1);
+        const verticalPadding = (this.courtHeight - numRows * ballSize) / (numRows + 1);
+        const top = verticalPadding + row * (ballSize + verticalPadding);
+        const left = horizontalPadding + col * (ballSize + horizontalPadding);
+        return {
+          top,
+          left
+        };
       },
       // 将字符串转换成ArrayBuffer
       string2buffer(str) {
@@ -342,11 +1138,11 @@ if (uni.restoreGlobal) {
         if (!str)
           return;
         const length = str.length;
-        let index = 0;
+        let index2 = 0;
         const array = [];
-        while (index < length) {
-          array.push(str.substring(index, index + 2));
-          index = index + 2;
+        while (index2 < length) {
+          array.push(str.substring(index2, index2 + 2));
+          index2 = index2 + 2;
         }
         val = array.join(",");
         return new Uint8Array(val.match(/[\da-f]{2}/gi).map((h2) => parseInt(h2, 16))).buffer;
@@ -363,77 +1159,250 @@ if (uni.restoreGlobal) {
         this.currentLanguage = this.currentLanguage === "zh" ? "en" : "zh";
       },
       onModeChange(event) {
-        const index = event.detail.value;
-        this.selectedMode = index;
-        this.updateParametersForMode(index);
+        const index2 = event.detail.value;
+        this.selectedMode = index2;
+        this.updateParametersForMode(index2);
+        this.showBallNumbers = [1, 2, 3, 7].includes(this.selectedMode);
+        this.toggleDirectionButtons(this.selectedMode);
+        this.toggleAngleControl(this.selectedMode);
+        this.toggleHeightSelector(this.selectedMode);
+        this.showInputWithClear = this.selectedMode === 7;
+        this.updateBallPositions(index2);
+        this.resetBallPositions();
+      },
+      toggleDirectionButtons(selectedMode) {
+        const modeSettings = this.modeSettings;
+        this.showDirectionButtons = false;
+        this.upDownButtonsDisabled = false;
+        this.leftRightButtonsDisabled = false;
+        const settings = modeSettings[selectedMode] || {
+          upDown: false,
+          leftRight: false
+        };
+        if (settings.upDown || settings.leftRight) {
+          this.showDirectionButtons = true;
+        }
+        this.upDownButtonsDisabled = !settings.upDown;
+        this.leftRightButtonsDisabled = !settings.leftRight;
+      },
+      // 控制角度调整功能的显示与隐藏
+      toggleAngleControl(selectedMode) {
+        if ([0, 2, 4, 5, 8, 9].includes(selectedMode)) {
+          this.showAngleControl = true;
+        } else {
+          this.showAngleControl = false;
+        }
+      },
+      // 控制发球高度选择功能的显示与隐藏
+      toggleHeightSelector(selectedMode) {
+        if ([1, 3, 6].includes(selectedMode)) {
+          this.showHeightSelector = true;
+        } else {
+          this.showHeightSelector = false;
+        }
+      },
+      // 调整角度
+      adjustAngle(change) {
+        this.angle = Math.min(Math.max(this.angle + change, this.minAngle), this.maxAngle);
+      },
+      // 选择发球高度
+      selectHeight(height) {
+        this.selectedHeight = height;
       },
       updateParametersForMode(modeIndex) {
-        const modeParams = [
-          {
-            frequency: 5,
-            speed: 20,
-            angle: 0
-          }
-          // 添加其他模式的默认参数...
-        ];
+        const modeParams = this.modeParams;
         const params = modeParams[modeIndex] || this.initialParams;
         this.frequency = params.frequency;
         this.speed = params.speed;
+        this.rotate = params.rotate;
+        this.heights = params.heights;
         this.angle = params.angle;
         this.resetBallPosition();
       },
-      moveBall(direction) {
-        const step = 1;
-        if (direction === "up") {
-          this.ballPosition.y = Math.max(0, this.ballPosition.y - step);
-        } else if (direction === "down") {
-          this.ballPosition.y = Math.min(5, this.ballPosition.y + step);
-        } else if (direction === "left") {
-          this.ballPosition.x = Math.max(0, this.ballPosition.x - step);
-        } else if (direction === "right") {
-          this.ballPosition.x = Math.min(5, this.ballPosition.x + step);
+      resetBallPositions() {
+        const selectedModeConfig = this.modeConfig[this.selectedMode];
+        if (selectedModeConfig.defaultPositions) {
+          selectedModeConfig.positions = selectedModeConfig.defaultPositions.map((position) => [...position]);
+          this.updateBallPositions(this.selectedMode);
         }
-        this.sendTrainingParams();
+      },
+      // 处理方向键按下事件
+      handleDirectionKey(direction) {
+        if (this.selectedMode === 1) {
+          this.moveBall(this.selectedBall, direction);
+        } else if (this.selectedMode === 2) {
+          if (this.selectedBall === 1) {
+            this.moveBall(1, direction);
+            if (direction === "up" || direction === "down") {
+              this.moveBall(2, direction);
+            }
+          } else if (this.selectedBall === 2 && (direction === "left" || direction === "right")) {
+            this.moveBall(2, direction);
+          }
+        } else if (this.selectedMode === 3) {
+          if (this.selectedBall === 1) {
+            this.moveBall(1, direction);
+            if (direction === "left" || direction === "right") {
+              this.moveBall(2, direction);
+            }
+          } else if (this.selectedBall === 2 && (direction === "up" || direction === "down")) {
+            this.moveBall(2, direction);
+          }
+        } else {
+          this.moveBall(1, direction);
+        }
+      },
+      moveBall(ballNumber, direction) {
+        const maxRows = 6;
+        const maxCols = 4;
+        const selectedModeConfig = this.modeConfig[this.selectedMode];
+        const ballPositions = selectedModeConfig.positions;
+        let newPositions = ballPositions.map((position) => [...position]);
+        let [row, col] = newPositions[ballNumber - 1];
+        switch (direction) {
+          case "up":
+            if (row > 0)
+              row -= 1;
+            break;
+          case "down":
+            if (row < maxRows)
+              row += 1;
+            break;
+          case "left":
+            if (col > 0)
+              col -= 1;
+            break;
+          case "right":
+            if (col < maxCols)
+              col += 1;
+            break;
+        }
+        newPositions[ballNumber - 1] = [row, col];
+        if (this.selectedMode === 2 && ballNumber === 1) {
+          newPositions[1][0] = row;
+        } else if (this.selectedMode === 2 && ballNumber === 2) {
+          newPositions[1] = [newPositions[0][0], col];
+        } else if (this.selectedMode === 3 && ballNumber === 1) {
+          newPositions[1][1] = col;
+        } else if (this.selectedMode === 3 && ballNumber === 2) {
+          newPositions[1] = [row, newPositions[0][1]];
+        }
+        selectedModeConfig.positions = newPositions;
+        this.updateBallPositions(this.selectedMode);
       },
       startTraining() {
         if (!this.trainingActive) {
-          formatAppLog("log", "at pages/index/index.vue:451", JSON.stringify({
-            mode: this.modeNames[this.selectedMode],
-            ballPosition: this.ballPosition,
-            frequency: this.frequency,
-            speed: this.speed,
-            angle: this.angle
-          }));
           this.trainingActive = true;
           this.buttonText = this.translations.endTraining[this.currentLanguage];
           this.buttonColor = "#ff6347";
           this.modeSelectable = false;
+          this.markUpcomingBalls();
+          this.determineServingOrder();
           this.sendTrainingParams();
+          this.printTrainingInfo();
         } else {
-          formatAppLog("log", "at pages/index/index.vue:465", "Ending training");
-          this.trainingActive = false;
-          this.buttonText = this.translations.startTraining[this.currentLanguage];
-          this.buttonColor = "#87ceeb";
-          this.resetToInitialValues();
-          this.modeSelectable = true;
-          this.sendTrainingParams();
+          this.endTraining();
         }
       },
-      sendTrainingParams() {
-        if (this.trainingActive) {
-          formatAppLog("log", "at pages/index/index.vue:476", JSON.stringify({
-            mode: this.modeNames[this.selectedMode],
-            ballPosition: this.ballPosition,
-            frequency: this.frequency,
-            speed: this.speed,
-            angle: this.angle
-          }));
+      endTraining() {
+        formatAppLog("log", "at pages/index/index.vue:964", "Ending training");
+        this.trainingActive = false;
+        this.buttonText = this.translations.startTraining[this.currentLanguage];
+        this.buttonColor = "#87ceeb";
+        this.resetToInitialValues();
+        this.modeSelectable = true;
+        this.sendTrainingParams();
+        const modeParams = this.modeParams[this.selectedMode] || {};
+        this.frequency = modeParams.frequency || 7;
+        this.speed = modeParams.speed || 80;
+        this.rotate = modeParams.rotate || 0;
+        this.angle = modeParams.angle || 30;
+        this.heights = modeParams.heights || "";
+        this.balls.forEach((ball, index2) => {
+          ball.top = ball.initialTop || "0px";
+          ball.left = ball.initialLeft || "0px";
+          ball.color = "green";
+        });
+        this.resetSlidersToDefault();
+        formatAppLog("log", "at pages/index/index.vue:997", "训练结束，参数恢复默认值:", {
+          frequency: this.frequency,
+          speed: this.speed,
+          rotate: this.rotate,
+          angle: this.angle,
+          heights: this.heights,
+          balls: this.balls.map((ball) => ({
+            position: {
+              top: ball.top,
+              left: ball.left
+            },
+            color: ball.color
+          }))
+        });
+      },
+      // 这是一个辅助函数，用于重置滑动条（sliders）的值
+      resetSlidersToDefault() {
+        this.$refs.frequencySlider.setValue(this.frequency);
+        this.$refs.speedSlider.setValue(this.speed);
+        this.$refs.rotateSlider.setValue(this.rotate);
+        this.$refs.angleSlider.setValue(this.angle);
+      },
+      markUpcomingBalls() {
+        if (this.selectedMode !== 7) {
+          this.balls.forEach((ball, index2) => {
+            this.$set(this.balls, index2, {
+              ...ball,
+              color: "green"
+            });
+          });
+        } else {
+          const sequence = this.inputData.split(",").map(Number);
+          sequence.forEach((index2) => {
+            if (this.balls[index2 - 1]) {
+              this.$set(this.balls, index2 - 1, {
+                ...this.balls[index2 - 1],
+                color: "green"
+              });
+            }
+          });
         }
+      },
+      determineServingOrder() {
+        if (this.selectedMode === 7) {
+          this.servingOrder = this.inputData.split(",").map(Number);
+        } else {
+          this.servingOrder = this.balls.map((_2, index2) => index2 + 1);
+        }
+      },
+      printTrainingInfo() {
+        const mode = this.selectedMode;
+        const positions = this.balls.map((ball) => ({
+          top: ball.top || "0px",
+          left: ball.left || "0px"
+        }));
+        const angles = this.balls.map(() => this.angle || "-");
+        const heights = this.balls.map(() => this.heights || "-");
+        const frequencies = this.balls.map(() => this.frequency || "-");
+        const speeds = this.balls.map(() => this.speed || "-");
+        const rotations = this.balls.map(() => this.rotate || "-");
+        const trainingInfo = {
+          mode,
+          positions,
+          angles,
+          heights,
+          frequencies,
+          speeds,
+          rotations
+        };
+        formatAppLog("log", "at pages/index/index.vue:1081", "训练信息:", JSON.stringify(trainingInfo, null, 2));
+      },
+      sendTrainingParams() {
+        if (this.trainingActive)
+          ;
       },
       resetToInitialValues() {
         this.frequency = this.initialParams.frequency;
         this.speed = this.initialParams.speed;
-        this.angle = this.initialParams.angle;
+        this.rotate = this.initialParams.rotate;
         this.ballPosition = {
           ...this.initialBallPosition
         };
@@ -446,8 +1415,8 @@ if (uni.restoreGlobal) {
         this.speed = event.detail.value;
         this.sendTrainingParams();
       },
-      handleAngleChange(event) {
-        this.angle = event.detail.value;
+      handleRotateChange(event) {
+        this.rotate = event.detail.value;
         this.sendTrainingParams();
       },
       resetBallPosition() {
@@ -458,19 +1427,20 @@ if (uni.restoreGlobal) {
     },
     mounted() {
       this.updateParametersForMode(this.selectedMode);
+      this.getCourtSize();
+      this.updateBallPositions(0);
     }
   };
-  function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock("view", { class: "container" }, [
       vue.createCommentVNode(" 第一层: 蓝牙功能，中英文切换，电量显示 "),
       vue.createElementVNode("view", { class: "header" }, [
         vue.createElementVNode(
           "button",
           {
-            class: "btn-bluetooth",
-            onClick: _cache[0] || (_cache[0] = (...args) => $options.player && $options.player(...args))
+            onClick: _cache[0] || (_cache[0] = (...args) => $options.navigateToBluetooth && $options.navigateToBluetooth(...args))
           },
-          vue.toDisplayString($data.translations.bluetooth[$data.currentLanguage]),
+          vue.toDisplayString($data.bluetoothName || "蓝牙"),
           1
           /* TEXT */
         ),
@@ -518,7 +1488,7 @@ if (uni.restoreGlobal) {
                     /* TEXT */
                   ),
                   vue.createElementVNode("button", {
-                    onClick: ($event) => $options.connectDevice(device.deviceId)
+                    onClick: ($event) => _ctx.connectDevice(device.deviceId)
                   }, "连接", 8, ["onClick"])
                 ]);
               }),
@@ -537,7 +1507,10 @@ if (uni.restoreGlobal) {
         }, [
           vue.createElementVNode(
             "view",
-            { class: "selected-mode" },
+            {
+              class: "selected-mode",
+              style: { "border": "1px solid red" }
+            },
             vue.toDisplayString($data.translations.currentMode[$data.currentLanguage]) + "：" + vue.toDisplayString($options.modeNames[$data.selectedMode]),
             1
             /* TEXT */
@@ -546,77 +1519,189 @@ if (uni.restoreGlobal) {
       ]),
       vue.createCommentVNode(" 第二层: 网球场和网球图片 "),
       vue.createElementVNode("view", { class: "court-container" }, [
+        vue.createCommentVNode(" 背景图 "),
         vue.createElementVNode("img", {
           class: "tennis-court",
           src: _imports_1,
           alt: "Tennis Court"
         }),
-        vue.createElementVNode(
-          "img",
-          {
-            class: "tennis-ball",
-            style: vue.normalizeStyle($options.ballStyle),
-            src: _imports_2,
-            alt: "Tennis Ball"
-          },
+        vue.createCommentVNode(" 网球容器 "),
+        (vue.openBlock(true), vue.createElementBlock(
+          vue.Fragment,
           null,
-          4
-          /* STYLE */
-        )
+          vue.renderList($data.balls, (ball, index2) => {
+            return vue.openBlock(), vue.createElementBlock("view", {
+              class: "ball",
+              key: index2,
+              style: vue.normalizeStyle($options.getBallPosition(index2)),
+              onClick: ($event) => $options.handleBallInteraction(index2)
+            }, [
+              $data.showBallNumbers ? (vue.openBlock(), vue.createElementBlock(
+                "span",
+                { key: 0 },
+                vue.toDisplayString(index2 + 1),
+                1
+                /* TEXT */
+              )) : vue.createCommentVNode("v-if", true)
+            ], 12, ["onClick"]);
+          }),
+          128
+          /* KEYED_FRAGMENT */
+        ))
       ]),
       vue.createCommentVNode(" 第三层: 开始训练按钮和方向控制按钮 "),
       vue.createElementVNode("view", { class: "controls" }, [
-        vue.createElementVNode(
-          "button",
-          {
-            ref: "startButton",
-            class: "btn-start",
-            style: vue.normalizeStyle({ backgroundColor: $data.buttonColor }),
-            onClick: _cache[4] || (_cache[4] = (...args) => $options.startTraining && $options.startTraining(...args))
-          },
-          vue.toDisplayString($data.buttonText),
-          5
-          /* TEXT, STYLE */
-        ),
-        vue.createElementVNode("view", { class: "direction-buttons" }, [
+        vue.createCommentVNode(" //编程模式时使用的文本框，用于记录选择的球 "),
+        $data.showInputWithClear ? (vue.openBlock(), vue.createElementBlock("view", {
+          key: 0,
+          class: "input-container"
+        }, [
+          vue.createElementVNode("text", { class: "input-label" }, "请选择发球顺序："),
+          vue.createElementVNode("input", {
+            type: "text",
+            value: $data.inputData,
+            readonly: "",
+            class: "input-field"
+          }, null, 8, ["value"]),
+          vue.createElementVNode("button", {
+            class: "clear-button",
+            onClick: _cache[4] || (_cache[4] = (...args) => $options.clearInputData && $options.clearInputData(...args))
+          }, "x")
+        ])) : vue.createCommentVNode("v-if", true),
+        vue.createCommentVNode(" 发球高度选择 "),
+        $data.showHeightSelector ? (vue.openBlock(), vue.createElementBlock("view", {
+          key: 1,
+          class: "height-selector"
+        }, [
           vue.createElementVNode(
-            "button",
-            {
-              onClick: _cache[5] || (_cache[5] = ($event) => $options.moveBall("up"))
-            },
-            vue.toDisplayString($data.translations.up[$data.currentLanguage]),
+            "span",
+            null,
+            vue.toDisplayString($data.translations.selectedHeight[$data.currentLanguage]) + ": " + vue.toDisplayString($data.selectedHeight),
             1
             /* TEXT */
           ),
-          vue.createElementVNode("view", { class: "left-right" }, [
+          vue.createElementVNode("view", { class: "height-options" }, [
             vue.createElementVNode(
-              "button",
+              "div",
               {
-                onClick: _cache[6] || (_cache[6] = ($event) => $options.moveBall("left"))
+                class: vue.normalizeClass(["dot", { selected: $data.selectedHeight === $data.translations.low[$data.currentLanguage] }]),
+                onClick: _cache[5] || (_cache[5] = ($event) => $options.selectHeight($data.translations.low[$data.currentLanguage]))
               },
-              vue.toDisplayString($data.translations.left[$data.currentLanguage]),
+              null,
+              2
+              /* CLASS */
+            ),
+            vue.createElementVNode(
+              "div",
+              {
+                class: vue.normalizeClass(["dot", { selected: $data.selectedHeight === "中" }]),
+                onClick: _cache[6] || (_cache[6] = ($event) => $options.selectHeight("中"))
+              },
+              null,
+              2
+              /* CLASS */
+            ),
+            vue.createElementVNode(
+              "div",
+              {
+                class: vue.normalizeClass(["dot", { selected: $data.selectedHeight === "高" }]),
+                onClick: _cache[7] || (_cache[7] = ($event) => $options.selectHeight("高"))
+              },
+              null,
+              2
+              /* CLASS */
+            )
+          ])
+        ])) : vue.createCommentVNode("v-if", true),
+        vue.createCommentVNode(" 下层按钮（方向按钮、角度调整、启动按钮） "),
+        vue.createElementVNode("view", { class: "lower-controls" }, [
+          vue.createElementVNode(
+            "button",
+            {
+              ref: "startButton",
+              class: "btn-start",
+              style: vue.normalizeStyle({ backgroundColor: $data.buttonColor }),
+              onClick: _cache[8] || (_cache[8] = (...args) => $options.startTraining && $options.startTraining(...args))
+            },
+            vue.toDisplayString($data.buttonText),
+            5
+            /* TEXT, STYLE */
+          ),
+          $data.showDirectionButtons ? (vue.openBlock(), vue.createElementBlock("view", {
+            key: 0,
+            class: "direction-buttons"
+          }, [
+            vue.createElementVNode("view", { class: "up-down-buttons" }, [
+              vue.createElementVNode("button", {
+                onClick: _cache[9] || (_cache[9] = ($event) => $options.handleDirectionKey("up")),
+                disabled: $data.upDownButtonsDisabled
+              }, vue.toDisplayString($data.translations.up[$data.currentLanguage]), 9, ["disabled"]),
+              vue.createElementVNode("button", {
+                onClick: _cache[10] || (_cache[10] = ($event) => $options.handleDirectionKey("down")),
+                disabled: $data.upDownButtonsDisabled
+              }, vue.toDisplayString($data.translations.down[$data.currentLanguage]), 9, ["disabled"])
+            ]),
+            vue.createElementVNode("view", { class: "left-right" }, [
+              vue.createElementVNode("button", {
+                onClick: _cache[11] || (_cache[11] = ($event) => $options.handleDirectionKey("left")),
+                disabled: $data.leftRightButtonsDisabled
+              }, vue.toDisplayString($data.translations.left[$data.currentLanguage]), 9, ["disabled"]),
+              vue.createElementVNode("button", {
+                onClick: _cache[12] || (_cache[12] = ($event) => $options.handleDirectionKey("right")),
+                disabled: $data.leftRightButtonsDisabled
+              }, vue.toDisplayString($data.translations.right[$data.currentLanguage]), 9, ["disabled"])
+            ])
+          ])) : vue.createCommentVNode("v-if", true),
+          $data.showAngleControl ? (vue.openBlock(), vue.createElementBlock("view", {
+            key: 1,
+            class: "angle-control"
+          }, [
+            vue.createElementVNode("button", {
+              onClick: _cache[13] || (_cache[13] = ($event) => $options.adjustAngle(-1))
+            }, "-"),
+            vue.createElementVNode(
+              "span",
+              null,
+              vue.toDisplayString($data.translations.angle[$data.currentLanguage]) + ": " + vue.toDisplayString($data.angle),
+              1
+              /* TEXT */
+            ),
+            vue.createElementVNode("button", {
+              onClick: _cache[14] || (_cache[14] = ($event) => $options.adjustAngle(1))
+            }, "+")
+          ])) : vue.createCommentVNode("v-if", true),
+          $data.selectedMode === 1 || $data.selectedMode === 2 || $data.selectedMode === 3 ? (vue.openBlock(), vue.createElementBlock("view", {
+            key: 2,
+            class: "ball-selection"
+          }, [
+            vue.createElementVNode(
+              "label",
+              null,
+              vue.toDisplayString($data.translations.selectBall[$data.currentLanguage]),
               1
               /* TEXT */
             ),
             vue.createElementVNode(
               "button",
               {
-                onClick: _cache[7] || (_cache[7] = ($event) => $options.moveBall("right"))
+                class: vue.normalizeClass({ selected: $data.selectedBall === 1 }),
+                onClick: _cache[15] || (_cache[15] = ($event) => $options.selectBall(1))
               },
-              vue.toDisplayString($data.translations.right[$data.currentLanguage]),
-              1
-              /* TEXT */
+              "1号球",
+              2
+              /* CLASS */
+            ),
+            vue.createElementVNode(
+              "button",
+              {
+                class: vue.normalizeClass({ selected: $data.selectedBall === 2 }),
+                onClick: _cache[16] || (_cache[16] = ($event) => $options.selectBall(2))
+              },
+              "2号球",
+              2
+              /* CLASS */
             )
-          ]),
-          vue.createElementVNode(
-            "button",
-            {
-              onClick: _cache[8] || (_cache[8] = ($event) => $options.moveBall("down"))
-            },
-            vue.toDisplayString($data.translations.down[$data.currentLanguage]),
-            1
-            /* TEXT */
-          )
+          ])) : vue.createCommentVNode("v-if", true)
         ])
       ]),
       vue.createCommentVNode(" 第四层: 参数滑动条 "),
@@ -645,8 +1730,8 @@ if (uni.restoreGlobal) {
             "block-color": "#87ceeb",
             activeColor: "#87ceeb",
             backgroundColor: "#d3d3d3",
-            onChanging: _cache[9] || (_cache[9] = (...args) => _ctx.handleFrequencyChanging && _ctx.handleFrequencyChanging(...args)),
-            onChange: _cache[10] || (_cache[10] = (...args) => $options.handleFrequencyChange && $options.handleFrequencyChange(...args))
+            onChanging: _cache[17] || (_cache[17] = (...args) => _ctx.handleFrequencyChanging && _ctx.handleFrequencyChanging(...args)),
+            onChange: _cache[18] || (_cache[18] = (...args) => $options.handleFrequencyChange && $options.handleFrequencyChange(...args))
           }, null, 40, ["value"]),
           vue.createElementVNode("view", { class: "range-label" }, [
             vue.createElementVNode("text", null, "1"),
@@ -654,7 +1739,10 @@ if (uni.restoreGlobal) {
           ])
         ]),
         vue.createCommentVNode(" 速度 "),
-        vue.createElementVNode("view", { class: "slider" }, [
+        $data.selectedMode !== 6 ? (vue.openBlock(), vue.createElementBlock("view", {
+          key: 0,
+          class: "slider"
+        }, [
           vue.createElementVNode("view", { class: "param-label" }, [
             vue.createTextVNode(
               vue.toDisplayString($data.translations.speed[$data.currentLanguage]) + ":",
@@ -677,40 +1765,40 @@ if (uni.restoreGlobal) {
             "block-color": "#87ceeb",
             activeColor: "#87ceeb",
             backgroundColor: "#d3d3d3",
-            onChanging: _cache[11] || (_cache[11] = (...args) => _ctx.handleSpeedChanging && _ctx.handleSpeedChanging(...args)),
-            onChange: _cache[12] || (_cache[12] = (...args) => $options.handleSpeedChange && $options.handleSpeedChange(...args))
+            onChanging: _cache[19] || (_cache[19] = (...args) => _ctx.handleSpeedChanging && _ctx.handleSpeedChanging(...args)),
+            onChange: _cache[20] || (_cache[20] = (...args) => $options.handleSpeedChange && $options.handleSpeedChange(...args))
           }, null, 40, ["value"]),
           vue.createElementVNode("view", { class: "range-label" }, [
             vue.createElementVNode("text", null, "20"),
             vue.createElementVNode("text", null, "140")
           ])
-        ]),
-        vue.createCommentVNode(" 角度 "),
+        ])) : vue.createCommentVNode("v-if", true),
+        vue.createCommentVNode(" 旋转角度 "),
         vue.createElementVNode("view", { class: "slider" }, [
           vue.createElementVNode("view", { class: "param-label" }, [
             vue.createTextVNode(
-              vue.toDisplayString($data.translations.angle[$data.currentLanguage]) + ":",
+              vue.toDisplayString($data.translations.rotate[$data.currentLanguage]) + ":",
               1
               /* TEXT */
             ),
             vue.createElementVNode(
               "text",
               { class: "param-value" },
-              vue.toDisplayString($data.angle),
+              vue.toDisplayString($data.rotate),
               1
               /* TEXT */
             )
           ]),
           vue.createElementVNode("slider", {
-            value: $data.angle,
+            value: $data.rotate,
             min: "-6",
             max: "6",
             "block-size": "16",
             "block-color": "#87ceeb",
             activeColor: "#87ceeb",
             backgroundColor: "#d3d3d3",
-            onChanging: _cache[13] || (_cache[13] = (...args) => _ctx.handleAngleChanging && _ctx.handleAngleChanging(...args)),
-            onChange: _cache[14] || (_cache[14] = (...args) => $options.handleAngleChange && $options.handleAngleChange(...args))
+            onChanging: _cache[21] || (_cache[21] = (...args) => _ctx.handleRotateChanging && _ctx.handleRotateChanging(...args)),
+            onChange: _cache[22] || (_cache[22] = (...args) => $options.handleRotateChange && $options.handleRotateChange(...args))
           }, null, 40, ["value"]),
           vue.createElementVNode("view", { class: "range-label" }, [
             vue.createElementVNode("text", null, "-6"),
@@ -720,1133 +1808,39 @@ if (uni.restoreGlobal) {
       ])
     ]);
   }
-  const PagesIndexIndex = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["render", _sfc_render], ["__scopeId", "data-v-1cf27b2a"], ["__file", "E:/work/TennisBallMachineController/pages/index/index.vue"]]);
+  const PagesIndexIndex = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["render", _sfc_render$1], ["__scopeId", "data-v-1cf27b2a"], ["__file", "E:/work/TennisBallMachineController/pages/index/index.vue"]]);
+  __definePage("pages/bluetooth/bluetooth", PagesBluetoothBluetooth);
   __definePage("pages/index/index", PagesIndexIndex);
-  function getDevtoolsGlobalHook() {
-    return getTarget().__VUE_DEVTOOLS_GLOBAL_HOOK__;
-  }
-  function getTarget() {
-    return typeof navigator !== "undefined" && typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : {};
-  }
-  const isProxyAvailable = typeof Proxy === "function";
-  const HOOK_SETUP = "devtools-plugin:setup";
-  const HOOK_PLUGIN_SETTINGS_SET = "plugin:settings:set";
-  class ApiProxy {
-    constructor(plugin, hook) {
-      this.target = null;
-      this.targetQueue = [];
-      this.onQueue = [];
-      this.plugin = plugin;
-      this.hook = hook;
-      const defaultSettings = {};
-      if (plugin.settings) {
-        for (const id in plugin.settings) {
-          const item = plugin.settings[id];
-          defaultSettings[id] = item.defaultValue;
-        }
-      }
-      const localSettingsSaveId = `__vue-devtools-plugin-settings__${plugin.id}`;
-      let currentSettings = { ...defaultSettings };
-      try {
-        const raw = localStorage.getItem(localSettingsSaveId);
-        const data = JSON.parse(raw);
-        Object.assign(currentSettings, data);
-      } catch (e2) {
-      }
-      this.fallbacks = {
-        getSettings() {
-          return currentSettings;
-        },
-        setSettings(value) {
-          try {
-            localStorage.setItem(localSettingsSaveId, JSON.stringify(value));
-          } catch (e2) {
-          }
-          currentSettings = value;
-        }
-      };
-      hook.on(HOOK_PLUGIN_SETTINGS_SET, (pluginId, value) => {
-        if (pluginId === this.plugin.id) {
-          this.fallbacks.setSettings(value);
-        }
-      });
-      this.proxiedOn = new Proxy({}, {
-        get: (_target, prop) => {
-          if (this.target) {
-            return this.target.on[prop];
-          } else {
-            return (...args) => {
-              this.onQueue.push({
-                method: prop,
-                args
-              });
-            };
-          }
-        }
-      });
-      this.proxiedTarget = new Proxy({}, {
-        get: (_target, prop) => {
-          if (this.target) {
-            return this.target[prop];
-          } else if (prop === "on") {
-            return this.proxiedOn;
-          } else if (Object.keys(this.fallbacks).includes(prop)) {
-            return (...args) => {
-              this.targetQueue.push({
-                method: prop,
-                args,
-                resolve: () => {
-                }
-              });
-              return this.fallbacks[prop](...args);
-            };
-          } else {
-            return (...args) => {
-              return new Promise((resolve) => {
-                this.targetQueue.push({
-                  method: prop,
-                  args,
-                  resolve
-                });
-              });
-            };
-          }
-        }
-      });
-    }
-    async setRealTarget(target) {
-      this.target = target;
-      for (const item of this.onQueue) {
-        this.target.on[item.method](...item.args);
-      }
-      for (const item of this.targetQueue) {
-        item.resolve(await this.target[item.method](...item.args));
-      }
-    }
-  }
-  function setupDevtoolsPlugin(pluginDescriptor, setupFn) {
-    const target = getTarget();
-    const hook = getDevtoolsGlobalHook();
-    const enableProxy = isProxyAvailable && pluginDescriptor.enableEarlyProxy;
-    if (hook && (target.__VUE_DEVTOOLS_PLUGIN_API_AVAILABLE__ || !enableProxy)) {
-      hook.emit(HOOK_SETUP, pluginDescriptor, setupFn);
-    } else {
-      const proxy = enableProxy ? new ApiProxy(pluginDescriptor, hook) : null;
-      const list = target.__VUE_DEVTOOLS_PLUGINS__ = target.__VUE_DEVTOOLS_PLUGINS__ || [];
-      list.push({
-        pluginDescriptor,
-        setupFn,
-        proxy
-      });
-      if (proxy)
-        setupFn(proxy.proxiedTarget);
-    }
-  }
-  /*!
-   * vuex v4.1.0
-   * (c) 2022 Evan You
-   * @license MIT
-   */
-  var storeKey = "store";
-  function forEachValue(obj, fn) {
-    Object.keys(obj).forEach(function(key) {
-      return fn(obj[key], key);
-    });
-  }
-  function isObject(obj) {
-    return obj !== null && typeof obj === "object";
-  }
-  function isPromise(val) {
-    return val && typeof val.then === "function";
-  }
-  function assert(condition, msg) {
-    if (!condition) {
-      throw new Error("[vuex] " + msg);
-    }
-  }
-  function partial(fn, arg) {
-    return function() {
-      return fn(arg);
-    };
-  }
-  function genericSubscribe(fn, subs, options) {
-    if (subs.indexOf(fn) < 0) {
-      options && options.prepend ? subs.unshift(fn) : subs.push(fn);
-    }
-    return function() {
-      var i2 = subs.indexOf(fn);
-      if (i2 > -1) {
-        subs.splice(i2, 1);
-      }
-    };
-  }
-  function resetStore(store, hot) {
-    store._actions = /* @__PURE__ */ Object.create(null);
-    store._mutations = /* @__PURE__ */ Object.create(null);
-    store._wrappedGetters = /* @__PURE__ */ Object.create(null);
-    store._modulesNamespaceMap = /* @__PURE__ */ Object.create(null);
-    var state = store.state;
-    installModule(store, state, [], store._modules.root, true);
-    resetStoreState(store, state, hot);
-  }
-  function resetStoreState(store, state, hot) {
-    var oldState = store._state;
-    var oldScope = store._scope;
-    store.getters = {};
-    store._makeLocalGettersCache = /* @__PURE__ */ Object.create(null);
-    var wrappedGetters = store._wrappedGetters;
-    var computedObj = {};
-    var computedCache = {};
-    var scope = vue.effectScope(true);
-    scope.run(function() {
-      forEachValue(wrappedGetters, function(fn, key) {
-        computedObj[key] = partial(fn, store);
-        computedCache[key] = vue.computed(function() {
-          return computedObj[key]();
-        });
-        Object.defineProperty(store.getters, key, {
-          get: function() {
-            return computedCache[key].value;
-          },
-          enumerable: true
-          // for local getters
-        });
-      });
-    });
-    store._state = vue.reactive({
-      data: state
-    });
-    store._scope = scope;
-    if (store.strict) {
-      enableStrictMode(store);
-    }
-    if (oldState) {
-      if (hot) {
-        store._withCommit(function() {
-          oldState.data = null;
-        });
-      }
-    }
-    if (oldScope) {
-      oldScope.stop();
-    }
-  }
-  function installModule(store, rootState, path, module, hot) {
-    var isRoot = !path.length;
-    var namespace = store._modules.getNamespace(path);
-    if (module.namespaced) {
-      if (store._modulesNamespaceMap[namespace] && true) {
-        console.error("[vuex] duplicate namespace " + namespace + " for the namespaced module " + path.join("/"));
-      }
-      store._modulesNamespaceMap[namespace] = module;
-    }
-    if (!isRoot && !hot) {
-      var parentState = getNestedState(rootState, path.slice(0, -1));
-      var moduleName = path[path.length - 1];
-      store._withCommit(function() {
-        {
-          if (moduleName in parentState) {
-            console.warn(
-              '[vuex] state field "' + moduleName + '" was overridden by a module with the same name at "' + path.join(".") + '"'
-            );
-          }
-        }
-        parentState[moduleName] = module.state;
-      });
-    }
-    var local = module.context = makeLocalContext(store, namespace, path);
-    module.forEachMutation(function(mutation, key) {
-      var namespacedType = namespace + key;
-      registerMutation(store, namespacedType, mutation, local);
-    });
-    module.forEachAction(function(action, key) {
-      var type = action.root ? key : namespace + key;
-      var handler = action.handler || action;
-      registerAction(store, type, handler, local);
-    });
-    module.forEachGetter(function(getter, key) {
-      var namespacedType = namespace + key;
-      registerGetter(store, namespacedType, getter, local);
-    });
-    module.forEachChild(function(child, key) {
-      installModule(store, rootState, path.concat(key), child, hot);
-    });
-  }
-  function makeLocalContext(store, namespace, path) {
-    var noNamespace = namespace === "";
-    var local = {
-      dispatch: noNamespace ? store.dispatch : function(_type, _payload, _options) {
-        var args = unifyObjectStyle(_type, _payload, _options);
-        var payload = args.payload;
-        var options = args.options;
-        var type = args.type;
-        if (!options || !options.root) {
-          type = namespace + type;
-          if (!store._actions[type]) {
-            console.error("[vuex] unknown local action type: " + args.type + ", global type: " + type);
-            return;
-          }
-        }
-        return store.dispatch(type, payload);
-      },
-      commit: noNamespace ? store.commit : function(_type, _payload, _options) {
-        var args = unifyObjectStyle(_type, _payload, _options);
-        var payload = args.payload;
-        var options = args.options;
-        var type = args.type;
-        if (!options || !options.root) {
-          type = namespace + type;
-          if (!store._mutations[type]) {
-            console.error("[vuex] unknown local mutation type: " + args.type + ", global type: " + type);
-            return;
-          }
-        }
-        store.commit(type, payload, options);
-      }
-    };
-    Object.defineProperties(local, {
-      getters: {
-        get: noNamespace ? function() {
-          return store.getters;
-        } : function() {
-          return makeLocalGetters(store, namespace);
-        }
-      },
-      state: {
-        get: function() {
-          return getNestedState(store.state, path);
-        }
-      }
-    });
-    return local;
-  }
-  function makeLocalGetters(store, namespace) {
-    if (!store._makeLocalGettersCache[namespace]) {
-      var gettersProxy = {};
-      var splitPos = namespace.length;
-      Object.keys(store.getters).forEach(function(type) {
-        if (type.slice(0, splitPos) !== namespace) {
-          return;
-        }
-        var localType = type.slice(splitPos);
-        Object.defineProperty(gettersProxy, localType, {
-          get: function() {
-            return store.getters[type];
-          },
-          enumerable: true
-        });
-      });
-      store._makeLocalGettersCache[namespace] = gettersProxy;
-    }
-    return store._makeLocalGettersCache[namespace];
-  }
-  function registerMutation(store, type, handler, local) {
-    var entry = store._mutations[type] || (store._mutations[type] = []);
-    entry.push(function wrappedMutationHandler(payload) {
-      handler.call(store, local.state, payload);
-    });
-  }
-  function registerAction(store, type, handler, local) {
-    var entry = store._actions[type] || (store._actions[type] = []);
-    entry.push(function wrappedActionHandler(payload) {
-      var res = handler.call(store, {
-        dispatch: local.dispatch,
-        commit: local.commit,
-        getters: local.getters,
-        state: local.state,
-        rootGetters: store.getters,
-        rootState: store.state
-      }, payload);
-      if (!isPromise(res)) {
-        res = Promise.resolve(res);
-      }
-      if (store._devtoolHook) {
-        return res.catch(function(err) {
-          store._devtoolHook.emit("vuex:error", err);
-          throw err;
-        });
-      } else {
-        return res;
-      }
-    });
-  }
-  function registerGetter(store, type, rawGetter, local) {
-    if (store._wrappedGetters[type]) {
-      {
-        console.error("[vuex] duplicate getter key: " + type);
-      }
-      return;
-    }
-    store._wrappedGetters[type] = function wrappedGetter(store2) {
-      return rawGetter(
-        local.state,
-        // local state
-        local.getters,
-        // local getters
-        store2.state,
-        // root state
-        store2.getters
-        // root getters
-      );
-    };
-  }
-  function enableStrictMode(store) {
-    vue.watch(function() {
-      return store._state.data;
-    }, function() {
-      {
-        assert(store._committing, "do not mutate vuex store state outside mutation handlers.");
-      }
-    }, { deep: true, flush: "sync" });
-  }
-  function getNestedState(state, path) {
-    return path.reduce(function(state2, key) {
-      return state2[key];
-    }, state);
-  }
-  function unifyObjectStyle(type, payload, options) {
-    if (isObject(type) && type.type) {
-      options = payload;
-      payload = type;
-      type = type.type;
-    }
-    {
-      assert(typeof type === "string", "expects string as the type, but found " + typeof type + ".");
-    }
-    return { type, payload, options };
-  }
-  var LABEL_VUEX_BINDINGS = "vuex bindings";
-  var MUTATIONS_LAYER_ID = "vuex:mutations";
-  var ACTIONS_LAYER_ID = "vuex:actions";
-  var INSPECTOR_ID = "vuex";
-  var actionId = 0;
-  function addDevtools(app, store) {
-    setupDevtoolsPlugin(
-      {
-        id: "org.vuejs.vuex",
-        app,
-        label: "Vuex",
-        homepage: "https://next.vuex.vuejs.org/",
-        logo: "https://vuejs.org/images/icons/favicon-96x96.png",
-        packageName: "vuex",
-        componentStateTypes: [LABEL_VUEX_BINDINGS]
-      },
-      function(api) {
-        api.addTimelineLayer({
-          id: MUTATIONS_LAYER_ID,
-          label: "Vuex Mutations",
-          color: COLOR_LIME_500
-        });
-        api.addTimelineLayer({
-          id: ACTIONS_LAYER_ID,
-          label: "Vuex Actions",
-          color: COLOR_LIME_500
-        });
-        api.addInspector({
-          id: INSPECTOR_ID,
-          label: "Vuex",
-          icon: "storage",
-          treeFilterPlaceholder: "Filter stores..."
-        });
-        api.on.getInspectorTree(function(payload) {
-          if (payload.app === app && payload.inspectorId === INSPECTOR_ID) {
-            if (payload.filter) {
-              var nodes = [];
-              flattenStoreForInspectorTree(nodes, store._modules.root, payload.filter, "");
-              payload.rootNodes = nodes;
-            } else {
-              payload.rootNodes = [
-                formatStoreForInspectorTree(store._modules.root, "")
-              ];
-            }
-          }
-        });
-        api.on.getInspectorState(function(payload) {
-          if (payload.app === app && payload.inspectorId === INSPECTOR_ID) {
-            var modulePath = payload.nodeId;
-            makeLocalGetters(store, modulePath);
-            payload.state = formatStoreForInspectorState(
-              getStoreModule(store._modules, modulePath),
-              modulePath === "root" ? store.getters : store._makeLocalGettersCache,
-              modulePath
-            );
-          }
-        });
-        api.on.editInspectorState(function(payload) {
-          if (payload.app === app && payload.inspectorId === INSPECTOR_ID) {
-            var modulePath = payload.nodeId;
-            var path = payload.path;
-            if (modulePath !== "root") {
-              path = modulePath.split("/").filter(Boolean).concat(path);
-            }
-            store._withCommit(function() {
-              payload.set(store._state.data, path, payload.state.value);
-            });
-          }
-        });
-        store.subscribe(function(mutation, state) {
-          var data = {};
-          if (mutation.payload) {
-            data.payload = mutation.payload;
-          }
-          data.state = state;
-          api.notifyComponentUpdate();
-          api.sendInspectorTree(INSPECTOR_ID);
-          api.sendInspectorState(INSPECTOR_ID);
-          api.addTimelineEvent({
-            layerId: MUTATIONS_LAYER_ID,
-            event: {
-              time: Date.now(),
-              title: mutation.type,
-              data
-            }
-          });
-        });
-        store.subscribeAction({
-          before: function(action, state) {
-            var data = {};
-            if (action.payload) {
-              data.payload = action.payload;
-            }
-            action._id = actionId++;
-            action._time = Date.now();
-            data.state = state;
-            api.addTimelineEvent({
-              layerId: ACTIONS_LAYER_ID,
-              event: {
-                time: action._time,
-                title: action.type,
-                groupId: action._id,
-                subtitle: "start",
-                data
-              }
-            });
-          },
-          after: function(action, state) {
-            var data = {};
-            var duration = Date.now() - action._time;
-            data.duration = {
-              _custom: {
-                type: "duration",
-                display: duration + "ms",
-                tooltip: "Action duration",
-                value: duration
-              }
-            };
-            if (action.payload) {
-              data.payload = action.payload;
-            }
-            data.state = state;
-            api.addTimelineEvent({
-              layerId: ACTIONS_LAYER_ID,
-              event: {
-                time: Date.now(),
-                title: action.type,
-                groupId: action._id,
-                subtitle: "end",
-                data
-              }
-            });
-          }
-        });
-      }
-    );
-  }
-  var COLOR_LIME_500 = 8702998;
-  var COLOR_DARK = 6710886;
-  var COLOR_WHITE = 16777215;
-  var TAG_NAMESPACED = {
-    label: "namespaced",
-    textColor: COLOR_WHITE,
-    backgroundColor: COLOR_DARK
-  };
-  function extractNameFromPath(path) {
-    return path && path !== "root" ? path.split("/").slice(-2, -1)[0] : "Root";
-  }
-  function formatStoreForInspectorTree(module, path) {
-    return {
-      id: path || "root",
-      // all modules end with a `/`, we want the last segment only
-      // cart/ -> cart
-      // nested/cart/ -> cart
-      label: extractNameFromPath(path),
-      tags: module.namespaced ? [TAG_NAMESPACED] : [],
-      children: Object.keys(module._children).map(
-        function(moduleName) {
-          return formatStoreForInspectorTree(
-            module._children[moduleName],
-            path + moduleName + "/"
-          );
-        }
-      )
-    };
-  }
-  function flattenStoreForInspectorTree(result, module, filter, path) {
-    if (path.includes(filter)) {
-      result.push({
-        id: path || "root",
-        label: path.endsWith("/") ? path.slice(0, path.length - 1) : path || "Root",
-        tags: module.namespaced ? [TAG_NAMESPACED] : []
-      });
-    }
-    Object.keys(module._children).forEach(function(moduleName) {
-      flattenStoreForInspectorTree(result, module._children[moduleName], filter, path + moduleName + "/");
-    });
-  }
-  function formatStoreForInspectorState(module, getters, path) {
-    getters = path === "root" ? getters : getters[path];
-    var gettersKeys = Object.keys(getters);
-    var storeState = {
-      state: Object.keys(module.state).map(function(key) {
-        return {
-          key,
-          editable: true,
-          value: module.state[key]
-        };
-      })
-    };
-    if (gettersKeys.length) {
-      var tree = transformPathsToObjectTree(getters);
-      storeState.getters = Object.keys(tree).map(function(key) {
-        return {
-          key: key.endsWith("/") ? extractNameFromPath(key) : key,
-          editable: false,
-          value: canThrow(function() {
-            return tree[key];
-          })
-        };
-      });
-    }
-    return storeState;
-  }
-  function transformPathsToObjectTree(getters) {
-    var result = {};
-    Object.keys(getters).forEach(function(key) {
-      var path = key.split("/");
-      if (path.length > 1) {
-        var target = result;
-        var leafKey = path.pop();
-        path.forEach(function(p2) {
-          if (!target[p2]) {
-            target[p2] = {
-              _custom: {
-                value: {},
-                display: p2,
-                tooltip: "Module",
-                abstract: true
-              }
-            };
-          }
-          target = target[p2]._custom.value;
-        });
-        target[leafKey] = canThrow(function() {
-          return getters[key];
-        });
-      } else {
-        result[key] = canThrow(function() {
-          return getters[key];
-        });
-      }
-    });
-    return result;
-  }
-  function getStoreModule(moduleMap, path) {
-    var names = path.split("/").filter(function(n2) {
-      return n2;
-    });
-    return names.reduce(
-      function(module, moduleName, i2) {
-        var child = module[moduleName];
-        if (!child) {
-          throw new Error('Missing module "' + moduleName + '" for path "' + path + '".');
-        }
-        return i2 === names.length - 1 ? child : child._children;
-      },
-      path === "root" ? moduleMap : moduleMap.root._children
-    );
-  }
-  function canThrow(cb) {
-    try {
-      return cb();
-    } catch (e2) {
-      return e2;
-    }
-  }
-  var Module = function Module2(rawModule, runtime) {
-    this.runtime = runtime;
-    this._children = /* @__PURE__ */ Object.create(null);
-    this._rawModule = rawModule;
-    var rawState = rawModule.state;
-    this.state = (typeof rawState === "function" ? rawState() : rawState) || {};
-  };
-  var prototypeAccessors$1 = { namespaced: { configurable: true } };
-  prototypeAccessors$1.namespaced.get = function() {
-    return !!this._rawModule.namespaced;
-  };
-  Module.prototype.addChild = function addChild(key, module) {
-    this._children[key] = module;
-  };
-  Module.prototype.removeChild = function removeChild(key) {
-    delete this._children[key];
-  };
-  Module.prototype.getChild = function getChild(key) {
-    return this._children[key];
-  };
-  Module.prototype.hasChild = function hasChild(key) {
-    return key in this._children;
-  };
-  Module.prototype.update = function update(rawModule) {
-    this._rawModule.namespaced = rawModule.namespaced;
-    if (rawModule.actions) {
-      this._rawModule.actions = rawModule.actions;
-    }
-    if (rawModule.mutations) {
-      this._rawModule.mutations = rawModule.mutations;
-    }
-    if (rawModule.getters) {
-      this._rawModule.getters = rawModule.getters;
-    }
-  };
-  Module.prototype.forEachChild = function forEachChild(fn) {
-    forEachValue(this._children, fn);
-  };
-  Module.prototype.forEachGetter = function forEachGetter(fn) {
-    if (this._rawModule.getters) {
-      forEachValue(this._rawModule.getters, fn);
-    }
-  };
-  Module.prototype.forEachAction = function forEachAction(fn) {
-    if (this._rawModule.actions) {
-      forEachValue(this._rawModule.actions, fn);
-    }
-  };
-  Module.prototype.forEachMutation = function forEachMutation(fn) {
-    if (this._rawModule.mutations) {
-      forEachValue(this._rawModule.mutations, fn);
-    }
-  };
-  Object.defineProperties(Module.prototype, prototypeAccessors$1);
-  var ModuleCollection = function ModuleCollection2(rawRootModule) {
-    this.register([], rawRootModule, false);
-  };
-  ModuleCollection.prototype.get = function get(path) {
-    return path.reduce(function(module, key) {
-      return module.getChild(key);
-    }, this.root);
-  };
-  ModuleCollection.prototype.getNamespace = function getNamespace(path) {
-    var module = this.root;
-    return path.reduce(function(namespace, key) {
-      module = module.getChild(key);
-      return namespace + (module.namespaced ? key + "/" : "");
-    }, "");
-  };
-  ModuleCollection.prototype.update = function update$1(rawRootModule) {
-    update2([], this.root, rawRootModule);
-  };
-  ModuleCollection.prototype.register = function register(path, rawModule, runtime) {
-    var this$1$1 = this;
-    if (runtime === void 0)
-      runtime = true;
-    {
-      assertRawModule(path, rawModule);
-    }
-    var newModule = new Module(rawModule, runtime);
-    if (path.length === 0) {
-      this.root = newModule;
-    } else {
-      var parent = this.get(path.slice(0, -1));
-      parent.addChild(path[path.length - 1], newModule);
-    }
-    if (rawModule.modules) {
-      forEachValue(rawModule.modules, function(rawChildModule, key) {
-        this$1$1.register(path.concat(key), rawChildModule, runtime);
+  const _sfc_main = {
+    mounted() {
+      uni.navigateTo({
+        url: "/pages/bluetooth/bluetooth"
       });
     }
   };
-  ModuleCollection.prototype.unregister = function unregister(path) {
-    var parent = this.get(path.slice(0, -1));
-    var key = path[path.length - 1];
-    var child = parent.getChild(key);
-    if (!child) {
-      {
-        console.warn(
-          "[vuex] trying to unregister module '" + key + "', which is not registered"
-        );
-      }
-      return;
-    }
-    if (!child.runtime) {
-      return;
-    }
-    parent.removeChild(key);
-  };
-  ModuleCollection.prototype.isRegistered = function isRegistered(path) {
-    var parent = this.get(path.slice(0, -1));
-    var key = path[path.length - 1];
-    if (parent) {
-      return parent.hasChild(key);
-    }
-    return false;
-  };
-  function update2(path, targetModule, newModule) {
-    {
-      assertRawModule(path, newModule);
-    }
-    targetModule.update(newModule);
-    if (newModule.modules) {
-      for (var key in newModule.modules) {
-        if (!targetModule.getChild(key)) {
-          {
-            console.warn(
-              "[vuex] trying to add a new module '" + key + "' on hot reloading, manual reload is needed"
-            );
-          }
-          return;
-        }
-        update2(
-          path.concat(key),
-          targetModule.getChild(key),
-          newModule.modules[key]
-        );
-      }
-    }
+  function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+    const _component_router_view = vue.resolveComponent("router-view");
+    return vue.openBlock(), vue.createElementBlock("view", null, [
+      vue.createVNode(_component_router_view)
+    ]);
   }
-  var functionAssert = {
-    assert: function(value) {
-      return typeof value === "function";
-    },
-    expected: "function"
-  };
-  var objectAssert = {
-    assert: function(value) {
-      return typeof value === "function" || typeof value === "object" && typeof value.handler === "function";
-    },
-    expected: 'function or object with "handler" function'
-  };
-  var assertTypes = {
-    getters: functionAssert,
-    mutations: functionAssert,
-    actions: objectAssert
-  };
-  function assertRawModule(path, rawModule) {
-    Object.keys(assertTypes).forEach(function(key) {
-      if (!rawModule[key]) {
-        return;
-      }
-      var assertOptions = assertTypes[key];
-      forEachValue(rawModule[key], function(value, type) {
-        assert(
-          assertOptions.assert(value),
-          makeAssertionMessage(path, key, type, value, assertOptions.expected)
-        );
-      });
-    });
-  }
-  function makeAssertionMessage(path, key, type, value, expected) {
-    var buf = key + " should be " + expected + ' but "' + key + "." + type + '"';
-    if (path.length > 0) {
-      buf += ' in module "' + path.join(".") + '"';
-    }
-    buf += " is " + JSON.stringify(value) + ".";
-    return buf;
-  }
-  var Store = function Store2(options) {
-    var this$1$1 = this;
-    if (options === void 0)
-      options = {};
-    {
-      assert(typeof Promise !== "undefined", "vuex requires a Promise polyfill in this browser.");
-      assert(this instanceof Store2, "store must be called with the new operator.");
-    }
-    var plugins = options.plugins;
-    if (plugins === void 0)
-      plugins = [];
-    var strict = options.strict;
-    if (strict === void 0)
-      strict = false;
-    var devtools = options.devtools;
-    this._committing = false;
-    this._actions = /* @__PURE__ */ Object.create(null);
-    this._actionSubscribers = [];
-    this._mutations = /* @__PURE__ */ Object.create(null);
-    this._wrappedGetters = /* @__PURE__ */ Object.create(null);
-    this._modules = new ModuleCollection(options);
-    this._modulesNamespaceMap = /* @__PURE__ */ Object.create(null);
-    this._subscribers = [];
-    this._makeLocalGettersCache = /* @__PURE__ */ Object.create(null);
-    this._scope = null;
-    this._devtools = devtools;
-    var store = this;
-    var ref = this;
-    var dispatch2 = ref.dispatch;
-    var commit2 = ref.commit;
-    this.dispatch = function boundDispatch(type, payload) {
-      return dispatch2.call(store, type, payload);
-    };
-    this.commit = function boundCommit(type, payload, options2) {
-      return commit2.call(store, type, payload, options2);
-    };
-    this.strict = strict;
-    var state = this._modules.root.state;
-    installModule(this, state, [], this._modules.root);
-    resetStoreState(this, state);
-    plugins.forEach(function(plugin) {
-      return plugin(this$1$1);
-    });
-  };
-  var prototypeAccessors = { state: { configurable: true } };
-  Store.prototype.install = function install(app, injectKey) {
-    app.provide(injectKey || storeKey, this);
-    app.config.globalProperties.$store = this;
-    var useDevtools = this._devtools !== void 0 ? this._devtools : true;
-    if (useDevtools) {
-      addDevtools(app, this);
-    }
-  };
-  prototypeAccessors.state.get = function() {
-    return this._state.data;
-  };
-  prototypeAccessors.state.set = function(v2) {
-    {
-      assert(false, "use store.replaceState() to explicit replace store state.");
-    }
-  };
-  Store.prototype.commit = function commit(_type, _payload, _options) {
-    var this$1$1 = this;
-    var ref = unifyObjectStyle(_type, _payload, _options);
-    var type = ref.type;
-    var payload = ref.payload;
-    var options = ref.options;
-    var mutation = { type, payload };
-    var entry = this._mutations[type];
-    if (!entry) {
-      {
-        console.error("[vuex] unknown mutation type: " + type);
-      }
-      return;
-    }
-    this._withCommit(function() {
-      entry.forEach(function commitIterator(handler) {
-        handler(payload);
-      });
-    });
-    this._subscribers.slice().forEach(function(sub) {
-      return sub(mutation, this$1$1.state);
-    });
-    if (options && options.silent) {
-      console.warn(
-        "[vuex] mutation type: " + type + ". Silent option has been removed. Use the filter functionality in the vue-devtools"
-      );
-    }
-  };
-  Store.prototype.dispatch = function dispatch(_type, _payload) {
-    var this$1$1 = this;
-    var ref = unifyObjectStyle(_type, _payload);
-    var type = ref.type;
-    var payload = ref.payload;
-    var action = { type, payload };
-    var entry = this._actions[type];
-    if (!entry) {
-      {
-        console.error("[vuex] unknown action type: " + type);
-      }
-      return;
-    }
-    try {
-      this._actionSubscribers.slice().filter(function(sub) {
-        return sub.before;
-      }).forEach(function(sub) {
-        return sub.before(action, this$1$1.state);
-      });
-    } catch (e2) {
-      {
-        console.warn("[vuex] error in before action subscribers: ");
-        console.error(e2);
-      }
-    }
-    var result = entry.length > 1 ? Promise.all(entry.map(function(handler) {
-      return handler(payload);
-    })) : entry[0](payload);
-    return new Promise(function(resolve, reject) {
-      result.then(function(res) {
-        try {
-          this$1$1._actionSubscribers.filter(function(sub) {
-            return sub.after;
-          }).forEach(function(sub) {
-            return sub.after(action, this$1$1.state);
-          });
-        } catch (e2) {
-          {
-            console.warn("[vuex] error in after action subscribers: ");
-            console.error(e2);
-          }
-        }
-        resolve(res);
-      }, function(error) {
-        try {
-          this$1$1._actionSubscribers.filter(function(sub) {
-            return sub.error;
-          }).forEach(function(sub) {
-            return sub.error(action, this$1$1.state, error);
-          });
-        } catch (e2) {
-          {
-            console.warn("[vuex] error in error action subscribers: ");
-            console.error(e2);
-          }
-        }
-        reject(error);
-      });
-    });
-  };
-  Store.prototype.subscribe = function subscribe(fn, options) {
-    return genericSubscribe(fn, this._subscribers, options);
-  };
-  Store.prototype.subscribeAction = function subscribeAction(fn, options) {
-    var subs = typeof fn === "function" ? { before: fn } : fn;
-    return genericSubscribe(subs, this._actionSubscribers, options);
-  };
-  Store.prototype.watch = function watch$1(getter, cb, options) {
-    var this$1$1 = this;
-    {
-      assert(typeof getter === "function", "store.watch only accepts a function.");
-    }
-    return vue.watch(function() {
-      return getter(this$1$1.state, this$1$1.getters);
-    }, cb, Object.assign({}, options));
-  };
-  Store.prototype.replaceState = function replaceState(state) {
-    var this$1$1 = this;
-    this._withCommit(function() {
-      this$1$1._state.data = state;
-    });
-  };
-  Store.prototype.registerModule = function registerModule(path, rawModule, options) {
-    if (options === void 0)
-      options = {};
-    if (typeof path === "string") {
-      path = [path];
-    }
-    {
-      assert(Array.isArray(path), "module path must be a string or an Array.");
-      assert(path.length > 0, "cannot register the root module by using registerModule.");
-    }
-    this._modules.register(path, rawModule);
-    installModule(this, this.state, path, this._modules.get(path), options.preserveState);
-    resetStoreState(this, this.state);
-  };
-  Store.prototype.unregisterModule = function unregisterModule(path) {
-    var this$1$1 = this;
-    if (typeof path === "string") {
-      path = [path];
-    }
-    {
-      assert(Array.isArray(path), "module path must be a string or an Array.");
-    }
-    this._modules.unregister(path);
-    this._withCommit(function() {
-      var parentState = getNestedState(this$1$1.state, path.slice(0, -1));
-      delete parentState[path[path.length - 1]];
-    });
-    resetStore(this);
-  };
-  Store.prototype.hasModule = function hasModule(path) {
-    if (typeof path === "string") {
-      path = [path];
-    }
-    {
-      assert(Array.isArray(path), "module path must be a string or an Array.");
-    }
-    return this._modules.isRegistered(path);
-  };
-  Store.prototype.hotUpdate = function hotUpdate(newOptions) {
-    this._modules.update(newOptions);
-    resetStore(this, true);
-  };
-  Store.prototype._withCommit = function _withCommit(fn) {
-    var committing = this._committing;
-    this._committing = true;
-    fn();
-    this._committing = committing;
-  };
-  Object.defineProperties(Store.prototype, prototypeAccessors);
-  var mapMutations = normalizeNamespace(function(namespace, mutations) {
-    var res = {};
-    if (!isValidMap(mutations)) {
-      console.error("[vuex] mapMutations: mapper parameter must be either an Array or an Object");
-    }
-    normalizeMap(mutations).forEach(function(ref) {
-      var key = ref.key;
-      var val = ref.val;
-      res[key] = function mappedMutation() {
-        var args = [], len = arguments.length;
-        while (len--)
-          args[len] = arguments[len];
-        var commit2 = this.$store.commit;
-        if (namespace) {
-          var module = getModuleByNamespace(this.$store, "mapMutations", namespace);
-          if (!module) {
-            return;
-          }
-          commit2 = module.context.commit;
-        }
-        return typeof val === "function" ? val.apply(this, [commit2].concat(args)) : commit2.apply(this.$store, [val].concat(args));
-      };
-    });
-    return res;
-  });
-  function normalizeMap(map) {
-    if (!isValidMap(map)) {
-      return [];
-    }
-    return Array.isArray(map) ? map.map(function(key) {
-      return { key, val: key };
-    }) : Object.keys(map).map(function(key) {
-      return { key, val: map[key] };
-    });
-  }
-  function isValidMap(map) {
-    return Array.isArray(map) || isObject(map);
-  }
-  function normalizeNamespace(fn) {
-    return function(namespace, map) {
-      if (typeof namespace !== "string") {
-        map = namespace;
-        namespace = "";
-      } else if (namespace.charAt(namespace.length - 1) !== "/") {
-        namespace += "/";
-      }
-      return fn(namespace, map);
-    };
-  }
-  function getModuleByNamespace(store, helper, namespace) {
-    var module = store._modulesNamespaceMap[namespace];
-    if (!module) {
-      console.error("[vuex] module namespace not found in " + helper + "(): " + namespace);
-    }
-    return module;
-  }
+  const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["render", _sfc_render], ["__file", "E:/work/TennisBallMachineController/App.vue"]]);
   const pages = [
+    {
+      path: "pages/bluetooth/bluetooth",
+      style: {
+        navigationBarTitleText: "蓝牙连接"
+      }
+    },
     {
       path: "pages/index/index",
       style: {
-        navigationBarTitleText: "网球发球机控制",
-        navigationBarTextStyle: "white",
-        navigationBarBackgroundColor: "#007AFF",
-        backgroundColor: "#F8F8F8"
+        navigationBarTitleText: "网球发球机控制器"
       }
     }
   ];
-  const globalStyle = {
-    navigationBarTextStyle: "black",
-    navigationBarTitleText: "网球发球机控制",
-    navigationBarBackgroundColor: "#F8F8F8",
-    backgroundColor: "#F8F8F8"
-  };
   const e = {
-    pages,
-    globalStyle
+    pages
   };
   var define_process_env_UNI_SECURE_NETWORK_CONFIG_default = [];
   function t(e2) {
@@ -4571,125 +4565,8 @@ ${i3}
     } }), Cs(Js), Js.addInterceptor = N, Js.removeInterceptor = D, Js.interceptObject = F;
   })();
   var Vs = Js;
-  function callCheckVersion() {
-    return new Promise((resolve, reject) => {
-      plus.runtime.getProperty(plus.runtime.appid, function(widgetInfo) {
-        const data = {
-          action: "checkVersion",
-          appid: plus.runtime.appid,
-          appVersion: plus.runtime.version,
-          wgtVersion: widgetInfo.version
-        };
-        formatAppLog("log", "at uni_modules/uni-upgrade-center-app/utils/call-check-version.js:11", "data: ", data);
-        Vs.callFunction({
-          name: "uni-upgrade-center",
-          data,
-          success: (e2) => {
-            formatAppLog("log", "at uni_modules/uni-upgrade-center-app/utils/call-check-version.js:16", "e: ", e2);
-            resolve(e2);
-          },
-          fail: (error) => {
-            reject(error);
-          }
-        });
-      });
-    });
-  }
-  const PACKAGE_INFO_KEY = "__package_info__";
-  function checkUpdate() {
-    return new Promise((resolve, reject) => {
-      callCheckVersion().then(async (e2) => {
-        if (!e2.result)
-          return;
-        const {
-          code,
-          message,
-          is_silently,
-          // 是否静默更新
-          url,
-          // 安装包下载地址
-          platform,
-          // 安装包平台
-          type
-          // 安装包类型
-        } = e2.result;
-        if (code > 0) {
-          const {
-            fileList
-          } = await Vs.getTempFileURL({
-            fileList: [url]
-          });
-          if (fileList[0].tempFileURL)
-            e2.result.url = fileList[0].tempFileURL;
-          resolve(e2);
-          if (is_silently) {
-            uni.downloadFile({
-              url: e2.result.url,
-              success: (res) => {
-                if (res.statusCode == 200) {
-                  plus.runtime.install(res.tempFilePath, {
-                    force: false
-                  });
-                }
-              }
-            });
-            return;
-          }
-          uni.setStorageSync(PACKAGE_INFO_KEY, e2.result);
-          uni.navigateTo({
-            url: `/uni_modules/uni-upgrade-center-app/pages/upgrade-popup?local_storage_key=${PACKAGE_INFO_KEY}`,
-            fail: (err) => {
-              formatAppLog("error", "at uni_modules/uni-upgrade-center-app/utils/check-update.js:63", "更新弹框跳转失败", err);
-              uni.removeStorageSync(PACKAGE_INFO_KEY);
-            }
-          });
-          return;
-        } else if (code < 0) {
-          formatAppLog("error", "at uni_modules/uni-upgrade-center-app/utils/check-update.js:71", message);
-          return reject(e2);
-        }
-        return resolve(e2);
-      }).catch((err) => {
-        formatAppLog("error", "at uni_modules/uni-upgrade-center-app/utils/check-update.js:77", err.message);
-        reject(err);
-      });
-    });
-  }
-  const _sfc_main = {
-    onLaunch: function() {
-      formatAppLog("log", "at App.vue:21", "App Launch");
-      if (plus.runtime.appid !== "HBuilder") {
-        checkUpdate();
-      }
-      uni.preLogin({
-        provider: "univerify",
-        success: (res) => {
-          this.setUniverifyErrorMsg();
-          formatAppLog("log", "at App.vue:34", "preLogin success: ", res);
-        },
-        fail: (res) => {
-          this.setUniverifyLogin(false);
-          this.setUniverifyErrorMsg(res.errMsg);
-          formatAppLog("log", "at App.vue:40", "preLogin fail res: ", res);
-        }
-      });
-    },
-    onShow: function() {
-      formatAppLog("log", "at App.vue:46", "App Show");
-    },
-    onHide: function() {
-      formatAppLog("log", "at App.vue:49", "App Hide");
-    },
-    globalData: {
-      test: ""
-    },
-    methods: {
-      ...mapMutations(["setUniverifyErrorMsg", "setUniverifyLogin"])
-    }
-  };
-  const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__file", "E:/work/TennisBallMachineController/App.vue"]]);
   var define_process_env_UNI_STATISTICS_CONFIG_default = { version: "2", enable: true };
-  var define_process_env_UNI_STAT_TITLE_JSON_default = { "pages/index/index": "网球发球机控制" };
+  var define_process_env_UNI_STAT_TITLE_JSON_default = { "pages/bluetooth/bluetooth": "蓝牙连接", "pages/index/index": "网球发球机控制器" };
   var define_process_env_UNI_STAT_UNI_CLOUD_default = {};
   const sys = uni.getSystemInfoSync();
   const STAT_VERSION = "4.24";

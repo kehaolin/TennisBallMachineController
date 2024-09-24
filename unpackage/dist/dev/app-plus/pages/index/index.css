@@ -61,32 +61,150 @@
 }
 .court-container[data-v-1cf27b2a] {
 		position: relative;
-		width: 100%;
-		height: 300px;
+		/* 根据需求调整网球场的高度 */
 }
 .tennis-court[data-v-1cf27b2a] {
 		width: 100%;
-		height: 100%;
+		/* 网球场自适应屏幕宽度 */
+		height: auto;
+		/* 高度自动调整 */
 }
-.tennis-ball[data-v-1cf27b2a] {
+.ball-container[data-v-1cf27b2a] {
 		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+}
+.ball[data-v-1cf27b2a] {
+		position: absolute;
+		background: rgba(255, 0, 0, 0.5);
 		border-radius: 50%;
+		display: flex;
+		/* 使用 flex 布局 */
+		justify-content: center;
+		/* 水平居中 */
+		align-items: center;
+		/* 垂直居中 */
+		width: 30px;
+		/* 网球的宽度 */
+		height: 30px;
+		/* 网球的高度 */
+		color: #fff;
+		font-size: 14px;
+		z-index: 10;
+		/* 提升 z-index 确保它接收点击事件 */
+}
+.tennis-ball-gray[data-v-1cf27b2a] {
+		background-color: gray;
+}
+.tennis-ball-red[data-v-1cf27b2a] {
+		background-color: red;
 }
 .controls[data-v-1cf27b2a] {
 		display: flex;
+		flex-direction: column;
 		justify-content: space-between;
-		padding: 10px;
+		align-items: center;
+		padding: 20px;
+}
+.height-selector[data-v-1cf27b2a] {
+		display: flex;
+		align-items: center;
+		margin-bottom: 20px;
+		white-space: nowrap;
+		/* 防止文字与单选框换行 */
+}
+.height-options[data-v-1cf27b2a] {
+		display: flex;
+		justify-content: space-between;
+		margin-left: 10px;
+		/* 距离文字的间距 */
+}
+.dot[data-v-1cf27b2a] {
+		width: 20px;
+		height: 20px;
+		border-radius: 50%;
+		background-color: lightgray;
+		margin: 0 5px;
+		cursor: pointer;
+}
+.selected[data-v-1cf27b2a] {
+		background-color: green;
 }
 .btn-start[data-v-1cf27b2a] {
-		margin-right: 20px;
+		padding: 10px 20px;
+		background-color: #4CAF50;
+		color: white;
+		border: none;
+		border-radius: 5px;
+}
+.lower-controls[data-v-1cf27b2a] {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		width: 100%;
+		/* 控制整个下层按钮组的宽度 */
+		flex-wrap: nowrap;
+		/* 防止换行 */
 }
 .direction-buttons[data-v-1cf27b2a] {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 }
-.left-right[data-v-1cf27b2a] {
+.direction-buttons .left-right[data-v-1cf27b2a] {
 		display: flex;
+		justify-content: space-between;
+		width: 150px;
+}
+.angle-control[data-v-1cf27b2a] {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		width: auto;
+}
+.angle-control uni-button[data-v-1cf27b2a] {
+		width: 40px;
+		height: 40px;
+}
+.angle-control span[data-v-1cf27b2a] {
+		margin: 10px 0;
+		/* 在上下按钮与文字之间添加间距 */
+}
+uni-button[data-v-1cf27b2a] {
+		padding: 10px 20px;
+		margin: 0 5px;
+		/* 调整按钮之间的间距 */
+}
+.input-container[data-v-1cf27b2a] {
+		display: flex;
+		align-items: center;
+		flex-direction: column;
+		margin-top: 10px;
+		/* 在按钮组和输入框之间添加间距 */
+}
+uni-input[type="text"][data-v-1cf27b2a] {
+		border: 1px solid #ccc;
+		padding: 5px;
+		margin-right: 10px;
+		width: 150px;
+		text-align: center;
+		/* 设置输入框宽度和对齐方式 */
+}
+.clear-button[data-v-1cf27b2a] {
+		background-color: #f44;
+		color: #fff;
+		border: none;
+		padding: 5px 10px;
+		cursor: pointer;
+		font-size: 16px;
+		cursor: pointer;
+}
+.clear-button[data-v-1cf27b2a]:hover {
+		background-color: #d33;
 }
 .slider-container[data-v-1cf27b2a] {
 		padding: 10px;

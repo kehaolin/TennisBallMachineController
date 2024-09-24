@@ -1,19 +1,15 @@
 {
-  "pages": [
-    {
-      "path": "pages/index/index",
-      "style": {
-        "navigationBarTitleText": "网球发球机控制",
-        "navigationBarTextStyle": "white",
-        "navigationBarBackgroundColor": "#007AFF",
-        "backgroundColor": "#F8F8F8"
-      }
-    }
-  ],
-  "globalStyle": {
-    "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "网球发球机控制",
-    "navigationBarBackgroundColor": "#F8F8F8",
-    "backgroundColor": "#F8F8F8"
-  }
+	"pages": [{
+			"path": "pages/bluetooth/bluetooth",
+			"style": {
+				"navigationBarTitleText": "蓝牙连接"
+			}
+		},
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "网球发球机控制器"
+			}
+		}
+	]
 }

@@ -115,8 +115,8 @@
     },
     "statusbar": {
       "immersed": "supportedDevice",
-      "style": "light",
-      "background": "#F8F8F8"
+      "style": "dark",
+      "background": "#000000"
     },
     "allowsInlineMediaPlayback": true,
     "uni-app": {

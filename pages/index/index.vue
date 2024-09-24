@@ -2,7 +2,7 @@
 	<view class="container">
 		<!-- 第一层: 蓝牙功能，中英文切换，电量显示 -->
 		<view class="header">
-			<button class="btn-bluetooth" @click="player">{{ translations.bluetooth[currentLanguage] }}</button>
+			<button @click="navigateToBluetooth">{{ bluetoothName || '蓝牙' }}</button>
 			<button class="btn-lang" @click="toggleLanguage">{{ translations.language[currentLanguage] }}</button>
 			<image class="battery-icon" src="/static/image/battery.png" />
 		</view>
@@ -37,10 +37,10 @@
 			<!-- 背景图 -->
 			<img class="tennis-court" src="/static/image/tennis-court.jpg" alt="Tennis Court" />
 			<!-- 网球容器 -->
-			<view class="ball-container">
-				<view class="ball" v-for="(ball, index) in balls" :key="index" :style="getBallPosition(index)">
-					<span v-if="showBallNumbers">{{ index + 1 }}</span>
-				</view>
+			<view class="ball" v-for="(ball, index) in balls" :key="index" :style="getBallPosition(index)"
+				@click="handleBallInteraction(index)">
+				<span v-if="showBallNumbers">
+					{{ index + 1 }}</span>
 			</view>
 		</view>
 
@@ -48,9 +48,11 @@
 		<view class="controls">
 			<!-- //编程模式时使用的文本框，用于记录选择的球 -->
 			<view v-if="showInputWithClear" class="input-container">
-				<input type="text" :value="inputData" readonly />
-				<button class="clear-button" @click="clearInput">x</button>
+				<text class="input-label">请选择发球顺序：</text>
+				<input type="text" :value="inputData" readonly class="input-field" />
+				<button class="clear-button" @click="clearInputData">x</button>
 			</view>
+
 			<!-- 发球高度选择 -->
 			<view v-if="showHeightSelector" class="height-selector">
 				<span>{{ translations.selectedHeight[currentLanguage] }}: {{ selectedHeight }}</span>
@@ -68,22 +70,28 @@
 					@click="startTraining">{{ buttonText }}</button>
 				<view v-if="showDirectionButtons" class="direction-buttons">
 					<view class="up-down-buttons">
-						<button @click="moveBall('up')"
+						<button @click="handleDirectionKey('up')"
 							:disabled="upDownButtonsDisabled">{{ translations.up[currentLanguage] }}</button>
-						<button @click="moveBall('down')"
+						<button @click="handleDirectionKey('down')"
 							:disabled="upDownButtonsDisabled">{{ translations.down[currentLanguage] }}</button>
 					</view>
 					<view class="left-right">
-						<button @click="moveBall('left')"
+						<button @click="handleDirectionKey('left')"
 							:disabled="leftRightButtonsDisabled">{{ translations.left[currentLanguage] }}</button>
-						<button @click="moveBall('right')"
+						<button @click="handleDirectionKey('right')"
 							:disabled="leftRightButtonsDisabled">{{ translations.right[currentLanguage] }}</button>
 					</view>
 				</view>
+
 				<view v-if="showAngleControl" class="angle-control">
 					<button @click="adjustAngle(-1)">-</button>
 					<span>{{ translations.angle[currentLanguage] }}: {{ angle }}</span>
 					<button @click="adjustAngle(1)">+</button>
+				</view>
+				<view v-if="selectedMode === 1 || selectedMode === 2 || selectedMode === 3" class="ball-selection">
+					<label>{{ translations.selectBall[currentLanguage] }}</label>
+					<button :class="{ selected: selectedBall === 1 }" @click="selectBall(1)">1号球</button>
+					<button :class="{ selected: selectedBall === 2 }" @click="selectBall(2)">2号球</button>
 				</view>
 			</view>
 		</view>
@@ -106,7 +114,7 @@
 			</view>
 
 			<!-- 速度 -->
-			<view class="slider">
+			<view v-if="selectedMode !== 6" class="slider">
 				<view class="param-label">
 					{{ translations.speed[currentLanguage] }}:<text class="param-value">{{ speed }}</text>
 				</view>
@@ -138,24 +146,29 @@
 	export default {
 		data() {
 			return {
+				bluetoothName: '',
 				currentLanguage: 'zh',
 				showDirectionButtons: true, // 控制方向按钮的显示与隐藏
 				upDownButtonsDisabled: false, // 控制上下方向按钮的禁用状态
 				leftRightButtonsDisabled: false, // 控制左右方向按钮的禁用状态
 				showAngleControl: true, // 控制角度调整功能的显示与隐藏
-				showHeightSelector: true, // 控制发球高度选择功能的显示与隐藏
+				showHeightSelector: false, // 控制发球高度选择功能的显示与隐藏
 				showInputWithClear: false, // 控制输入框和清除按钮的显示与隐藏
-				inputData: '请按顺序点击网球', // 输入框显示的数据
-				angle: 30, // 初始角度
+				inputData: '', // 输入框显示的数据
+				angle: 30, // 初始角度				
+				heights: 30,
 				minAngle: 20, // 角度最小值
 				maxAngle: 50, // 角度最大值
 				heightOptions: ['低', '中', '高'], // 发球高度选项
 				selectedHeight: '中', // 默认选择的发球高度
+				selectedBall: 1,
 				showBallNumbers: false,
-				// 默认生成20个网球
+				// 默认生成35个网球
 				balls: Array.from({
-					length: 1
-				}),
+					length: 35
+				}, () => ({
+					color: 'gray'
+				})),
 				courtWidth: 300,
 				courtHeight: 200,
 				BluetoothList: [], // 存储发现的蓝牙设备
@@ -219,6 +232,10 @@
 						zh: '高',
 						en: 'High'
 					},
+					selectBall: {
+						zh: '选择球',
+						en: 'selectBall'
+					},
 					right: {
 						zh: '右',
 						en: 'Right'
@@ -277,21 +294,238 @@
 						en: 'Moon Ball'
 					}
 				],
+				modeConfig: {
+					0: {
+						ballCount: 1,
+						positions: [
+							[2, 2]
+						]
+					}, // 定点练习
+					1: {
+						ballCount: 2,
+						positions: [
+							[2, 2],
+							[3, 4]
+						]
+					}, // 交叉循环
+					2: {
+						ballCount: 2,
+						positions: [
+							[2, 0],
+							[2, 4]
+						]
+					}, // 水平循环
+					3: {
+						ballCount: 2,
+						positions: [
+							[0, 2],
+							[3, 2]
+						]
+					}, // 垂直循环
+					4: {
+						ballCount: 1,
+						positions: [
+							[2, 2]
+						]
+					}, // 截击练习
+					5: {
+						ballCount: 1,
+						positions: [
+							[2, 2]
+						]
+					}, // 高压练习
+					6: {
+						ballCount: 1,
+						positions: [
+							[2, 2]
+						]
+					}, // 全场随机
+					7: {
+						ballCount: 35,
+						positions: [ // 编程练习
+							[0, 0],
+							[0, 1],
+							[0, 2],
+							[0, 3],
+							[0, 4],
+							[1, 0],
+							[1, 1],
+							[1, 2],
+							[1, 3],
+							[1, 4],
+							[2, 0],
+							[2, 1],
+							[2, 2],
+							[2, 3],
+							[2, 4],
+							[3, 0],
+							[3, 1],
+							[3, 2],
+							[3, 3],
+							[3, 4],
+							[4, 0],
+							[4, 1],
+							[4, 2],
+							[4, 3],
+							[4, 4],
+							[5, 0],
+							[5, 1],
+							[5, 2],
+							[5, 3],
+							[5, 4],
+							[6, 0],
+							[6, 1],
+							[6, 2],
+							[6, 3],
+							[6, 4]
+						]
+					}, // 编程练习
+					8: {
+						ballCount: 1,
+						positions: [
+							[2, 2]
+						]
+					}, // 入门练习
+					9: {
+						ballCount: 1,
+						positions: [
+							[2, 2]
+						]
+					} // 月亮球
+				},
+				modeParams: [{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '',
+						angle: 20
+					}, // 定点练习
+					{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '中',
+						angle: null
+					}, // 交叉循环
+					{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '',
+						angle: 30
+					}, // 水平循环
+					{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '中',
+						angle: null
+					}, // 垂直循环
+					{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '',
+						angle: 30
+					}, // 截击练习
+					{
+						frequency: 7,
+						speed: 50,
+						rotate: 0,
+						heights: '',
+						angle: 30
+					}, // 高压练习
+					{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '中',
+						angle: null
+					}, // 全场随机
+					{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '',
+						angle: null
+					}, // 编程练习
+					{
+						frequency: 7,
+						speed: 20,
+						rotate: 0,
+						heights: '',
+						angle: 30
+					}, // 入门练习
+					{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '',
+						angle: 30
+					} // 月亮球
+				],
+				modeSettings: {
+					0: {
+						upDown: true,
+						leftRight: true
+					}, // 定点练习
+					1: {
+						upDown: true,
+						leftRight: true
+					}, // 交叉循环
+					2: {
+						upDown: true,
+						leftRight: true
+					}, // 水平循环
+					3: {
+						upDown: true,
+						leftRight: true
+					}, // 垂直循环
+					4: {
+						upDown: true,
+						leftRight: true
+					}, // 截击练习
+					5: {
+						upDown: true,
+						leftRight: true
+					}, // 高压练习
+					6: {
+						upDown: false,
+						leftRight: false
+					}, // 全场随机
+					7: {
+						upDown: false,
+						leftRight: false
+					}, // 编程练习
+					8: {
+						upDown: true,
+						leftRight: true
+					}, // 入门练习
+					9: {
+						upDown: true,
+						leftRight: true
+					}, // 月亮球
+				},
 				selectedMode: 0,
 				frequency: 5,
 				speed: 20,
 				rotate: 0,
 				ballCount: 1, // 网球个数
+				selectedBalls: [], // 记录被点击的网球索引
+				selectedSequence: [], // 用于记录选中的网球序号
+				ballColors: [], // 用于记录每个网球的颜色状态
 				defaultPositions: [], // 网球默认位置
 				ballPosition: {
-					x: 0,
-					y: 0
+					x: 2,
+					y: 2
 				}, // 记录网球的位置
 				trainingActive: false,
 				initialParams: {
 					frequency: 5,
 					speed: 20,
-					rotate: 0
+					rotate: 0,
+					heights: '',
+					angle: null
 				},
 				initialBallPosition: {
 					x: 0,
@@ -304,165 +538,43 @@
 				return this.modes.map(mode => mode[this.currentLanguage]);
 			},
 			ballStyle() {
-				const cellSize = Math.min(300 / 5, 50); // 设定网球场宽度为300px，分成5格，网球大小适应格子
+				const cellSize = Math.min(300 / 5, 400 / 7); // 网球场宽度为300px，高度为400px，分成5列7行，网球大小适应格子
+				const backgroundColor = this.selectedMode === 7 ? this.ballColors[index] || 'gray' : 'red';
 				return {
-					top: `${this.ballPosition.y * cellSize}px`,
-					left: `${this.ballPosition.x * cellSize}px`,
-					width: `${cellSize * 0.8}px`, // 增大网球的大小
-					height: `${cellSize * 0.8}px`
+					top: `${this.ballPosition.y * cellSize}px`, // 更新top坐标，基于7行布局
+					left: `${this.ballPosition.x * cellSize}px`, // left坐标仍基于5列
+					width: `${cellSize * 0.8}px`, // 增大网球的大小，保持比例
+					height: `${cellSize * 0.8}px`,
+					backgroundColor // 根据颜色状态设置背景颜色
 				};
 			}
 		},
+		watch: {
+			selectedBall(newValue) {
+				this.updateButtonStates(); // 选中的球发生变化时更新按钮状态
+			},
+			selectedMode(newValue) {
+				this.updateButtonStates(); // 选中的模式发生变化时更新按钮状态
+			}
+		},
+		onLoad(options) {
+			// 检查是否传递了 bluetoothName
+			if (options.bluetoothName) {
+				this.bluetoothName = options.bluetoothName;
+			}
+		},
 		methods: {
-			player() {
-				uni.openBluetoothAdapter({
-					success: (res) => {
-						uni.showToast({
-							title: '初始化成功',
-							icon: 'success',
-							duration: 800
-						});
-						this.findBlue(); // 开始搜索蓝牙设备
-					},
-					fail: () => {
-						uni.showToast({
-							title: '请打开蓝牙',
-							icon: 'none'
-						});
-					}
+
+			navigateToBluetooth() {
+				// 返回蓝牙页面
+				uni.navigateTo({
+					url: '/pages/bluetooth/bluetooth'
 				});
 			},
-
-			// 搜索蓝牙
-			findBlue() {
-				uni.startBluetoothDevicesDiscovery({
-					allowDuplicatesKey: false,
-					interval: 0,
-					success: () => {
-						uni.showLoading({
-							title: '正在搜索设备',
-						});
-						this.getBlue(); // 获取搜索到的设备
-					}
-				});
-
-				// 停止搜索设备的时间设置为10秒
-				setTimeout(() => {
-					uni.stopBluetoothDevicesDiscovery({
-						success: () => {
-							console.log('停止蓝牙搜索');
-						}
-					});
-				}, 10000); // 10秒后停止搜索
-			},
-
-			// 获取搜索到的设备信息
-			getBlue() {
-				uni.getBluetoothDevices({
-					success: (res) => {
-						uni.hideLoading();
-						this.BluetoothList = res.devices;
-						console.log('-----------' + res.devices)
-						this.showActionSheet = true; // 显示设备列表弹窗
-					},
-					fail: () => {
-						console.log("搜索蓝牙设备失败");
-					}
-				});
-			},
-
-			// 处理设备点击事件
-			connectDevice(deviceId) {
-				uni.createBLEConnection({
-					deviceId: deviceId,
-					success: () => {
-						uni.showToast({
-							title: '连接成功',
-							icon: 'success',
-							duration: 800
-						});
-						uni.stopBluetoothDevicesDiscovery({
-							success: () => {
-								console.log('连接蓝牙成功之后关闭蓝牙搜索');
-							}
-						});
-						this.deviceId = deviceId;
-						this.getServiceId(); // 获取服务ID
-					},
-					fail: (err) => {
-						console.log('连接失败', err);
-					}
-				});
-			},
-
-			// 获取服务ID
-			getServiceId() {
-				uni.getBLEDeviceServices({
-					deviceId: this.deviceId,
-					success: (res) => {
-						console.log(res);
-						this.readyservices = res.services[0].uuid;
-						this.services = res.services[1].uuid;
-						this.getCharacteId(); // 获取特征值ID
-					}
-				});
-			},
-
-			// 获取特征值ID
-			getCharacteId() {
-				uni.getBLEDeviceCharacteristics({
-					deviceId: this.deviceId,
-					serviceId: this.services,
-					success: (res) => {
-						console.log(res);
-						for (let i = 0; i < res.characteristics.length; i++) {
-							const model = res.characteristics[i];
-							if (model.properties.write) {
-								this.sendMy(model.uuid);
-							}
-							if (model.properties.notify) {
-								this.notifyUuid = model.uuid;
-							}
-						}
-					}
-				});
-			},
-
-			// 写入数据到蓝牙设备
-			sendMy(buffer) {
-				const buff = this.string2buffer('3a0a0b0c0d02423122');
-				uni.writeBLECharacteristicValue({
-					deviceId: this.deviceId,
-					serviceId: this.services,
-					characteristicId: buffer,
-					value: buff,
-					success: () => {
-						console.log("写入成功");
-						this.startNotice(); // 开始接收数据
-					},
-					fail: (err) => {
-						console.log(err);
-					}
-				});
-			},
-
-			// 启用通知功能，接收设备返回的数据
-			startNotice() {
-				uni.notifyBLECharacteristicValueChange({
-					state: true,
-					deviceId: this.deviceId,
-					serviceId: this.services,
-					characteristicId: this.notifyUuid,
-					success: () => {
-						uni.onBLECharacteristicValueChange((res) => {
-							const nonceId = this.ab2hex(res.value);
-							console.log('返回数据:', nonceId);
-						});
-					},
-					fail: (err) => {
-						console.log(err);
-					}
-				});
+			updateButtonStates() {
+				// 更新上下和左右按钮的禁用状态
+				this.upDownButtonsDisabled = this.selectedMode === 2 && this.selectedBall === 2;
+				this.leftRightButtonsDisabled = this.selectedMode === 3 && this.selectedBall === 2;
 			},
 			// 获取网球场大小
 			getCourtSize() {
@@ -470,103 +582,19 @@
 				query.select('.tennis-court').boundingClientRect(rect => {
 					this.courtWidth = rect.width;
 					this.courtHeight = rect.height;
-					this.updateBallPositions();
+					this.updateBallPositions(0);
 				}).exec();
 			},
 
-			// 更新球的位置
-			// updateBallPositions() {
-			// 	const ballSize = 30; // 网球的宽度和高度（单位：px）
-			// 	const numCols = 5; // 列数
-			// 	const numRows = 4; // 行数
-
-			// 	const horizontalPadding = (this.courtWidth - numCols * ballSize) / (numCols + 1); // 横向边距
-			// 	const verticalPadding = (this.courtHeight - numRows * ballSize) / (numRows + 1); // 纵向边距
-
-			// 	this.balls = this.balls.map((ball, index) => {
-			// 		const row = Math.floor(index / numCols);
-			// 		const col = index % numCols;
-
-			// 		const top = verticalPadding + row * (ballSize + verticalPadding);
-			// 		const left = horizontalPadding + col * (ballSize + horizontalPadding);
-
-			// 		return {
-			// 			...ball,
-			// 			top: `${top}px`,
-			// 			left: `${left}px`,
-			// 			width: `${ballSize}px`,
-			// 			height: `${ballSize}px`,
-			// 		};
-			// 	});
-			// },
-
-			updateBallPositions() {
-				const ballSize = 30; // 网球的宽度和高度（单位：px）
-				const numCols = 5; // 列数
-				const numRows = 4; // 行数
-
-				// 确保 courtWidth 和 courtHeight 是网球场的实际宽度和高度
-				const horizontalPadding = (this.courtWidth - numCols * ballSize) / (numCols + 1); // 横向边距
-				const verticalPadding = (this.courtHeight - numRows * ballSize) / (numRows + 1); // 纵向边距
-
-				this.balls = this.balls.map((ball, index) => {
-					const row = Math.floor(index / numCols);
-					const col = index % numCols;
-
-					const top = verticalPadding + row * (ballSize + verticalPadding);
-					const left = horizontalPadding + col * (ballSize + horizontalPadding);
-
-					return {
-						...ball,
-						top: `${top}px`,
-						left: `${left}px`,
-						width: `${ballSize}px`,
-						height: `${ballSize}px`,
-					};
-				});
-			},
-
-			// // 将网球的初始位置设置为第三行第三列
-			setInitialBallPosition() {
-				const thirdRow = 2;
-				const thirdCol = 2;
-
-				// 设置第三行第三列网球的位置
-				const initialBall = this.calculatePosition(thirdRow, thirdCol);
-
-				// 只设置第一个网球的位置，其他网球保持默认
-				this.balls[0] = {
-					top: `${initialBall.top}px`,
-					left: `${initialBall.left}px`,
-					width: '30px',
-					height: '30px',
-				};
-
-				// 更新其他球的位置
-				this.updateBallPositions();
+			selectBall(ballNumber) {
+				this.selectedBall = ballNumber; // 选择球
 			},
 
 			// 计算网球在网球场上的位置（基于4x5网格）
-			// calculatePosition(row, col) {
-			// 	const ballSize = 30; // 网球的宽度和高度（单位：px）
-			// 	const numCols = 5; // 列数
-			// 	const numRows = 4; // 行数
-
-			// 	const horizontalPadding = (this.courtWidth - numCols * ballSize) / (numCols + 1); // 横向边距
-			// 	const verticalPadding = (this.courtHeight - numRows * ballSize) / (numRows + 1); // 纵向边距
-
-			// 	const top = verticalPadding + row * (ballSize + verticalPadding);
-			// 	const left = horizontalPadding + col * (ballSize + horizontalPadding);
-
-			// 	return {
-			// 		top,
-			// 		left
-			// 	};
-			// },
 			calculatePosition(row, col) {
 				const ballSize = 30; // 网球的宽度和高度（单位：px）
 				const numCols = 5; // 列数
-				const numRows = 4; // 行数
+				const numRows = 7; // 行数
 
 				const horizontalPadding = (this.courtWidth - numCols * ballSize) / (numCols + 1); // 横向边距
 				const verticalPadding = (this.courtHeight - numRows * ballSize) / (numRows + 1); // 纵向边距
@@ -588,110 +616,67 @@
 					return {
 						top: '0px',
 						left: '0px',
-						width: '30px',
-						height: '30px',
+						width: '20px',
+						height: '20px',
+						backgroundColor: 'gray'
 					};
 				}
 				return {
 					top: ball.top || '0px',
 					left: ball.left || '0px',
-					width: ball.width || '30px',
-					height: ball.height || '30px',
+					width: ball.width || '20px',
+					height: ball.height || '20px',
+					backgroundColor: ball.color || 'gray'
 				};
 			},
 
-			setBallCountAndPositions(mode) {
-				// 定义模式配置
-				const modeConfig = {
-					0: {
-						ballCount: 1,
-						positions: [
-							[2, 2]
-						]
-					}, // 定点练习
-					1: {
-						ballCount: 2,
-						positions: [
-							[1, 1],
-							[2, 2]
-						]
-					}, // 交叉循环
-					2: {
-						ballCount: 2,
-						positions: [
-							[1, 1],
-							[1, 2]
-						]
-					}, // 水平循环
-					3: {
-						ballCount: 2,
-						positions: [
-							[1, 1],
-							[2, 1]
-						]
-					}, // 垂直循环
-					4: {
-						ballCount: 1,
-						positions: [
-							[1, 1]
-						]
-					}, // 截击练习
-					5: {
-						ballCount: 1,
-						positions: [
-							[1, 1]
-						]
-					}, // 高压练习
-					6: {
-						ballCount: 1,
-						positions: [
-							[1, 1]
-						]
-					}, // 全场随机
-					7: {
-						ballCount: 20,
-						positions: [
-							[1, 1],
-							[1, 2],
-							[1, 3],
-							[1, 4],
-							[1, 5],
-							[2, 1],
-							[2, 2],
-							[2, 3],
-							[2, 4],
-							[2, 5],
-							[3, 1],
-							[3, 2],
-							[3, 3],
-							[3, 4],
-							[3, 5],
-							[4, 1],
-							[4, 2],
-							[4, 3],
-							[4, 4],
-							[4, 5]
-						]
-					}, // 编程练习
-					8: {
-						ballCount: 1,
-						positions: [
-							[1, 1]
-						]
-					}, // 入门练习
-					9: {
-						ballCount: 1,
-						positions: [
-							[1, 1]
-						]
-					}, // 月亮球
-				};
+			handleBallInteraction(index) {
+				// 确保只有在模式7下生效
+				if (this.selectedMode !== 7) return;
 
-				// 获取模式的球数和位置
+				// 获取当前点击的球
+				const ball = this.balls[index];
+
+				// 如果球是灰色，点击后变为红色
+				if (ball.color === 'gray') {
+					this.$set(this.balls, index, {
+						...ball,
+						color: 'red'
+					});
+					console.log(`球 ${index + 1} 变为红色`); // 调试输出
+					this.selectedBalls.push(index + 1); // 记录被点击的球，+1为了显示从1开始
+				}
+				// 如果球是红色，点击后变为灰色
+				else {
+					this.$set(this.balls, index, {
+						...ball,
+						color: 'gray'
+					});
+					console.log(`球 ${index + 1} 变为灰色`); // 调试输出
+					this.selectedBalls = this.selectedBalls.filter(ballIndex => ballIndex !== (index + 1));
+				}
+
+				// 更新展示的输入框内容
+				this.inputData = this.selectedBalls.join(',');
+			},
+
+			clearInputData() {
+				this.inputData = []
+				this.selectedBalls = []
+				// 重置所有球的颜色为灰色
+				this.balls = this.balls.map(ball => ({
+					...ball,
+					color: 'gray'
+				}));
+			},
+
+			updateBallPositions(mode) {
+				let modeConfig = this.modeConfig
+				// 获取当前模式的球数和初始位置
 				const config = modeConfig[mode] || {
 					ballCount: 1,
 					positions: [
-						[1, 1]
+						[2, 2]
 					]
 				};
 				const {
@@ -699,35 +684,46 @@
 					positions
 				} = config;
 
-				// 设置球的数量和初始位置
 				this.balls = positions.map(([row, col]) => {
 					const position = this.calculatePosition(row, col);
 					return {
+						width: '20px',
+						height: '20px',
 						top: `${position.top}px`,
 						left: `${position.left}px`,
-						width: '30px',
-						height: '30px',
+						color: mode === 7 ? 'gray' : 'red' // 模式7下为灰色，其他模式为红色
 					};
 				});
 
-				// 更新球的位置
-				this.updateBallPositions();
+				// 如果是模式7，确保有20个球
+				if (mode === 7) {
+					while (this.balls.length < 35) {
+						this.balls.push({
+							width: '20px',
+							height: '20px',
+							top: '0px',
+							left: '0px',
+							color: mode === 7 ? 'gray' : 'red' // 模式7下为灰色，其他模式为红色
+						});
+					}
+				}
+				// 初始化球的颜色状态为灰色
+				this.ballColors = new Array(this.balls.length).fill('gray');
 			},
+
 
 			// 计算网球在网球场上的位置（基于4x5网格）
 			calculatePosition(row, col) {
 				const ballSize = 30; // 网球的宽度和高度（单位：px）
 				const numCols = 5; // 列数
-				const numRows = 4; // 行数
+				const numRows = 7; // 行数
 
 				// 确保 courtWidth 和 courtHeight 是网球场的实际宽度和高度
 				const horizontalPadding = (this.courtWidth - numCols * ballSize) / (numCols + 1); // 横向边距
 				const verticalPadding = (this.courtHeight - numRows * ballSize) / (numRows + 1); // 纵向边距
-				console.log('horizontalPadding,verticalPadding', horizontalPadding, verticalPadding)
 
 				const top = verticalPadding + row * (ballSize + verticalPadding);
 				const left = horizontalPadding + col * (ballSize + horizontalPadding);
-				console.log('top,left', top, left)
 
 				return {
 					top,
@@ -735,119 +731,6 @@
 				};
 			},
 
-
-			// 更新球的位置
-			updateBallPositions() {
-				// 具体实现更新球的位置
-			},
-
-
-			// setBallCount(mode) {
-			// 	const modeBallCounts = {
-			// 		0: 1, // 定点练习
-			// 		1: 2, // 交叉循环
-			// 		2: 2, // 水平循环
-			// 		3: 2, // 垂直循环
-			// 		4: 1, // 截击练习
-			// 		5: 1, // 高压练习
-			// 		6: 1, // 全场随机
-			// 		7: 20, // 编程练习
-			// 		8: 1, // 入门练习
-			// 		9: 1, // 月亮球
-			// 	};
-
-			// 	// 根据模式设置网球的个数
-			// 	const ballCount = modeBallCounts[mode] || 1;
-
-			// 	this.balls = Array.from({
-			// 		length: ballCount
-			// 	}, () => ({
-			// 		top: '0px',
-			// 		left: '0px',
-			// 		width: '30px',
-			// 		height: '30px',
-			// 	}));
-
-			// 	// 更新球的位置
-			// 	this.updateBallPositions();
-			// },
-
-			// setDefaultPositions(mode) {
-			// 	const modeDefaultPositions = {
-			// 		0: [
-			// 			[2, 2]
-			// 		], // 定点练习
-			// 		1: [
-			// 			[1, 1],
-			// 			[2, 2]
-			// 		], // 交叉循环
-			// 		2: [
-			// 			[1, 1],
-			// 			[1, 2]
-			// 		], // 水平循环
-			// 		3: [
-			// 			[1, 1],
-			// 			[2, 1]
-			// 		], // 垂直循环
-			// 		4: [
-			// 			[1, 1]
-			// 		], // 截击练习
-			// 		5: [
-			// 			[1, 1]
-			// 		], // 高压练习
-			// 		6: [
-			// 			[1, 1]
-			// 		], // 全场随机
-			// 		7: [
-			// 			[1, 1],
-			// 			[1, 2],
-			// 			[1, 3],
-			// 			[1, 4],
-			// 			[1, 5], // 第一行
-			// 			[2, 1],
-			// 			[2, 2],
-			// 			[2, 3],
-			// 			[2, 4],
-			// 			[2, 5], // 第二行
-			// 			[3, 1],
-			// 			[3, 2],
-			// 			[3, 3],
-			// 			[3, 4],
-			// 			[3, 5], // 第三行
-			// 			[4, 1],
-			// 			[4, 2],
-			// 			[4, 3],
-			// 			[4, 4],
-			// 			[4, 5] // 第四行
-			// 		], // 编程练习
-
-			// 		8: [
-			// 			[1, 1]
-			// 		], // 入门练习
-			// 		9: [
-			// 			[1, 1]
-			// 		], // 月亮球
-			// 	};
-
-			// 	// 设置默认位置
-			// 	const defaultPositions = modeDefaultPositions[mode] || [
-			// 		[1, 1]
-			// 	];
-
-			// 	// 根据默认位置更新网球的坐标
-			// 	this.balls = defaultPositions.map(([row, col]) => {
-			// 		const position = this.calculatePosition(row, col);
-			// 		return {
-			// 			top: `${position.top}px`,
-			// 			left: `${position.left}px`,
-			// 			width: '30px',
-			// 			height: '30px'
-			// 		};
-			// 	});
-
-			// 	// 更新球的位置
-			// 	this.updateBallPositions();
-			// },
 			// 将字符串转换成ArrayBuffer
 			string2buffer(str) {
 				let val = "";
@@ -882,60 +765,21 @@
 				this.updateParametersForMode(index);
 
 				// 控制 UI 部件显示隐藏
-				this.showBallNumbers = (this.selectedMode === 7); // 编程练习显示数字
+				this.showBallNumbers = [1, 2, 3, 7].includes(this.selectedMode);
+				// 编程练习显示数字
 				this.toggleDirectionButtons(this.selectedMode); // 控制方向按钮显示
 				this.toggleAngleControl(this.selectedMode); // 控制角度调整显示
 				this.toggleHeightSelector(this.selectedMode); // 控制发球高度选择功能
 				this.showInputWithClear = (this.selectedMode === 7); // 编程练习模式下的输入框
 
 				// 根据模式设置网球个数及默认位置
-				this.setBallCountAndPositions(this.selectedMode);
+				this.updateBallPositions(index);
+				this.resetBallPositions();
 			},
 
 			toggleDirectionButtons(selectedMode) {
 				// 定义一个对象来映射每个模式的上下移动和左右移动状态
-				const modeSettings = {
-					0: {
-						upDown: true,
-						leftRight: true
-					}, // 定点练习
-					1: {
-						upDown: false,
-						leftRight: false
-					}, // 交叉循环
-					2: {
-						upDown: false,
-						leftRight: true
-					}, // 水平循环
-					3: {
-						upDown: true,
-						leftRight: false
-					}, // 垂直循环
-					4: {
-						upDown: true,
-						leftRight: true
-					}, // 截击练习
-					5: {
-						upDown: true,
-						leftRight: true
-					}, // 高压练习
-					6: {
-						upDown: false,
-						leftRight: false
-					}, // 全场随机
-					7: {
-						upDown: false,
-						leftRight: false
-					}, // 编程练习
-					8: {
-						upDown: true,
-						leftRight: true
-					}, // 入门练习
-					9: {
-						upDown: true,
-						leftRight: true
-					}, // 月亮球
-				};
+				const modeSettings = this.modeSettings
 
 				// 默认隐藏方向按钮
 				this.showDirectionButtons = false;
@@ -975,10 +819,6 @@
 			adjustAngle(change) {
 				this.angle = Math.min(Math.max(this.angle + change, this.minAngle), this.maxAngle);
 			},
-			clearInput() {
-				this.inputData = '';
-				// this.inputData = '请按顺序点击网球'; // 清空输入框内容
-			},
 
 			// 选择发球高度
 			selectHeight(height) {
@@ -986,57 +826,7 @@
 			},
 			updateParametersForMode(modeIndex) {
 				// 定义每个模式的默认参数
-				const modeParams = [{
-						frequency: 7,
-						speed: 80,
-						rotate: 0
-					}, // 定点练习
-					{
-						frequency: 7,
-						speed: 80,
-						rotate: 0
-					}, // 交叉循环
-					{
-						frequency: 7,
-						speed: 80,
-						rotate: 0
-					}, // 水平循环
-					{
-						frequency: 7,
-						speed: 80,
-						rotate: 0
-					}, // 垂直循环
-					{
-						frequency: 7,
-						speed: 80,
-						rotate: 0
-					}, // 截击练习
-					{
-						frequency: 7,
-						speed: 50,
-						rotate: 0
-					}, // 高压练习
-					{
-						frequency: 7,
-						speed: 80,
-						rotate: 0
-					}, // 全场随机
-					{
-						frequency: 7,
-						speed: 80,
-						rotate: 0
-					}, // 编程练习
-					{
-						frequency: 7,
-						speed: 20,
-						rotate: 0
-					}, // 入门练习
-					{
-						frequency: 7,
-						speed: 80,
-						rotate: 0
-					} // 月亮球
-				];
+				const modeParams = this.modeParams
 
 				// 获取所选模式的参数，如果模式索引超出范围，则使用初始参数
 				const params = modeParams[modeIndex] || this.initialParams;
@@ -1045,59 +835,261 @@
 				this.frequency = params.frequency;
 				this.speed = params.speed;
 				this.rotate = params.rotate;
+				this.heights = params.heights
+				this.angle = params.angle
 
 				// 重置球的位置
 				this.resetBallPosition();
 			},
 
-			moveBall(direction) {
-				const step = 1; // 每次移动一个格子
-				if (direction === 'up') {
-					this.ballPosition.y = Math.max(0, this.ballPosition.y - step);
-				} else if (direction === 'down') {
-					this.ballPosition.y = Math.min(5, this.ballPosition.y + step);
-				} else if (direction === 'left') {
-					this.ballPosition.x = Math.max(0, this.ballPosition.x - step);
-				} else if (direction === 'right') {
-					this.ballPosition.x = Math.min(5, this.ballPosition.x + step);
+			resetBallPositions() {
+				const selectedModeConfig = this.modeConfig[this.selectedMode];
+
+				if (selectedModeConfig.defaultPositions) {
+					selectedModeConfig.positions = selectedModeConfig.defaultPositions.map(position => [...position]);
+					this.updateBallPositions(this.selectedMode); // 更新球的位置显示
 				}
-				this.sendTrainingParams(); // 发送更新后的球位置
 			},
+
+			// 处理方向键按下事件
+			handleDirectionKey(direction) {
+				// 模式1: 选中的球可以自由移动
+				if (this.selectedMode === 1) {
+					this.moveBall(this.selectedBall, direction);
+				}
+				// 模式2: 1号球可以自由移动，上下移动时2号球跟随，2号球只能左右移动
+				else if (this.selectedMode === 2) {
+					if (this.selectedBall === 1) {
+						this.moveBall(1, direction); // 1号球可以上下左右移动
+						if (direction === 'up' || direction === 'down') {
+							this.moveBall(2, direction); // 2号球跟随上下移动
+						}
+					} else if (this.selectedBall === 2 && (direction === 'left' || direction === 'right')) {
+						this.moveBall(2, direction); // 2号球只能左右移动
+					}
+				}
+				// 模式3: 1号球可以自由移动，左右移动时2号球跟随，2号球只能上下移动
+				else if (this.selectedMode === 3) {
+					if (this.selectedBall === 1) {
+						this.moveBall(1, direction); // 1号球可以上下左右移动
+						if (direction === 'left' || direction === 'right') {
+							this.moveBall(2, direction); // 2号球跟随左右移动
+						}
+					} else if (this.selectedBall === 2 && (direction === 'up' || direction === 'down')) {
+						this.moveBall(2, direction); // 2号球只能上下移动
+					}
+				} else {
+					this.moveBall(1, direction)
+				}
+			},
+
+			moveBall(ballNumber, direction) {
+				const maxRows = 6; // 网球场的行数
+				const maxCols = 4; // 网球场的列数
+				const selectedModeConfig = this.modeConfig[this.selectedMode];
+				const ballPositions = selectedModeConfig.positions;
+
+				// 复制当前球的位置，防止直接修改原数组
+				let newPositions = ballPositions.map(position => [...position]);
+
+				// 获取当前球的位置
+				let [row, col] = newPositions[ballNumber - 1]; // ballNumber 从 1 开始，数组索引从 0 开始
+
+				// 根据按下的方向键更新选中球的位置
+				switch (direction) {
+					case 'up':
+						if (row > 0) row -= 1; // 向上移动一行
+						break;
+					case 'down':
+						if (row < maxRows) row += 1; // 向下移动一行
+						break;
+					case 'left':
+						if (col > 0) col -= 1; // 向左移动一列
+						break;
+					case 'right':
+						if (col < maxCols) col += 1; // 向右移动一列
+						break;
+				}
+
+				// 更新选中球的位置
+				newPositions[ballNumber - 1] = [row, col];
+
+				// 根据不同模式，更新其他球的位置
+				if (this.selectedMode === 2 && ballNumber === 1) {
+					// 模式2: 1号球上下移动时，2号球跟随上下移动，但2号球只能水平移动
+					newPositions[1][0] = row; // 2号球的行号跟随1号球
+				} else if (this.selectedMode === 2 && ballNumber === 2) {
+					// 2号球只能左右移动，行保持不变
+					newPositions[1] = [newPositions[0][0], col]; // 保证2号球与1号球保持水平
+				} else if (this.selectedMode === 3 && ballNumber === 1) {
+					// 模式3: 1号球左右移动时，2号球跟随左右移动，但2号球只能垂直移动
+					newPositions[1][1] = col; // 2号球的列号跟随1号球
+				} else if (this.selectedMode === 3 && ballNumber === 2) {
+					// 2号球只能上下移动，列保持不变
+					newPositions[1] = [row, newPositions[0][1]]; // 保证2号球与1号球保持垂直
+				}
+
+				// 更新球的位置
+				selectedModeConfig.positions = newPositions;
+
+				// 更新球在界面上的显示位置
+				this.updateBallPositions(this.selectedMode);
+			},
+
+
 			startTraining() {
 				if (!this.trainingActive) {
-					// 开始训练
-					console.log(JSON.stringify({
-						mode: this.modeNames[this.selectedMode],
-						ballPosition: this.ballPosition,
-						frequency: this.frequency,
-						speed: this.speed,
-						rotate: this.rotate
-					}));
 					this.trainingActive = true;
 					this.buttonText = this.translations.endTraining[this.currentLanguage];
 					this.buttonColor = '#ff6347'; // 训练中按钮颜色
 					this.modeSelectable = false; // 禁用模式选择
-					this.sendTrainingParams(); // 发送初始参数
+					// 标记即将发的球为绿色
+					this.markUpcomingBalls();
+
+					// 确定发球顺序
+					this.determineServingOrder();
+
+					// 发送初始训练参数
+					this.sendTrainingParams();
+
+					// 打印信息
+					this.printTrainingInfo();
 				} else {
-					// 结束训练
-					console.log('Ending training');
-					this.trainingActive = false;
-					this.buttonText = this.translations.startTraining[this.currentLanguage];
-					this.buttonColor = '#87ceeb'; // 结束训练按钮颜色
-					this.resetToInitialValues(); // 恢复初始值
-					this.modeSelectable = true; // 启用模式选择
-					this.sendTrainingParams(); // 发送结束参数
+					this.endTraining()
 				}
 			},
+
+			endTraining() {
+				// 结束训练
+				console.log('Ending training');
+				this.trainingActive = false;
+				this.buttonText = this.translations.startTraining[this.currentLanguage];
+				this.buttonColor = '#87ceeb'; // 结束训练按钮颜色
+				this.resetToInitialValues(); // 恢复初始值
+				this.modeSelectable = true; // 启用模式选择
+				this.sendTrainingParams(); // 发送结束参数
+				// 恢复所有模式的默认参数
+				const modeParams = this.modeParams[this.selectedMode] || {};
+
+				// 恢复频率、速度、旋转、角度、高度等参数为默认值
+				this.frequency = modeParams.frequency || 7;
+				this.speed = modeParams.speed || 80;
+				this.rotate = modeParams.rotate || 0;
+				this.angle = modeParams.angle || 30;
+				this.heights = modeParams.heights || '';
+
+
+
+				// 恢复网球位置和颜色
+				this.balls.forEach((ball, index) => {
+					// 恢复位置（假设有默认的初始位置存储在 ball.initialTop 和 ball.initialLeft）
+					ball.top = ball.initialTop || '0px';
+					ball.left = ball.initialLeft || '0px';
+
+					// 恢复颜色（假设绿色表示默认颜色）
+					ball.color = 'green';
+				});
+
+				// 重置 UI 控件的值（如需要）
+				this.resetSlidersToDefault();
+
+				// 打印结束后的状态（可选）
+				console.log('训练结束，参数恢复默认值:', {
+					frequency: this.frequency,
+					speed: this.speed,
+					rotate: this.rotate,
+					angle: this.angle,
+					heights: this.heights,
+					balls: this.balls.map(ball => ({
+						position: {
+							top: ball.top,
+							left: ball.left
+						},
+						color: ball.color
+					}))
+				});
+			},
+
+			// 这是一个辅助函数，用于重置滑动条（sliders）的值
+			resetSlidersToDefault() {
+				// 你可以添加逻辑将滑动条的值恢复为默认状态
+				this.$refs.frequencySlider.setValue(this.frequency);
+				this.$refs.speedSlider.setValue(this.speed);
+				this.$refs.rotateSlider.setValue(this.rotate);
+				this.$refs.angleSlider.setValue(this.angle);
+			},
+
+			markUpcomingBalls() {
+				if (this.selectedMode !== 7) {
+					// 对于模式7之外的模式，按从左到右、从上到下的顺序将球标记为绿色
+					this.balls.forEach((ball, index) => {
+						this.$set(this.balls, index, {
+							...ball,
+							color: 'green'
+						});
+					});
+				} else {
+					// 对于模式7，根据用户选择的顺序标记球为绿色
+					const sequence = this.inputData.split(',').map(Number);
+					sequence.forEach(index => {
+						if (this.balls[index - 1]) {
+							this.$set(this.balls, index - 1, {
+								...this.balls[index - 1],
+								color: 'green'
+							});
+						}
+					});
+				}
+			},
+
+			determineServingOrder() {
+				if (this.selectedMode === 7) {
+					// 模式7：使用用户定义的发球顺序
+					this.servingOrder = this.inputData.split(',').map(Number);
+				} else {
+					// 其他模式：从左到右、从上到下的顺序
+					this.servingOrder = this.balls.map((_, index) => index + 1);
+				}
+			},
+
+			printTrainingInfo() {
+				const mode = this.selectedMode; // 当前模式
+				const positions = this.balls.map(ball => ({
+					top: ball.top || '0px',
+					left: ball.left || '0px'
+				})); // 每个球的位置
+
+				// 直接使用实例变量中的当前参数
+				const angles = this.balls.map(() => this.angle || '-'); // 角度信息
+				const heights = this.balls.map(() => this.heights || '-'); // 高度信息
+				const frequencies = this.balls.map(() => this.frequency || '-'); // 频率信息
+				const speeds = this.balls.map(() => this.speed || '-'); // 速度信息
+				const rotations = this.balls.map(() => this.rotate || '-'); // 旋转信息
+
+				// 组织成一个对象
+				const trainingInfo = {
+					mode: mode,
+					positions: positions,
+					angles: angles,
+					heights: heights,
+					frequencies: frequencies,
+					speeds: speeds,
+					rotations: rotations
+				};
+
+				// 输出为 JSON 格式
+				console.log('训练信息:', JSON.stringify(trainingInfo, null, 2));
+			},
+
 			sendTrainingParams() {
 				if (this.trainingActive) {
-					console.log(JSON.stringify({
-						mode: this.modeNames[this.selectedMode],
-						ballPosition: this.ballPosition,
-						frequency: this.frequency,
-						speed: this.speed,
-						rotate: this.rotate
-					}));
+					// console.log(JSON.stringify({
+					// 	mode: this.modeNames[this.selectedMode],
+					// 	ballPosition: this.ballPosition,
+					// 	frequency: this.frequency,
+					// 	speed: this.speed,
+					// 	rotate: this.rotate
+					// }));
 				}
 			},
 			resetToInitialValues() {
@@ -1130,7 +1122,7 @@
 		mounted() {
 			this.updateParametersForMode(this.selectedMode);
 			this.getCourtSize();
-			this.setInitialBallPosition();
+			this.updateBallPositions(0)
 		}
 	};
 </script>
@@ -1232,10 +1224,28 @@
 		position: absolute;
 		background: rgba(255, 0, 0, 0.5);
 		border-radius: 50%;
-		text-align: center;
-		line-height: 30px;
+		display: flex;
+		/* 使用 flex 布局 */
+		justify-content: center;
+		/* 水平居中 */
+		align-items: center;
+		/* 垂直居中 */
+		width: 30px;
+		/* 网球的宽度 */
+		height: 30px;
+		/* 网球的高度 */
 		color: #fff;
 		font-size: 14px;
+		z-index: 10;
+		/* 提升 z-index 确保它接收点击事件 */
+	}
+
+	.tennis-ball-gray {
+		background-color: gray;
+	}
+
+	.tennis-ball-red {
+		background-color: red;
 	}
 
 	.controls {
@@ -1332,9 +1342,11 @@
 	.input-container {
 		display: flex;
 		align-items: center;
+		flex-direction: column;
 		margin-top: 10px;
 		/* 在按钮组和输入框之间添加间距 */
 	}
+
 
 	input[type="text"] {
 		border: 1px solid #ccc;
