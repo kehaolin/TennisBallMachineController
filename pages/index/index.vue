@@ -789,6 +789,7 @@
 
 				// 根据模式设置网球个数及默认位置
 				this.updateBallPositions(index);
+				this.resetToInitialValues();
 			},
 
 			toggleDirectionButtons(selectedMode) {

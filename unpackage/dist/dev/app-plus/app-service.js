@@ -709,6 +709,7 @@ if (uni.restoreGlobal) {
         this.toggleHeightSelector(this.selectedMode);
         this.showInputWithClear = this.selectedMode === 7;
         this.updateBallPositions(index2);
+        this.resetToInitialValues();
       },
       toggleDirectionButtons(selectedMode) {
         const modeSettings = this.modeSettings;
@@ -851,7 +852,7 @@ if (uni.restoreGlobal) {
         this.angle = this.initialParams.angle;
         this.heights = this.initialParams.heights;
         this.selectedBall = 1;
-        formatAppLog("log", "at pages/index/index.vue:982", "训练结束", this.selectedMode);
+        formatAppLog("log", "at pages/index/index.vue:983", "训练结束", this.selectedMode);
         this.restoreDefaultBallPositions();
       },
       handleFrequencyChange(event) {
@@ -898,10 +899,10 @@ if (uni.restoreGlobal) {
           speeds,
           rotations
         };
-        formatAppLog("log", "at pages/index/index.vue:1041", "训练信息:", JSON.stringify(trainingInfo, null, 2));
+        formatAppLog("log", "at pages/index/index.vue:1042", "训练信息:", JSON.stringify(trainingInfo, null, 2));
       },
       sendTrainingParams() {
-        formatAppLog("log", "at pages/index/index.vue:1045", "训练结束");
+        formatAppLog("log", "at pages/index/index.vue:1046", "训练结束");
       }
     },
     mounted() {
