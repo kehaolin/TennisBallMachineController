@@ -621,44 +621,6 @@ if (uni.restoreGlobal) {
           formatAppLog("error", "at pages/index/index.vue:683", "未找到默认位置！");
         }
       },
-      updateBallPositions(mode) {
-        formatAppLog("log", "at pages/index/index.vue:688", "进来了+++++", mode);
-        let modeConfig = this.modeConfig;
-        const config = modeConfig[mode] || {
-          ballCount: 1,
-          positions: [
-            [2, 2]
-          ]
-        };
-        const {
-          ballCount,
-          positions
-        } = config;
-        this.balls = positions.map(([row, col]) => {
-          const position = this.calculatePosition(row, col);
-          return {
-            width: "20px",
-            height: "20px",
-            top: `${position.top}px`,
-            left: `${position.left}px`,
-            color: mode === 7 ? "gray" : "red"
-            // 模式7下为灰色，其他模式为红色
-          };
-        });
-        if (mode === 7) {
-          while (this.balls.length < 35) {
-            this.balls.push({
-              width: "20px",
-              height: "20px",
-              top: "0px",
-              left: "0px",
-              color: mode === 7 ? "gray" : "red"
-              // 模式7下为灰色，其他模式为红色
-            });
-          }
-        }
-        this.ballColors = new Array(this.balls.length).fill("gray");
-      },
       // 计算网球在网球场上的位置（基于4x5网格）
       calculatePosition(row, col) {
         const ballSize = 30;
@@ -698,18 +660,6 @@ if (uni.restoreGlobal) {
       },
       toggleLanguage() {
         this.currentLanguage = this.currentLanguage === "zh" ? "en" : "zh";
-      },
-      onModeChange(event) {
-        const index2 = event.detail.value;
-        this.selectedMode = index2;
-        this.updateParametersForMode(index2);
-        this.showBallNumbers = [1, 2, 3, 7].includes(this.selectedMode);
-        this.toggleDirectionButtons(this.selectedMode);
-        this.toggleAngleControl(this.selectedMode);
-        this.toggleHeightSelector(this.selectedMode);
-        this.showInputWithClear = this.selectedMode === 7;
-        this.updateBallPositions(index2);
-        this.resetToInitialValues();
       },
       toggleDirectionButtons(selectedMode) {
         const modeSettings = this.modeSettings;
@@ -786,6 +736,18 @@ if (uni.restoreGlobal) {
           this.moveBall(1, direction);
         }
       },
+      onModeChange(event) {
+        const index2 = event.detail.value;
+        this.selectedMode = index2;
+        this.updateParametersForMode(index2);
+        this.showBallNumbers = [1, 2, 3, 7].includes(this.selectedMode);
+        this.toggleDirectionButtons(this.selectedMode);
+        this.toggleAngleControl(this.selectedMode);
+        this.toggleHeightSelector(this.selectedMode);
+        this.showInputWithClear = this.selectedMode === 7;
+        this.updateBallPositions(index2);
+        this.resetToInitialValues();
+      },
       moveBall(ballNumber, direction) {
         const maxRows = 6;
         const maxCols = 4;
@@ -824,6 +786,44 @@ if (uni.restoreGlobal) {
         selectedModeConfig.positions = newPositions;
         this.updateBallPositions(this.selectedMode);
       },
+      updateBallPositions(mode) {
+        let modeConfig = this.modeConfig;
+        formatAppLog("log", "at pages/index/index.vue:905", modeConfig[mode]);
+        const config = modeConfig[mode] || {
+          ballCount: 1,
+          positions: [
+            [2, 2]
+          ]
+        };
+        const {
+          ballCount,
+          positions
+        } = config;
+        this.balls = positions.map(([row, col]) => {
+          const position = this.calculatePosition(row, col);
+          return {
+            width: "20px",
+            height: "20px",
+            top: `${position.top}px`,
+            left: `${position.left}px`,
+            color: mode === 7 ? "gray" : "red"
+            // 模式7下为灰色，其他模式为红色
+          };
+        });
+        if (mode === 7) {
+          while (this.balls.length < 35) {
+            this.balls.push({
+              width: "20px",
+              height: "20px",
+              top: "0px",
+              left: "0px",
+              color: mode === 7 ? "gray" : "red"
+              // 模式7下为灰色，其他模式为红色
+            });
+          }
+        }
+        this.ballColors = new Array(this.balls.length).fill("gray");
+      },
       startTraining() {
         if (!this.trainingActive) {
           this.trainingActive = true;
@@ -845,14 +845,125 @@ if (uni.restoreGlobal) {
         this.sendTrainingParams();
       },
       resetToInitialValues() {
+        const modeconfig = {
+          0: {
+            ballCount: 1,
+            positions: [
+              [2, 2]
+            ]
+          },
+          // 定点练习
+          1: {
+            ballCount: 2,
+            positions: [
+              [2, 2],
+              [3, 4]
+            ]
+          },
+          // 交叉循环
+          2: {
+            ballCount: 2,
+            positions: [
+              [2, 0],
+              [2, 4]
+            ]
+          },
+          // 水平循环
+          3: {
+            ballCount: 2,
+            positions: [
+              [0, 2],
+              [3, 2]
+            ]
+          },
+          // 垂直循环
+          4: {
+            ballCount: 1,
+            positions: [
+              [2, 2]
+            ]
+          },
+          // 截击练习
+          5: {
+            ballCount: 1,
+            positions: [
+              [2, 2]
+            ]
+          },
+          // 高压练习
+          6: {
+            ballCount: 1,
+            positions: [
+              [2, 2]
+            ]
+          },
+          // 全场随机
+          7: {
+            ballCount: 35,
+            positions: [
+              // 编程练习
+              [0, 0],
+              [0, 1],
+              [0, 2],
+              [0, 3],
+              [0, 4],
+              [1, 0],
+              [1, 1],
+              [1, 2],
+              [1, 3],
+              [1, 4],
+              [2, 0],
+              [2, 1],
+              [2, 2],
+              [2, 3],
+              [2, 4],
+              [3, 0],
+              [3, 1],
+              [3, 2],
+              [3, 3],
+              [3, 4],
+              [4, 0],
+              [4, 1],
+              [4, 2],
+              [4, 3],
+              [4, 4],
+              [5, 0],
+              [5, 1],
+              [5, 2],
+              [5, 3],
+              [5, 4],
+              [6, 0],
+              [6, 1],
+              [6, 2],
+              [6, 3],
+              [6, 4]
+            ]
+          },
+          // 编程练习
+          8: {
+            ballCount: 1,
+            positions: [
+              [2, 2]
+            ]
+          },
+          // 入门练习
+          9: {
+            ballCount: 1,
+            positions: [
+              [2, 2]
+            ]
+          }
+          // 月亮球
+        };
         this.modeParams[this.selectedMode] || {};
+        this.modeConfig = modeconfig;
         this.frequency = this.initialParams.frequency;
         this.speed = this.initialParams.speed;
         this.rotate = this.initialParams.rotate;
         this.angle = this.initialParams.angle;
         this.heights = this.initialParams.heights;
         this.selectedBall = 1;
-        formatAppLog("log", "at pages/index/index.vue:983", "训练结束", this.selectedMode);
+        formatAppLog("log", "at pages/index/index.vue:1084", "训练结束", this.selectedMode);
         this.restoreDefaultBallPositions();
       },
       handleFrequencyChange(event) {
@@ -899,10 +1010,10 @@ if (uni.restoreGlobal) {
           speeds,
           rotations
         };
-        formatAppLog("log", "at pages/index/index.vue:1042", "训练信息:", JSON.stringify(trainingInfo, null, 2));
+        formatAppLog("log", "at pages/index/index.vue:1143", "训练信息:", JSON.stringify(trainingInfo, null, 2));
       },
       sendTrainingParams() {
-        formatAppLog("log", "at pages/index/index.vue:1046", "训练结束");
+        formatAppLog("log", "at pages/index/index.vue:1147", "训练结束");
       }
     },
     mounted() {
