@@ -38,6 +38,8 @@ if (uni.restoreGlobal) {
       console[type].apply(console, [...args, filename]);
     }
   }
+  const _imports_0 = "/static/image/battery.png";
+  const _imports_1 = "/static/image/tennis-court.jpg";
   const _export_sfc = (sfc, props) => {
     const target = sfc.__vccOpts || sfc;
     for (const [key, val] of props) {
@@ -45,477 +47,6 @@ if (uni.restoreGlobal) {
     }
     return target;
   };
-  const _sfc_main$2 = {
-    data() {
-      return {
-        devices: [],
-        deviceId: "",
-        connectedDeviceId: null,
-        currentDevice: null,
-        batteryLevel: null,
-        batteryInterval: null,
-        isTraining: false,
-        commandHistory: [],
-        receivedMessages: [],
-        trainingMode: "moonball",
-        speed: 10,
-        frequency: 5,
-        angle: 0,
-        serviceId: "55535343-FE7D-4AE5-8FA9-9FAFD205E455",
-        // characteristicId: '0000FFF2-0000-1000-8000-00805F9B34FB',
-        TX_UUID: "49535343884143f4a8d4ecbe34729bb3",
-        // 接收指令UUID
-        RX_UUID: "495353431e4d4bd9ba6123c647249616"
-        // 发送指令UUID
-      };
-    },
-    methods: {
-      openBluetoothAdapter() {
-        uni.openBluetoothAdapter({
-          success: (res) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:93", "蓝牙模块初始化成功", res);
-            this.checkBluetoothState();
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:97", "蓝牙模块初始化失败", err);
-            uni.showToast({
-              title: "请打开蓝牙",
-              icon: "none"
-            });
-          }
-        });
-      },
-      startBluetoothDevicesDiscovery() {
-        if (this.connectedDeviceId)
-          return;
-        this.devices = [];
-        uni.startBluetoothDevicesDiscovery({
-          success: (res) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:110", "开始搜索附近的蓝牙设备", res);
-            this.onBluetoothDeviceFound();
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:114", "搜索蓝牙设备失败", err);
-          }
-        });
-      },
-      checkBluetoothState() {
-        uni.getBluetoothAdapterState({
-          success: (res) => {
-            if (res.available) {
-              formatAppLog("log", "at pages/bluetooth/bluetooth.vue:122", "蓝牙模块可用");
-            } else {
-              formatAppLog("log", "at pages/bluetooth/bluetooth.vue:124", "蓝牙模块不可用");
-            }
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:128", "获取蓝牙状态失败", err);
-          }
-        });
-      },
-      onBluetoothDeviceFound() {
-        uni.onBluetoothDeviceFound((res) => {
-          res.devices.forEach((device) => {
-            this.devices.push(device);
-          });
-          formatAppLog("log", "at pages/bluetooth/bluetooth.vue:139", "发现的新设备", this.devices);
-        });
-      },
-      connectToDevice(deviceId) {
-        uni.createBLEConnection({
-          deviceId,
-          success: (res) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:147", "连接成功", res);
-            this.connectedDeviceId = deviceId;
-            this.currentDevice = this.devices.find((d2) => d2.deviceId === deviceId);
-            this.devices = [];
-            this.deviceId = deviceId;
-            this.stopBluetoothDevicesDiscovery();
-            let This = this;
-            setTimeout(() => {
-              uni.getBLEDeviceServices({
-                deviceId,
-                success(res2) {
-                  formatAppLog("log", "at pages/bluetooth/bluetooth.vue:160", "device services:", res2.services);
-                  This.receiveBLEData();
-                }
-              });
-            }, 1e3);
-            uni.navigateTo({
-              url: `/pages/index/index?bluetoothName=${res.deviceName}`
-            });
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:170", "连接失败", err);
-          }
-        });
-        this.batteryLevel = 100;
-        this.batteryInterval = setInterval(() => {
-          this.writeBLECharacteristicValue("getBattery\n", this.RX_UUID);
-        }, 6e4);
-      },
-      toggleTraining() {
-        if (this.isTraining) {
-          this.sendEndTrainingCommand();
-        } else {
-          this.sendStartTrainingCommand();
-        }
-        this.isTraining = !this.isTraining;
-      },
-      sendStartTrainingCommand() {
-        const command = `AT+START=${this.trainingMode},${this.speed},${this.frequency},${this.angle}
-`;
-        this.writeBLECharacteristicValue(command, this.RX_UUID);
-        this.addCommandToHistory(command);
-      },
-      handleSliderChange(param, event) {
-        this[param] = event.detail.value;
-        if (this.isTraining) {
-          this.sendUpdateCommand();
-        }
-      },
-      sendUpdateCommand() {
-        const command = `AT+UPDATE=${this.trainingMode},${this.speed},${this.frequency},${this.angle}
-`;
-        this.writeBLECharacteristicValue(command);
-        this.addCommandToHistory(command);
-      },
-      sendEndTrainingCommand() {
-        const command = "AT+END\n";
-        this.writeBLECharacteristicValue(command, this.RX_UUID);
-        this.addCommandToHistory(command);
-        this.commandHistory = [];
-        this.receivedMessages = [];
-      },
-      receiveBLEData() {
-        uni.notifyBLECharacteristicValueChange({
-          state: true,
-          deviceId: this.deviceId,
-          serviceId: this.serviceId,
-          characteristicId: "49535343-8841-43F4-A8D4-ECBE34729BB3",
-          state: true,
-          success: () => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:218", "成功启用接收通知");
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:221", "启用接收通知失败", err, this.serviceId);
-          }
-        });
-        uni.onBLECharacteristicValueChange((res) => {
-          const receivedData = this.arrayBufferToString(res.value);
-          formatAppLog("log", "at pages/bluetooth/bluetooth.vue:228", "收到的数据:", receivedData);
-          if (receivedData.startsWith("battery:")) {
-            this.batteryLevel = receivedData.split(":")[1];
-          }
-          this.receivedMessages.push({
-            text: `收: ${receivedData}`,
-            color: "#008000"
-            // 可以根据需要自定义颜色
-          });
-          this.updateCommandHistoryDisplay();
-          this.processReceivedCommand(receivedData);
-        });
-      },
-      processReceivedCommand(command) {
-        if (command.startsWith("training:start")) {
-          formatAppLog("log", "at pages/bluetooth/bluetooth.vue:244", "this.isTraining++++++", this.isTraining);
-          if (this.isTraining)
-            return;
-          this.sendStartTrainingCommand();
-          this.isTraining = true;
-        } else if (command.startsWith("training:end")) {
-          if (this.isTraining) {
-            this.sendEndTrainingCommand();
-            this.isTraining = false;
-          }
-        }
-      },
-      writeBLECharacteristicValue(command, characteristicId) {
-        if (!this.connectedDeviceId)
-          return;
-        let buffer = new ArrayBuffer(command.length);
-        let dataview = new DataView(buffer);
-        for (let i2 = 0; i2 < command.length; i2++) {
-          dataview.setUint8(i2, command.charAt(i2).charCodeAt());
-        }
-        uni.writeBLECharacteristicValue({
-          deviceId: this.deviceId,
-          serviceId: "55535343-FE7D-4AE5-8FA9-9FAFD205E455",
-          characteristicId: "49535343-1E4D-4BD9-BA61-23C647249616",
-          value: buffer,
-          success(res) {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:272", "发送数据成功", res);
-          },
-          fail(err) {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:276", "发送数据失败", err);
-          }
-        });
-      },
-      disconnectDevice() {
-        if (!this.connectedDeviceId) {
-          uni.showToast({
-            title: "未连接设备",
-            icon: "none"
-          });
-          return;
-        }
-        if (this.batteryInterval) {
-          clearInterval(this.batteryInterval);
-          this.batteryInterval = null;
-        }
-        uni.closeBLEConnection({
-          deviceId: this.connectedDeviceId,
-          success: (res) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:295", "断开连接成功", res);
-            this.connectedDeviceId = null;
-            this.currentDevice = null;
-            this.batteryLevel = null;
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:301", "断开连接失败", err);
-          }
-        });
-      },
-      stopBluetoothDevicesDiscovery() {
-        uni.stopBluetoothDevicesDiscovery({
-          success: (res) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:308", "停止搜索蓝牙设备成功", res);
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:311", "停止搜索蓝牙设备失败", err);
-          }
-        });
-      },
-      stringToArrayBuffer(str) {
-        const base64 = btoa(unescape(encodeURIComponent(str)));
-        const len = base64.length;
-        const bytes = new Uint8Array(len);
-        for (let i2 = 0; i2 < len; i2++) {
-          bytes[i2] = base64.charCodeAt(i2);
-        }
-        return bytes.buffer;
-      },
-      arrayBufferToString(buffer) {
-        const bytes = new Uint8Array(buffer);
-        const binary = bytes.reduce((str, byte) => str + String.fromCharCode(byte), "");
-        return decodeURIComponent(escape(binary));
-      },
-      updateCommandHistoryDisplay() {
-        const commandHistoryEl = this.$refs.commandHistory;
-        if (commandHistoryEl) {
-          commandHistoryEl.scrollTop = commandHistoryEl.scrollHeight;
-        }
-      },
-      addCommandToHistory(command) {
-        this.commandHistory.push(`发送: ${command}`);
-        this.updateCommandHistoryDisplay();
-      }
-    }
-  };
-  function _sfc_render$2(_ctx, _cache, $props, $setup, $data, $options) {
-    return vue.openBlock(), vue.createElementBlock(
-      vue.Fragment,
-      null,
-      [
-        $data.batteryLevel !== null ? (vue.openBlock(), vue.createElementBlock("view", { key: 0 }, [
-          vue.createElementVNode(
-            "text",
-            null,
-            "当前电量: " + vue.toDisplayString($data.batteryLevel) + "%",
-            1
-            /* TEXT */
-          )
-        ])) : vue.createCommentVNode("v-if", true),
-        vue.createElementVNode("view", null, [
-          vue.createElementVNode("button", {
-            onClick: _cache[0] || (_cache[0] = (...args) => $options.openBluetoothAdapter && $options.openBluetoothAdapter(...args))
-          }, "打开蓝牙"),
-          !$data.connectedDeviceId ? (vue.openBlock(), vue.createElementBlock("button", {
-            key: 0,
-            onClick: _cache[1] || (_cache[1] = (...args) => $options.startBluetoothDevicesDiscovery && $options.startBluetoothDevicesDiscovery(...args))
-          }, "搜索蓝牙设备")) : vue.createCommentVNode("v-if", true),
-          !$data.connectedDeviceId ? (vue.openBlock(), vue.createElementBlock("button", {
-            key: 1,
-            onClick: _cache[2] || (_cache[2] = (...args) => $options.stopBluetoothDevicesDiscovery && $options.stopBluetoothDevicesDiscovery(...args))
-          }, "停止搜索蓝牙设备")) : vue.createCommentVNode("v-if", true),
-          $data.connectedDeviceId ? (vue.openBlock(), vue.createElementBlock("view", { key: 2 }, [
-            vue.createElementVNode("text", null, "当前连接的设备："),
-            $data.currentDevice ? (vue.openBlock(), vue.createElementBlock("view", { key: 0 }, [
-              vue.createElementVNode(
-                "text",
-                null,
-                vue.toDisplayString($data.currentDevice.name || "未命名设备"),
-                1
-                /* TEXT */
-              ),
-              vue.createElementVNode(
-                "text",
-                null,
-                "设备 ID: " + vue.toDisplayString($data.currentDevice.deviceId),
-                1
-                /* TEXT */
-              )
-            ])) : vue.createCommentVNode("v-if", true),
-            vue.createElementVNode("button", {
-              onClick: _cache[3] || (_cache[3] = (...args) => $options.disconnectDevice && $options.disconnectDevice(...args))
-            }, "断开连接")
-          ])) : $data.devices.length > 0 ? (vue.openBlock(), vue.createElementBlock("view", { key: 3 }, [
-            vue.createElementVNode("text", null, "发现的蓝牙设备："),
-            (vue.openBlock(true), vue.createElementBlock(
-              vue.Fragment,
-              null,
-              vue.renderList($data.devices, (device) => {
-                return vue.openBlock(), vue.createElementBlock("view", {
-                  key: device.deviceId,
-                  style: { "margin": "10px 0" }
-                }, [
-                  vue.createElementVNode(
-                    "text",
-                    null,
-                    vue.toDisplayString(device.name || "未命名设备"),
-                    1
-                    /* TEXT */
-                  ),
-                  vue.createElementVNode("button", {
-                    onClick: ($event) => $options.connectToDevice(device.deviceId)
-                  }, "连接设备", 8, ["onClick"])
-                ]);
-              }),
-              128
-              /* KEYED_FRAGMENT */
-            ))
-          ])) : vue.createCommentVNode("v-if", true),
-          vue.createElementVNode("view", null, [
-            vue.createElementVNode(
-              "text",
-              null,
-              "速度数值: " + vue.toDisplayString($data.speed),
-              1
-              /* TEXT */
-            ),
-            vue.createElementVNode("slider", {
-              value: $data.speed,
-              min: "0",
-              max: "100",
-              step: "1",
-              onChange: _cache[4] || (_cache[4] = ($event) => $options.handleSliderChange("speed", $event))
-            }, null, 40, ["value"]),
-            vue.createElementVNode(
-              "text",
-              null,
-              "频率数值: " + vue.toDisplayString($data.frequency),
-              1
-              /* TEXT */
-            ),
-            vue.createElementVNode("slider", {
-              value: $data.frequency,
-              min: "0",
-              max: "100",
-              step: "1",
-              onChange: _cache[5] || (_cache[5] = ($event) => $options.handleSliderChange("frequency", $event))
-            }, null, 40, ["value"]),
-            vue.createElementVNode(
-              "text",
-              null,
-              "角度数值: " + vue.toDisplayString($data.angle),
-              1
-              /* TEXT */
-            ),
-            vue.createElementVNode("slider", {
-              value: $data.angle,
-              min: "0",
-              max: "360",
-              step: "1",
-              onChange: _cache[6] || (_cache[6] = ($event) => $options.handleSliderChange("angle", $event))
-            }, null, 40, ["value"])
-          ]),
-          $data.connectedDeviceId ? (vue.openBlock(), vue.createElementBlock(
-            "button",
-            {
-              key: 4,
-              onClick: _cache[7] || (_cache[7] = (...args) => $options.toggleTraining && $options.toggleTraining(...args))
-            },
-            vue.toDisplayString($data.isTraining ? "结束训练" : "开始训练"),
-            1
-            /* TEXT */
-          )) : vue.createCommentVNode("v-if", true),
-          vue.createElementVNode("button", {
-            onClick: _cache[8] || (_cache[8] = (...args) => _ctx.closeBluetoothAdapter && _ctx.closeBluetoothAdapter(...args))
-          }, "关闭蓝牙"),
-          $data.commandHistory.length > 0 ? (vue.openBlock(), vue.createElementBlock("view", {
-            key: 5,
-            class: "command-history"
-          }, [
-            vue.createElementVNode("text", null, "发送的指令历史："),
-            vue.createElementVNode(
-              "view",
-              { ref: "commandHistory" },
-              [
-                (vue.openBlock(true), vue.createElementBlock(
-                  vue.Fragment,
-                  null,
-                  vue.renderList($data.commandHistory, (command, index2) => {
-                    return vue.openBlock(), vue.createElementBlock(
-                      "text",
-                      {
-                        key: index2,
-                        class: "command"
-                      },
-                      vue.toDisplayString(command),
-                      1
-                      /* TEXT */
-                    );
-                  }),
-                  128
-                  /* KEYED_FRAGMENT */
-                ))
-              ],
-              512
-              /* NEED_PATCH */
-            )
-          ])) : vue.createCommentVNode("v-if", true),
-          $data.receivedMessages.length > 0 ? (vue.openBlock(), vue.createElementBlock("view", {
-            key: 6,
-            class: "received-messages"
-          }, [
-            vue.createElementVNode("text", null, "接收到的消息："),
-            vue.createElementVNode(
-              "view",
-              { ref: "receivedMessages" },
-              [
-                (vue.openBlock(true), vue.createElementBlock(
-                  vue.Fragment,
-                  null,
-                  vue.renderList($data.receivedMessages, (message, index2) => {
-                    return vue.openBlock(), vue.createElementBlock(
-                      "text",
-                      {
-                        key: index2,
-                        style: vue.normalizeStyle({ color: message.color }),
-                        class: "message"
-                      },
-                      vue.toDisplayString(message.text),
-                      5
-                      /* TEXT, STYLE */
-                    );
-                  }),
-                  128
-                  /* KEYED_FRAGMENT */
-                ))
-              ],
-              512
-              /* NEED_PATCH */
-            )
-          ])) : vue.createCommentVNode("v-if", true)
-        ])
-      ],
-      64
-      /* STABLE_FRAGMENT */
-    );
-  }
-  const PagesBluetoothBluetooth = /* @__PURE__ */ _export_sfc(_sfc_main$2, [["render", _sfc_render$2], ["__file", "E:/work/TennisBallMachineController/pages/bluetooth/bluetooth.vue"]]);
-  const _imports_0 = "/static/image/battery.png";
-  const _imports_1 = "/static/image/tennis-court.jpg";
   const _sfc_main$1 = {
     data() {
       return {
@@ -955,7 +486,7 @@ if (uni.restoreGlobal) {
           speed: 20,
           rotate: 0,
           heights: "",
-          angle: null
+          angle: 20
         },
         initialBallPosition: {
           x: 0,
@@ -1061,14 +592,14 @@ if (uni.restoreGlobal) {
             ...ball,
             color: "red"
           });
-          formatAppLog("log", "at pages/index/index.vue:646", `球 ${index2 + 1} 变为红色`);
+          formatAppLog("log", "at pages/index/index.vue:645", `球 ${index2 + 1} 变为红色`);
           this.selectedBalls.push(index2 + 1);
         } else {
           this.$set(this.balls, index2, {
             ...ball,
             color: "gray"
           });
-          formatAppLog("log", "at pages/index/index.vue:655", `球 ${index2 + 1} 变为灰色`);
+          formatAppLog("log", "at pages/index/index.vue:654", `球 ${index2 + 1} 变为灰色`);
           this.selectedBalls = this.selectedBalls.filter((ballIndex) => ballIndex !== index2 + 1);
         }
         this.inputData = this.selectedBalls.join(",");
@@ -1081,7 +612,17 @@ if (uni.restoreGlobal) {
           color: "gray"
         }));
       },
+      restoreDefaultBallPositions() {
+        const selectedModeConfig = this.modeConfig[this.selectedMode];
+        if (selectedModeConfig && selectedModeConfig.positions) {
+          selectedModeConfig.positions = selectedModeConfig.positions.map((position) => [...position]);
+          this.updateBallPositions(this.selectedMode);
+        } else {
+          formatAppLog("error", "at pages/index/index.vue:683", "未找到默认位置！");
+        }
+      },
       updateBallPositions(mode) {
+        formatAppLog("log", "at pages/index/index.vue:688", "进来了+++++", mode);
         let modeConfig = this.modeConfig;
         const config = modeConfig[mode] || {
           ballCount: 1,
@@ -1168,7 +709,6 @@ if (uni.restoreGlobal) {
         this.toggleHeightSelector(this.selectedMode);
         this.showInputWithClear = this.selectedMode === 7;
         this.updateBallPositions(index2);
-        this.resetBallPositions();
       },
       toggleDirectionButtons(selectedMode) {
         const modeSettings = this.modeSettings;
@@ -1218,13 +758,6 @@ if (uni.restoreGlobal) {
         this.heights = params.heights;
         this.angle = params.angle;
         this.resetBallPosition();
-      },
-      resetBallPositions() {
-        const selectedModeConfig = this.modeConfig[this.selectedMode];
-        if (selectedModeConfig.defaultPositions) {
-          selectedModeConfig.positions = selectedModeConfig.defaultPositions.map((position) => [...position]);
-          this.updateBallPositions(this.selectedMode);
-        }
       },
       // 处理方向键按下事件
       handleDirectionKey(direction) {
@@ -1296,75 +829,47 @@ if (uni.restoreGlobal) {
           this.buttonText = this.translations.endTraining[this.currentLanguage];
           this.buttonColor = "#ff6347";
           this.modeSelectable = false;
-          this.markUpcomingBalls();
           this.determineServingOrder();
-          this.sendTrainingParams();
           this.printTrainingInfo();
         } else {
           this.endTraining();
         }
       },
       endTraining() {
-        formatAppLog("log", "at pages/index/index.vue:964", "Ending training");
         this.trainingActive = false;
         this.buttonText = this.translations.startTraining[this.currentLanguage];
         this.buttonColor = "#87ceeb";
-        this.resetToInitialValues();
         this.modeSelectable = true;
+        this.resetToInitialValues();
         this.sendTrainingParams();
-        const modeParams = this.modeParams[this.selectedMode] || {};
-        this.frequency = modeParams.frequency || 7;
-        this.speed = modeParams.speed || 80;
-        this.rotate = modeParams.rotate || 0;
-        this.angle = modeParams.angle || 30;
-        this.heights = modeParams.heights || "";
-        this.balls.forEach((ball, index2) => {
-          ball.top = ball.initialTop || "0px";
-          ball.left = ball.initialLeft || "0px";
-          ball.color = "green";
-        });
-        this.resetSlidersToDefault();
-        formatAppLog("log", "at pages/index/index.vue:997", "训练结束，参数恢复默认值:", {
-          frequency: this.frequency,
-          speed: this.speed,
-          rotate: this.rotate,
-          angle: this.angle,
-          heights: this.heights,
-          balls: this.balls.map((ball) => ({
-            position: {
-              top: ball.top,
-              left: ball.left
-            },
-            color: ball.color
-          }))
-        });
       },
-      // 这是一个辅助函数，用于重置滑动条（sliders）的值
-      resetSlidersToDefault() {
-        this.$refs.frequencySlider.setValue(this.frequency);
-        this.$refs.speedSlider.setValue(this.speed);
-        this.$refs.rotateSlider.setValue(this.rotate);
-        this.$refs.angleSlider.setValue(this.angle);
+      resetToInitialValues() {
+        this.modeParams[this.selectedMode] || {};
+        this.frequency = this.initialParams.frequency;
+        this.speed = this.initialParams.speed;
+        this.rotate = this.initialParams.rotate;
+        this.angle = this.initialParams.angle;
+        this.heights = this.initialParams.heights;
+        this.selectedBall = 1;
+        formatAppLog("log", "at pages/index/index.vue:982", "训练结束", this.selectedMode);
+        this.restoreDefaultBallPositions();
       },
-      markUpcomingBalls() {
-        if (this.selectedMode !== 7) {
-          this.balls.forEach((ball, index2) => {
-            this.$set(this.balls, index2, {
-              ...ball,
-              color: "green"
-            });
-          });
-        } else {
-          const sequence = this.inputData.split(",").map(Number);
-          sequence.forEach((index2) => {
-            if (this.balls[index2 - 1]) {
-              this.$set(this.balls, index2 - 1, {
-                ...this.balls[index2 - 1],
-                color: "green"
-              });
-            }
-          });
-        }
+      handleFrequencyChange(event) {
+        this.frequency = event.detail.value;
+        this.sendTrainingParams();
+      },
+      handleSpeedChange(event) {
+        this.speed = event.detail.value;
+        this.sendTrainingParams();
+      },
+      handleRotateChange(event) {
+        this.rotate = event.detail.value;
+        this.sendTrainingParams();
+      },
+      resetBallPosition() {
+        this.ballPosition = {
+          ...this.initialBallPosition
+        };
       },
       determineServingOrder() {
         if (this.selectedMode === 7) {
@@ -1393,36 +898,10 @@ if (uni.restoreGlobal) {
           speeds,
           rotations
         };
-        formatAppLog("log", "at pages/index/index.vue:1081", "训练信息:", JSON.stringify(trainingInfo, null, 2));
+        formatAppLog("log", "at pages/index/index.vue:1041", "训练信息:", JSON.stringify(trainingInfo, null, 2));
       },
       sendTrainingParams() {
-        if (this.trainingActive)
-          ;
-      },
-      resetToInitialValues() {
-        this.frequency = this.initialParams.frequency;
-        this.speed = this.initialParams.speed;
-        this.rotate = this.initialParams.rotate;
-        this.ballPosition = {
-          ...this.initialBallPosition
-        };
-      },
-      handleFrequencyChange(event) {
-        this.frequency = event.detail.value;
-        this.sendTrainingParams();
-      },
-      handleSpeedChange(event) {
-        this.speed = event.detail.value;
-        this.sendTrainingParams();
-      },
-      handleRotateChange(event) {
-        this.rotate = event.detail.value;
-        this.sendTrainingParams();
-      },
-      resetBallPosition() {
-        this.ballPosition = {
-          ...this.initialBallPosition
-        };
+        formatAppLog("log", "at pages/index/index.vue:1045", "训练结束");
       }
     },
     mounted() {
@@ -1809,7 +1288,6 @@ if (uni.restoreGlobal) {
     ]);
   }
   const PagesIndexIndex = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["render", _sfc_render$1], ["__scopeId", "data-v-1cf27b2a"], ["__file", "E:/work/TennisBallMachineController/pages/index/index.vue"]]);
-  __definePage("pages/bluetooth/bluetooth", PagesBluetoothBluetooth);
   __definePage("pages/index/index", PagesIndexIndex);
   const _sfc_main = {
     mounted() {
@@ -1826,12 +1304,6 @@ if (uni.restoreGlobal) {
   }
   const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["render", _sfc_render], ["__file", "E:/work/TennisBallMachineController/App.vue"]]);
   const pages = [
-    {
-      path: "pages/bluetooth/bluetooth",
-      style: {
-        navigationBarTitleText: "蓝牙连接"
-      }
-    },
     {
       path: "pages/index/index",
       style: {
@@ -4566,7 +4038,7 @@ ${i3}
   })();
   var Vs = Js;
   var define_process_env_UNI_STATISTICS_CONFIG_default = { version: "2", enable: true };
-  var define_process_env_UNI_STAT_TITLE_JSON_default = { "pages/bluetooth/bluetooth": "蓝牙连接", "pages/index/index": "网球发球机控制器" };
+  var define_process_env_UNI_STAT_TITLE_JSON_default = { "pages/index/index": "网球发球机控制器" };
   var define_process_env_UNI_STAT_UNI_CLOUD_default = {};
   const sys = uni.getSystemInfoSync();
   const STAT_VERSION = "4.24";

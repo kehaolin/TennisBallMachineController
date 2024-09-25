@@ -525,7 +525,7 @@
 					speed: 20,
 					rotate: 0,
 					heights: '',
-					angle: null
+					angle: 20
 				},
 				initialBallPosition: {
 					x: 0,
@@ -564,7 +564,6 @@
 			}
 		},
 		methods: {
-
 			navigateToBluetooth() {
 				// 返回蓝牙页面
 				uni.navigateTo({
@@ -670,7 +669,23 @@
 				}));
 			},
 
+			restoreDefaultBallPositions() {
+				const selectedModeConfig = this.modeConfig[this.selectedMode];
+
+				// 检查是否存在默认位置
+				if (selectedModeConfig && selectedModeConfig.positions) {
+					// 重新设置球的位置为 modeConfig 中的初始位置
+					selectedModeConfig.positions = selectedModeConfig.positions.map(position => [...position]);
+
+					// 更新球的位置显示
+					this.updateBallPositions(this.selectedMode);
+				} else {
+					console.error("未找到默认位置！");
+				}
+			},
+
 			updateBallPositions(mode) {
+				console.log('进来了+++++', mode)
 				let modeConfig = this.modeConfig
 				// 获取当前模式的球数和初始位置
 				const config = modeConfig[mode] || {
@@ -695,7 +710,7 @@
 					};
 				});
 
-				// 如果是模式7，确保有20个球
+				// 如果是模式7，确保有35个球
 				if (mode === 7) {
 					while (this.balls.length < 35) {
 						this.balls.push({
@@ -774,7 +789,6 @@
 
 				// 根据模式设置网球个数及默认位置
 				this.updateBallPositions(index);
-				this.resetBallPositions();
 			},
 
 			toggleDirectionButtons(selectedMode) {
@@ -840,15 +854,6 @@
 
 				// 重置球的位置
 				this.resetBallPosition();
-			},
-
-			resetBallPositions() {
-				const selectedModeConfig = this.modeConfig[this.selectedMode];
-
-				if (selectedModeConfig.defaultPositions) {
-					selectedModeConfig.positions = selectedModeConfig.defaultPositions.map(position => [...position]);
-					this.updateBallPositions(this.selectedMode); // 更新球的位置显示
-				}
 			},
 
 			// 处理方向键按下事件
@@ -943,14 +948,9 @@
 					this.buttonText = this.translations.endTraining[this.currentLanguage];
 					this.buttonColor = '#ff6347'; // 训练中按钮颜色
 					this.modeSelectable = false; // 禁用模式选择
-					// 标记即将发的球为绿色
-					this.markUpcomingBalls();
 
 					// 确定发球顺序
 					this.determineServingOrder();
-
-					// 发送初始训练参数
-					this.sendTrainingParams();
 
 					// 打印信息
 					this.printTrainingInfo();
@@ -960,86 +960,46 @@
 			},
 
 			endTraining() {
-				// 结束训练
-				console.log('Ending training');
 				this.trainingActive = false;
 				this.buttonText = this.translations.startTraining[this.currentLanguage];
 				this.buttonColor = '#87ceeb'; // 结束训练按钮颜色
+				this.modeSelectable = true; // 启用模式选择		
 				this.resetToInitialValues(); // 恢复初始值
-				this.modeSelectable = true; // 启用模式选择
 				this.sendTrainingParams(); // 发送结束参数
+				// 重置 UI 控件的值（如需要）
+				// this.resetSlidersToDefault();
+			},
+
+			resetToInitialValues() {
 				// 恢复所有模式的默认参数
 				const modeParams = this.modeParams[this.selectedMode] || {};
-
-				// 恢复频率、速度、旋转、角度、高度等参数为默认值
-				this.frequency = modeParams.frequency || 7;
-				this.speed = modeParams.speed || 80;
-				this.rotate = modeParams.rotate || 0;
-				this.angle = modeParams.angle || 30;
-				this.heights = modeParams.heights || '';
-
-
-
-				// 恢复网球位置和颜色
-				this.balls.forEach((ball, index) => {
-					// 恢复位置（假设有默认的初始位置存储在 ball.initialTop 和 ball.initialLeft）
-					ball.top = ball.initialTop || '0px';
-					ball.left = ball.initialLeft || '0px';
-
-					// 恢复颜色（假设绿色表示默认颜色）
-					ball.color = 'green';
-				});
-
-				// 重置 UI 控件的值（如需要）
-				this.resetSlidersToDefault();
-
-				// 打印结束后的状态（可选）
-				console.log('训练结束，参数恢复默认值:', {
-					frequency: this.frequency,
-					speed: this.speed,
-					rotate: this.rotate,
-					angle: this.angle,
-					heights: this.heights,
-					balls: this.balls.map(ball => ({
-						position: {
-							top: ball.top,
-							left: ball.left
-						},
-						color: ball.color
-					}))
-				});
+				this.frequency = this.initialParams.frequency;
+				this.speed = this.initialParams.speed;
+				this.rotate = this.initialParams.rotate;
+				this.angle = this.initialParams.angle;
+				this.heights = this.initialParams.heights;
+				this.selectedBall = 1
+				console.log('训练结束', this.selectedMode)
+				this.restoreDefaultBallPositions()
 			},
 
-			// 这是一个辅助函数，用于重置滑动条（sliders）的值
-			resetSlidersToDefault() {
-				// 你可以添加逻辑将滑动条的值恢复为默认状态
-				this.$refs.frequencySlider.setValue(this.frequency);
-				this.$refs.speedSlider.setValue(this.speed);
-				this.$refs.rotateSlider.setValue(this.rotate);
-				this.$refs.angleSlider.setValue(this.angle);
+			handleFrequencyChange(event) {
+				this.frequency = event.detail.value;
+				this.sendTrainingParams(); // 发送调整后的参数
 			},
-
-			markUpcomingBalls() {
-				if (this.selectedMode !== 7) {
-					// 对于模式7之外的模式，按从左到右、从上到下的顺序将球标记为绿色
-					this.balls.forEach((ball, index) => {
-						this.$set(this.balls, index, {
-							...ball,
-							color: 'green'
-						});
-					});
-				} else {
-					// 对于模式7，根据用户选择的顺序标记球为绿色
-					const sequence = this.inputData.split(',').map(Number);
-					sequence.forEach(index => {
-						if (this.balls[index - 1]) {
-							this.$set(this.balls, index - 1, {
-								...this.balls[index - 1],
-								color: 'green'
-							});
-						}
-					});
-				}
+			handleSpeedChange(event) {
+				this.speed = event.detail.value;
+				this.sendTrainingParams(); // 发送调整后的参数
+			},
+			handleRotateChange(event) {
+				this.rotate = event.detail.value;
+				this.sendTrainingParams(); // 发送调整后的参数
+			},
+			resetBallPosition() {
+				// 重置网球的位置
+				this.ballPosition = {
+					...this.initialBallPosition
+				};
 			},
 
 			determineServingOrder() {
@@ -1082,42 +1042,8 @@
 			},
 
 			sendTrainingParams() {
-				if (this.trainingActive) {
-					// console.log(JSON.stringify({
-					// 	mode: this.modeNames[this.selectedMode],
-					// 	ballPosition: this.ballPosition,
-					// 	frequency: this.frequency,
-					// 	speed: this.speed,
-					// 	rotate: this.rotate
-					// }));
-				}
+				console.log('训练结束')
 			},
-			resetToInitialValues() {
-				this.frequency = this.initialParams.frequency;
-				this.speed = this.initialParams.speed;
-				this.rotate = this.initialParams.rotate;
-				this.ballPosition = {
-					...this.initialBallPosition
-				};
-			},
-			handleFrequencyChange(event) {
-				this.frequency = event.detail.value;
-				this.sendTrainingParams(); // 发送调整后的参数
-			},
-			handleSpeedChange(event) {
-				this.speed = event.detail.value;
-				this.sendTrainingParams(); // 发送调整后的参数
-			},
-			handleRotateChange(event) {
-				this.rotate = event.detail.value;
-				this.sendTrainingParams(); // 发送调整后的参数
-			},
-			resetBallPosition() {
-				// 重置网球的位置
-				this.ballPosition = {
-					...this.initialBallPosition
-				};
-			}
 		},
 		mounted() {
 			this.updateParametersForMode(this.selectedMode);
