@@ -771,11 +771,24 @@
 			// 调整角度
 			adjustAngle(change) {
 				this.angle = Math.min(Math.max(this.angle + change, this.minAngle), this.maxAngle);
+				if (this.trainingActive) {
+					this.sendTrainingParams(); // 发送调整后的参数
+				}
 			},
 
 			// 选择发球高度
 			selectHeight(height) {
+				if (height == '低') {
+					this.angle = 20
+				} else if (height == '中') {
+					this.angle = 35
+				} else {
+					this.angle = 50
+				}
 				this.selectedHeight = height;
+				if (this.trainingActive) {
+					this.sendTrainingParams(); // 发送调整后的参数
+				}
 			},
 			updateParametersForMode(modeIndex) {
 				// 定义每个模式的默认参数
@@ -898,11 +911,13 @@
 
 				// 更新球在界面上的显示位置
 				this.updateBallPositions(this.selectedMode);
+				if (this.trainingActive) {
+					this.sendTrainingParams(); // 发送调整后的参数
+				}
 			},
 
 			updateBallPositions(mode) {
 				let modeConfig = this.modeConfig
-				console.log(modeConfig[mode])
 				// 获取当前模式的球数和初始位置
 				const config = modeConfig[mode] || {
 					ballCount: 1,
@@ -918,6 +933,7 @@
 				this.balls = positions.map(([row, col]) => {
 					const position = this.calculatePosition(row, col);
 					return {
+						ballIndex: [row, col], // 默认的球位置 [row, col]
 						width: '20px',
 						height: '20px',
 						top: `${position.top}px`,
@@ -930,6 +946,7 @@
 				if (mode === 7) {
 					while (this.balls.length < 35) {
 						this.balls.push({
+							ballIndex: [0, 0], // 默认网格位置 [0, 0]
 							width: '20px',
 							height: '20px',
 							top: '0px',
@@ -954,21 +971,10 @@
 					this.determineServingOrder();
 
 					// 打印信息
-					this.printTrainingInfo();
+					this.sendTrainingParams();
 				} else {
 					this.endTraining()
 				}
-			},
-
-			endTraining() {
-				this.trainingActive = false;
-				this.buttonText = this.translations.startTraining[this.currentLanguage];
-				this.buttonColor = '#87ceeb'; // 结束训练按钮颜色
-				this.modeSelectable = true; // 启用模式选择		
-				this.resetToInitialValues(); // 恢复初始值
-				this.sendTrainingParams(); // 发送结束参数
-				// 重置 UI 控件的值（如需要）
-				// this.resetSlidersToDefault();
 			},
 
 			resetToInitialValues() {
@@ -1081,8 +1087,18 @@
 				this.angle = this.initialParams.angle;
 				this.heights = this.initialParams.heights;
 				this.selectedBall = 1
-				console.log('训练结束', this.selectedMode)
 				this.restoreDefaultBallPositions()
+			},
+
+			endTraining() {
+				this.trainingActive = false;
+				this.buttonText = this.translations.startTraining[this.currentLanguage];
+				this.buttonColor = '#87ceeb'; // 结束训练按钮颜色
+				this.modeSelectable = true; // 启用模式选择		
+				this.resetToInitialValues(); // 恢复初始值
+				this.sendTrainingParams(); // 发送结束参数
+				// 重置 UI 控件的值（如需要）
+				// this.resetSlidersToDefault();
 			},
 
 			handleFrequencyChange(event) {
@@ -1114,14 +1130,26 @@
 				}
 			},
 
-			printTrainingInfo() {
-				const mode = this.selectedMode; // 当前模式
-				const positions = this.balls.map(ball => ({
-					top: ball.top || '0px',
-					left: ball.left || '0px'
-				})); // 每个球的位置
+			sendTrainingParams() {
+				let command = ''; // 最终生成的指令
 
-				// 直接使用实例变量中的当前参数
+				if (!this.trainingActive) {
+					command = 'RCS_Stop=1\n';
+					console.log('Generated command:', command);
+					return;
+				}
+
+				const mode = this.selectedMode; // 当前模式
+
+				// 记录模式7下被选中的球的位置信息
+				let selectedPositions = [];
+				if (mode === 7) {
+					selectedPositions = this.selectedBalls.map(index => {
+						const ball = this.balls[index - 1]; // index 是从 1 开始，所以需要 -1
+						return ball.ballIndex; // 获取 [row, col] 位置
+					});
+				}
+
 				const angles = this.balls.map(() => this.angle || '-'); // 角度信息
 				const heights = this.balls.map(() => this.heights || '-'); // 高度信息
 				const frequencies = this.balls.map(() => this.frequency || '-'); // 频率信息
@@ -1131,7 +1159,10 @@
 				// 组织成一个对象
 				const trainingInfo = {
 					mode: mode,
-					positions: positions,
+					positions: mode === 7 ? selectedPositions : this.balls.map(ball => ({
+						top: ball.top || '0px',
+						left: ball.left || '0px'
+					})), // 模式7记录被选中的球位置，其他模式记录所有球
 					angles: angles,
 					heights: heights,
 					frequencies: frequencies,
@@ -1139,12 +1170,54 @@
 					rotations: rotations
 				};
 
-				// 输出为 JSON 格式
-				console.log('训练信息:', JSON.stringify(trainingInfo, null, 2));
-			},
+				// 根据模式生成相应的指令
+				switch (trainingInfo.mode) {
+					case 0:
+					case 4:
+					case 5:
+					case 8:
+					case 9:
+						// RCS_Single=20,30,5000,7000,3\n
+						command =
+							`RCS_Single=20,30,${trainingInfo.speeds[0] || 5000},${trainingInfo.frequencies[0] || 7000},${trainingInfo.rotations[0] || 3}\n`;
+						break;
 
-			sendTrainingParams() {
-				console.log('训练结束')
+					case 1:
+					case 2:
+						// RCS_Double=V,0,90,30,5000,7000,3\n
+						command =
+							`RCS_Double=V,0,90,30,${trainingInfo.speeds[0] || 5000},${trainingInfo.frequencies[0] || 7000},${trainingInfo.rotations[0] || 3}\n`;
+						break;
+
+					case 3:
+						// RCS_Double=H,0,90,30,5000,7000,3\n
+						command =
+							`RCS_Double=H,0,90,30,${trainingInfo.speeds[0] || 5000},${trainingInfo.frequencies[0] || 7000},${trainingInfo.rotations[0] || 3}\n`;
+						break;
+
+					case 6:
+						// RCS_Random=0,90,0,30,2000,5000,1,10,-500\n
+						command =
+							`RCS_Random=0,90,0,30,${trainingInfo.speeds[0] || 2000},${trainingInfo.frequencies[0] || 5000},1,10,-500\n`;
+						break;
+
+					case 7:
+						// RCS_Multi=20,30,5000,7000,3;20,30,5000,7000,3;...\n
+						command = trainingInfo.positions.map(pos =>
+							`20,30,${trainingInfo.speeds[0] || 5000},${trainingInfo.frequencies[0] || 7000},${trainingInfo.rotations[0] || 3}`
+						).join(';') + ';\n';
+						break;
+
+					default:
+						console.error("Unsupported mode");
+						return;
+				}
+
+				// 输出生成的指令
+				console.log('Generated command:', command);
+
+				// 这里可以将指令发送到发球机，例如通过 WebSocket 或其他通信方式
+				// this.sendCommandToMachine(command);
 			},
 		},
 		mounted() {
