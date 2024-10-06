@@ -1129,8 +1129,7 @@
 					this.servingOrder = this.balls.map((_, index) => index + 1);
 				}
 			},
-
-			sendTrainingParams() {
+			async sendTrainingParams() {
 				let command = ''; // 最终生成的指令
 
 				if (!this.trainingActive) {
@@ -1140,15 +1139,28 @@
 				}
 
 				const mode = this.selectedMode; // 当前模式
-
-				// 记录模式7下被选中的球的位置信息
 				let selectedPositions = [];
-				if (mode === 7) {
-					selectedPositions = this.selectedBalls.map(index => {
-						const ball = this.balls[index - 1]; // index 是从 1 开始，所以需要 -1
-						return ball.ballIndex; // 获取 [row, col] 位置
-					});
-				}
+
+				// 获取当前模式下所有球的下标
+				const ballIndices = this.balls.map((ball, index) => ({
+					ballIndex: ball.ballIndex,
+					arrayIndex: index + 1 // 下标从1开始
+				}));
+
+				// 获取点位表数据
+				const tableData = await this.getTable(this.angle, this.speed);
+				console.log('tableData', tableData, 'this.selectedBalls', this.selectedBalls);
+
+				// 根据 ballIndices 获取对应的 positions 内容
+				const positions = ballIndices.map(({
+					ballIndex
+				}) => {
+					const [row, col] = ballIndex; // 获取 [row, col] 位置
+					const positionInfo = tableData.positions[row - 1][col - 1]; // 根据 row 和 col 获取对应的位置信息
+					return positionInfo; // 返回位置信息
+				});
+
+				console.log('Retrieved positions based on ball indices:', positions); // 打印获取到的位置信息
 
 				const angles = this.balls.map(() => this.angle || '-'); // 角度信息
 				const heights = this.balls.map(() => this.heights || '-'); // 高度信息
@@ -1156,13 +1168,17 @@
 				const speeds = this.balls.map(() => this.speed || '-'); // 速度信息
 				const rotations = this.balls.map(() => this.rotate || '-'); // 旋转信息
 
+				if (mode === 7) {
+					selectedPositions = this.selectedBalls.map(index => {
+						const ball = this.balls[index - 1]; // index 是从 1 开始，所以需要 -1
+						return ball.ballIndex; // 获取 [row, col] 位置
+					});
+				}
+
 				// 组织成一个对象
 				const trainingInfo = {
 					mode: mode,
-					positions: mode === 7 ? selectedPositions : this.balls.map(ball => ({
-						top: ball.top || '0px',
-						left: ball.left || '0px'
-					})), // 模式7记录被选中的球位置，其他模式记录所有球
+					positions: mode === 7 ? selectedPositions : [],
 					angles: angles,
 					heights: heights,
 					frequencies: frequencies,
@@ -1177,37 +1193,27 @@
 					case 5:
 					case 8:
 					case 9:
-						// RCS_Single=20,30,5000,7000,3\n
 						command =
 							`RCS_Single=20,30,${trainingInfo.speeds[0] || 5000},${trainingInfo.frequencies[0] || 7000},${trainingInfo.rotations[0] || 3}\n`;
 						break;
-
 					case 1:
 					case 2:
-						// RCS_Double=V,0,90,30,5000,7000,3\n
 						command =
 							`RCS_Double=V,0,90,30,${trainingInfo.speeds[0] || 5000},${trainingInfo.frequencies[0] || 7000},${trainingInfo.rotations[0] || 3}\n`;
 						break;
-
 					case 3:
-						// RCS_Double=H,0,90,30,5000,7000,3\n
 						command =
 							`RCS_Double=H,0,90,30,${trainingInfo.speeds[0] || 5000},${trainingInfo.frequencies[0] || 7000},${trainingInfo.rotations[0] || 3}\n`;
 						break;
-
 					case 6:
-						// RCS_Random=0,90,0,30,2000,5000,1,10,-500\n
 						command =
 							`RCS_Random=0,90,0,30,${trainingInfo.speeds[0] || 2000},${trainingInfo.frequencies[0] || 5000},1,10,-500\n`;
 						break;
-
 					case 7:
-						// RCS_Multi=20,30,5000,7000,3;20,30,5000,7000,3;...\n
 						command = trainingInfo.positions.map(pos =>
 							`20,30,${trainingInfo.speeds[0] || 5000},${trainingInfo.frequencies[0] || 7000},${trainingInfo.rotations[0] || 3}`
 						).join(';') + ';\n';
 						break;
-
 					default:
 						console.error("Unsupported mode");
 						return;
@@ -1215,11 +1221,33 @@
 
 				// 输出生成的指令
 				console.log('Generated command:', command);
-
-				// 这里可以将指令发送到发球机，例如通过 WebSocket 或其他通信方式
-				// this.sendCommandToMachine(command);
 			},
+
+			async getTable(angle, speed) {
+				try {
+					const response = await uni.request({
+						url: '/static/position_tables.json',
+						method: 'GET'
+					});
+
+					const data = response.data;
+
+					// 根据角度和速度查询
+					const result = data.find(item => item.angle === angle && item.speed === speed);
+					if (result) {
+						return result; // 返回匹配的内容
+					} else {
+						console.error(
+							'No matching table or positions found for given angle and speed');
+						return null;
+					}
+				} catch (error) {
+					console.error('Error fetching position tables:', error);
+					return null;
+				}
+			}
 		},
+
 		mounted() {
 			this.updateParametersForMode(this.selectedMode);
 			this.getCourtSize();
