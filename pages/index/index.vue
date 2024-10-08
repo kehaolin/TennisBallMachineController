@@ -38,7 +38,7 @@
 			<img class="tennis-court" src="/static/image/tennis-court.jpg" alt="Tennis Court" />
 			<!-- 网球容器 -->
 			<view class="ball" v-for="(ball, index) in balls" :key="index" :style="getBallPosition(index)"
-				@click="handleBallInteraction(index)">
+				@click="trainingActive ? null : handleBallInteraction(index)">
 				<span v-if="showBallNumbers">
 					{{ index + 1 }}</span>
 			</view>
@@ -50,7 +50,7 @@
 			<view v-if="showInputWithClear" class="input-container">
 				<text class="input-label">请选择发球顺序：</text>
 				<input type="text" :value="inputData" readonly class="input-field" />
-				<button class="clear-button" @click="clearInputData">x</button>
+				<button class="clear-button" @click="clearInputData" :disabled="trainingActive">x</button>
 			</view>
 
 			<!-- 发球高度选择 -->
@@ -1142,27 +1142,78 @@
 				const mode = this.selectedMode; // 当前模式
 				let selectedPositions = [];
 
-				// 获取当前模式下所有球的下标
-				const ballIndices = this.balls.map((ball, index) => ({
-					ballIndex: ball.ballIndex,
-					arrayIndex: index // 下标从0开始
-				}));
+				let ballIndices = [];
+				const maxRows = 5; // 表示 5 行
+				const maxCols = 7; // 表示 7 列
+
+				if (mode === 7) {
+					ballIndices = this.selectedBalls.map(index => {
+						// 将 selectedBalls 中的索引调整为 0 到 34 的范围
+						const validIndex = index - 1; // 假设 selectedBalls 是从 1 开始的序号
+
+						const ball = this.balls[validIndex];
+
+						// 检查球是否存在并且 ballIndex 也是有效的
+						if (validIndex >= 0 && validIndex < this.balls.length && ball && Array.isArray(ball
+								.ballIndex) && ball.ballIndex.length >= 2) {
+							const ballIndex = ball.ballIndex;
+							const row = Math.min(ballIndex[0], maxRows - 1);
+							const col = Math.min(ballIndex[1], maxCols - 1);
+
+							return {
+								ballIndex: [row, col],
+								arrayIndex: validIndex
+							};
+						} else {
+							console.warn(`无效的球或索引: ${validIndex}`, ball);
+							return null; // 处理无效情况
+						}
+					}).filter(item => item !== null);
+				} else {
+					ballIndices = this.balls.map((ball, index) => {
+						// 确保每个球都有有效的 ballIndex
+						if (ball && Array.isArray(ball.ballIndex) && ball.ballIndex.length >= 2) {
+							const ballIndex = ball.ballIndex;
+							const row = Math.min(ballIndex[0], maxRows - 1);
+							const col = Math.min(ballIndex[1], maxCols - 1);
+
+							return {
+								ballIndex: [row, col],
+								arrayIndex: index
+							};
+						} else {
+							console.warn(`无效的球或索引: ${index}`, ball);
+							return null; // 处理无效情况
+						}
+					}).filter(item => item !== null);
+				}
 
 				// 获取点位表数据
 				const tableData = await this.getTable(this.angle, this.speed);
 
-				console.log('tableData:', tableData)
+				console.log('ballIndices:', ballIndices);
+				console.log('tableData:', tableData);
 				// 根据 ballIndices 获取对应的 positions 内容
 				const positions = ballIndices.map(({
 					ballIndex
 				}) => {
-					const indexArray = Array.from(ballIndex); // 转换 Proxy 对象为数组
-					const [row, col] = indexArray; // 获取 [row, col] 位置
-					console.log('Row:', row, 'Col:', col);
-					const positionInfo = tableData.positions[row][col]; // 根据 row 和 col 获取对应的位置信息
-					return positionInfo; // 返回位置信息
-				});
+					const indexArray = Array.from(ballIndex);
+					if (indexArray.length !== 2) {
+						console.error('Invalid ballIndex length:', indexArray);
+						return null;
+					}
+					const [row, col] = indexArray;
 
+					// 检查行和列索引
+					if (row < 0 || row >= tableData.positions.length || col < 0 || col >= tableData.positions[
+							row].length) {
+						console.error('Invalid row or column index:', row, col);
+						return null;
+					}
+
+					const positionInfo = tableData.positions[row][col];
+					return positionInfo;
+				}).filter(pos => pos !== null);
 
 				console.log('Retrieved positions based on ball indices:', positions); // 打印获取到的位置信息
 
@@ -1174,10 +1225,23 @@
 
 				if (mode === 7) {
 					selectedPositions = this.selectedBalls.map(index => {
-						const ball = this.balls[index]; // index 是从 0 开始
-						return ball.ballIndex; // 获取 [row, col] 位置
-					});
+						// 使用 index - 1 来将序号转换为 0~34 的索引
+						const validIndex = index - 1; // 调整为 0~34 索引
+						if (validIndex >= 0 && validIndex < this.balls.length) {
+							const ball = this.balls[validIndex];
+							if (ball) {
+								return ball.ballIndex; // 获取 [row, col] 位置
+							} else {
+								console.warn(`无效的球对象在索引: ${validIndex}`);
+								return null; // 返回 null 表示无效的球
+							}
+						} else {
+							console.warn(`选中的索引超出范围: ${index}`);
+							return null; // 返回 null 表示索引无效
+						}
+					}).filter(position => position !== null);
 				}
+
 				// 组织成一个对象
 				const trainingInfo = {
 					mode: mode,
@@ -1233,7 +1297,8 @@
 							command = positions.map(pos =>
 								`${pos.horizontalAngle},${pos.verticalAngle},${pos.bottomMotor},${pos.topMotor}`
 							).join(';') + ';\n';
-							console.log('Generated command for case 7:', command);
+
+							console.log('指令的长度', command.length);
 						}
 						break;
 					default:
@@ -1241,8 +1306,11 @@
 						return;
 				}
 
-				// 输出生成的指令
-				console.log('Generated command:', command);
+				const maxCommandLength = 128;
+				for (let i = 0; i < command.length; i += maxCommandLength) {
+					const part = command.slice(i, i + maxCommandLength);
+					console.log('发送指令:', `RCS_Random=${part}`); // 添加前缀并输出
+				}
 			},
 
 			async getTable(angle, speed) {
