@@ -67,7 +67,7 @@
 			<!-- 下层按钮（方向按钮、角度调整、启动按钮） -->
 			<view class="lower-controls">
 				<button ref="startButton" class="btn-start" :style="{ backgroundColor: buttonColor }"
-					@click="startTraining">{{ buttonText }}</button>
+					@click="startTraining" :disabled="selectedMode === 7 && inputData === ''">{{ buttonText }}</button>
 				<view v-if="showDirectionButtons" class="direction-buttons">
 					<view class="up-down-buttons">
 						<button @click="handleDirectionKey('up')"
@@ -642,7 +642,6 @@
 						...ball,
 						color: 'red'
 					});
-					console.log(`球 ${index + 1} 变为红色`); // 调试输出
 					this.selectedBalls.push(index + 1); // 记录被点击的球，+1为了显示从1开始
 				}
 				// 如果球是红色，点击后变为灰色
@@ -651,7 +650,6 @@
 						...ball,
 						color: 'gray'
 					});
-					console.log(`球 ${index + 1} 变为灰色`); // 调试输出
 					this.selectedBalls = this.selectedBalls.filter(ballIndex => ballIndex !== (index + 1));
 				}
 
@@ -660,7 +658,7 @@
 			},
 
 			clearInputData() {
-				this.inputData = []
+				this.inputData = ''
 				this.selectedBalls = []
 				// 重置所有球的颜色为灰色
 				this.balls = this.balls.map(ball => ({
@@ -1097,6 +1095,9 @@
 				this.modeSelectable = true; // 启用模式选择		
 				this.resetToInitialValues(); // 恢复初始值
 				this.sendTrainingParams(); // 发送结束参数
+				if (this.selectedMode === 7) {
+					this.clearInputData()
+				}
 				// 重置 UI 控件的值（如需要）
 				// this.resetSlidersToDefault();
 			},
@@ -1129,9 +1130,9 @@
 					this.servingOrder = this.balls.map((_, index) => index + 1);
 				}
 			},
+
 			async sendTrainingParams() {
 				let command = ''; // 最终生成的指令
-
 				if (!this.trainingActive) {
 					command = 'RCS_Stop=1\n';
 					console.log('Generated command:', command);
@@ -1144,21 +1145,24 @@
 				// 获取当前模式下所有球的下标
 				const ballIndices = this.balls.map((ball, index) => ({
 					ballIndex: ball.ballIndex,
-					arrayIndex: index + 1 // 下标从1开始
+					arrayIndex: index // 下标从0开始
 				}));
 
 				// 获取点位表数据
 				const tableData = await this.getTable(this.angle, this.speed);
-				console.log('tableData', tableData, 'this.selectedBalls', this.selectedBalls);
 
+				console.log('tableData:', tableData)
 				// 根据 ballIndices 获取对应的 positions 内容
 				const positions = ballIndices.map(({
 					ballIndex
 				}) => {
-					const [row, col] = ballIndex; // 获取 [row, col] 位置
-					const positionInfo = tableData.positions[row - 1][col - 1]; // 根据 row 和 col 获取对应的位置信息
+					const indexArray = Array.from(ballIndex); // 转换 Proxy 对象为数组
+					const [row, col] = indexArray; // 获取 [row, col] 位置
+					console.log('Row:', row, 'Col:', col);
+					const positionInfo = tableData.positions[row][col]; // 根据 row 和 col 获取对应的位置信息
 					return positionInfo; // 返回位置信息
 				});
+
 
 				console.log('Retrieved positions based on ball indices:', positions); // 打印获取到的位置信息
 
@@ -1170,11 +1174,10 @@
 
 				if (mode === 7) {
 					selectedPositions = this.selectedBalls.map(index => {
-						const ball = this.balls[index - 1]; // index 是从 1 开始，所以需要 -1
+						const ball = this.balls[index]; // index 是从 0 开始
 						return ball.ballIndex; // 获取 [row, col] 位置
 					});
 				}
-
 				// 组织成一个对象
 				const trainingInfo = {
 					mode: mode,
@@ -1194,25 +1197,44 @@
 					case 8:
 					case 9:
 						command =
-							`RCS_Single=20,30,${trainingInfo.speeds[0] || 5000},${trainingInfo.frequencies[0] || 7000},${trainingInfo.rotations[0] || 3}\n`;
+							`RCS_Single=${positions[0].horizontalAngle},${positions[0].verticalAngle},${positions[0].bottomMotor},${positions[0].topMotor},${positions[0].horizontalAngle}\n`;
 						break;
 					case 1:
+						command = positions.map(pos =>
+							`${pos.horizontalAngle},${pos.verticalAngle},${pos.bottomMotor},${pos.topMotor}`
+						).join(';') + ';\n';
+						break;
 					case 2:
 						command =
-							`RCS_Double=V,0,90,30,${trainingInfo.speeds[0] || 5000},${trainingInfo.frequencies[0] || 7000},${trainingInfo.rotations[0] || 3}\n`;
+							`RCS_Double=V,${positions[0].horizontalAngle},${positions[0].verticalAngle},${positions[1].horizontalAngle},${positions[1].verticalAngle},${positions[0].bottomMotor},${positions[0].topMotor}\n`;
 						break;
 					case 3:
 						command =
-							`RCS_Double=H,0,90,30,${trainingInfo.speeds[0] || 5000},${trainingInfo.frequencies[0] || 7000},${trainingInfo.rotations[0] || 3}\n`;
+							`RCS_Double=H,${positions[0].horizontalAngle},${positions[0].verticalAngle},${positions[1].horizontalAngle},${positions[1].verticalAngle},${positions[0].bottomMotor},${positions[0].topMotor}\n`;
 						break;
 					case 6:
+						const minHorizontalAngle = 0; // 根据表格的最小值设置
+						const maxHorizontalAngle = 90; // 根据表格的最大值设置
+						const minVerticalAngle = 0; // 根据表格的最小值设置
+						const maxVerticalAngle = 30; // 根据表格的最大值设置
+						const minBottomMotorSpeed = 2000; // 根据表格的最小值设置
+						const maxBottomMotorSpeed = 5000; // 根据表格的最大值设置
+						const minTopMotorSpeed = 1000; // 根据表格的最小值设置
+						const maxTopMotorSpeed = 2000; // 根据表格的最大值设置
+						const minSpeedDifference = -1000; // 下电机速度差的最小值
+						const maxSpeedDifference = 1000; // 下电机速度差的最大值						
 						command =
-							`RCS_Random=0,90,0,30,${trainingInfo.speeds[0] || 2000},${trainingInfo.frequencies[0] || 5000},1,10,-500\n`;
+							`RCS_Random=${minHorizontalAngle},${maxHorizontalAngle},${minVerticalAngle},${maxVerticalAngle},${minBottomMotorSpeed},${maxBottomMotorSpeed},${minTopMotorSpeed},${maxTopMotorSpeed},${minSpeedDifference},${maxSpeedDifference}\n`;
 						break;
 					case 7:
-						command = trainingInfo.positions.map(pos =>
-							`20,30,${trainingInfo.speeds[0] || 5000},${trainingInfo.frequencies[0] || 7000},${trainingInfo.rotations[0] || 3}`
-						).join(';') + ';\n';
+						if (positions.length === 0) {
+							console.log('No positions available for case 7');
+						} else {
+							command = positions.map(pos =>
+								`${pos.horizontalAngle},${pos.verticalAngle},${pos.bottomMotor},${pos.topMotor}`
+							).join(';') + ';\n';
+							console.log('Generated command for case 7:', command);
+						}
 						break;
 					default:
 						console.error("Unsupported mode");
