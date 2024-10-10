@@ -38,6 +38,8 @@ if (uni.restoreGlobal) {
       console[type].apply(console, [...args, filename]);
     }
   }
+  const _imports_0 = "/static/image/battery.png";
+  const _imports_1 = "/static/image/tennis-court.jpg";
   const _export_sfc = (sfc, props) => {
     const target = sfc.__vccOpts || sfc;
     for (const [key, val] of props) {
@@ -45,482 +47,14 @@ if (uni.restoreGlobal) {
     }
     return target;
   };
-  const _sfc_main$2 = {
-    data() {
-      return {
-        devices: [],
-        deviceId: "",
-        connectedDeviceId: null,
-        currentDevice: null,
-        batteryLevel: null,
-        batteryInterval: null,
-        isTraining: false,
-        commandHistory: [],
-        receivedMessages: [],
-        trainingMode: "moonball",
-        speed: 10,
-        frequency: 5,
-        angle: 0,
-        serviceId: "55535343-FE7D-4AE5-8FA9-9FAFD205E455",
-        // characteristicId: '0000FFF2-0000-1000-8000-00805F9B34FB',
-        TX_UUID: "49535343884143f4a8d4ecbe34729bb3",
-        // 接收指令UUID
-        RX_UUID: "495353431e4d4bd9ba6123c647249616"
-        // 发送指令UUID
-      };
-    },
-    methods: {
-      openBluetoothAdapter() {
-        uni.openBluetoothAdapter({
-          success: (res) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:93", "蓝牙模块初始化成功", res);
-            this.checkBluetoothState();
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:97", "蓝牙模块初始化失败", err);
-            uni.showToast({
-              title: "请打开蓝牙",
-              icon: "none"
-            });
-          }
-        });
-      },
-      startBluetoothDevicesDiscovery() {
-        if (this.connectedDeviceId)
-          return;
-        this.devices = [];
-        uni.startBluetoothDevicesDiscovery({
-          success: (res) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:110", "开始搜索附近的蓝牙设备", res);
-            this.onBluetoothDeviceFound();
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:114", "搜索蓝牙设备失败", err);
-          }
-        });
-      },
-      checkBluetoothState() {
-        uni.getBluetoothAdapterState({
-          success: (res) => {
-            if (res.available) {
-              formatAppLog("log", "at pages/bluetooth/bluetooth.vue:122", "蓝牙模块可用");
-            } else {
-              formatAppLog("log", "at pages/bluetooth/bluetooth.vue:124", "蓝牙模块不可用");
-            }
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:128", "获取蓝牙状态失败", err);
-          }
-        });
-      },
-      onBluetoothDeviceFound() {
-        uni.onBluetoothDeviceFound((res) => {
-          res.devices.forEach((device) => {
-            this.devices.push(device);
-          });
-          formatAppLog("log", "at pages/bluetooth/bluetooth.vue:139", "发现的新设备", this.devices);
-        });
-      },
-      connectToDevice(deviceId) {
-        uni.createBLEConnection({
-          deviceId,
-          success: (res) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:147", "连接成功", res);
-            this.connectedDeviceId = deviceId;
-            this.currentDevice = this.devices.find((d2) => d2.deviceId === deviceId);
-            this.devices = [];
-            this.deviceId = deviceId;
-            this.stopBluetoothDevicesDiscovery();
-            let This = this;
-            setTimeout(() => {
-              uni.getBLEDeviceServices({
-                deviceId,
-                success(res2) {
-                  formatAppLog("log", "at pages/bluetooth/bluetooth.vue:160", "device services:", res2.services);
-                  This.receiveBLEData();
-                }
-              });
-            }, 1e3);
-            uni.navigateTo({
-              url: `/pages/index/index?bluetoothName=${res.deviceName}`
-            });
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:170", "连接失败", err);
-          }
-        });
-        this.batteryLevel = 100;
-        this.batteryInterval = setInterval(() => {
-          this.writeBLECharacteristicValue("getBattery\n", this.RX_UUID);
-        }, 6e4);
-      },
-      toggleTraining() {
-        if (this.isTraining) {
-          this.sendEndTrainingCommand();
-        } else {
-          this.sendStartTrainingCommand();
-        }
-        this.isTraining = !this.isTraining;
-      },
-      sendStartTrainingCommand() {
-        const command = `AT+START=${this.trainingMode},${this.speed},${this.frequency},${this.angle}
-`;
-        this.writeBLECharacteristicValue(command, this.RX_UUID);
-        this.addCommandToHistory(command);
-      },
-      handleSliderChange(param, event) {
-        this[param] = event.detail.value;
-        if (this.isTraining) {
-          this.sendUpdateCommand();
-        }
-      },
-      sendUpdateCommand() {
-        const command = `AT+UPDATE=${this.trainingMode},${this.speed},${this.frequency},${this.angle}
-`;
-        this.writeBLECharacteristicValue(command);
-        this.addCommandToHistory(command);
-      },
-      sendEndTrainingCommand() {
-        const command = "AT+END\n";
-        this.writeBLECharacteristicValue(command, this.RX_UUID);
-        this.addCommandToHistory(command);
-        this.commandHistory = [];
-        this.receivedMessages = [];
-      },
-      receiveBLEData() {
-        uni.notifyBLECharacteristicValueChange({
-          state: true,
-          deviceId: this.deviceId,
-          serviceId: this.serviceId,
-          characteristicId: "49535343-8841-43F4-A8D4-ECBE34729BB3",
-          state: true,
-          success: () => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:218", "成功启用接收通知");
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:221", "启用接收通知失败", err, this.serviceId);
-          }
-        });
-        uni.onBLECharacteristicValueChange((res) => {
-          const receivedData = this.arrayBufferToString(res.value);
-          formatAppLog("log", "at pages/bluetooth/bluetooth.vue:228", "收到的数据:", receivedData);
-          if (receivedData.startsWith("battery:")) {
-            this.batteryLevel = receivedData.split(":")[1];
-          }
-          this.receivedMessages.push({
-            text: `收: ${receivedData}`,
-            color: "#008000"
-            // 可以根据需要自定义颜色
-          });
-          this.updateCommandHistoryDisplay();
-          this.processReceivedCommand(receivedData);
-        });
-      },
-      processReceivedCommand(command) {
-        if (command.startsWith("training:start")) {
-          formatAppLog("log", "at pages/bluetooth/bluetooth.vue:244", "this.isTraining++++++", this.isTraining);
-          if (this.isTraining)
-            return;
-          this.sendStartTrainingCommand();
-          this.isTraining = true;
-        } else if (command.startsWith("training:end")) {
-          if (this.isTraining) {
-            this.sendEndTrainingCommand();
-            this.isTraining = false;
-          }
-        }
-      },
-      writeBLECharacteristicValue(command, characteristicId) {
-        if (!this.connectedDeviceId)
-          return;
-        let buffer = new ArrayBuffer(command.length);
-        let dataview = new DataView(buffer);
-        for (let i2 = 0; i2 < command.length; i2++) {
-          dataview.setUint8(i2, command.charAt(i2).charCodeAt());
-        }
-        uni.writeBLECharacteristicValue({
-          deviceId: this.deviceId,
-          serviceId: "55535343-FE7D-4AE5-8FA9-9FAFD205E455",
-          characteristicId: "49535343-1E4D-4BD9-BA61-23C647249616",
-          value: buffer,
-          success(res) {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:272", "发送数据成功", res);
-          },
-          fail(err) {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:276", "发送数据失败", err);
-          }
-        });
-      },
-      disconnectDevice() {
-        if (!this.connectedDeviceId) {
-          uni.showToast({
-            title: "未连接设备",
-            icon: "none"
-          });
-          return;
-        }
-        if (this.batteryInterval) {
-          clearInterval(this.batteryInterval);
-          this.batteryInterval = null;
-        }
-        uni.closeBLEConnection({
-          deviceId: this.connectedDeviceId,
-          success: (res) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:295", "断开连接成功", res);
-            this.connectedDeviceId = null;
-            this.currentDevice = null;
-            this.batteryLevel = null;
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:301", "断开连接失败", err);
-          }
-        });
-      },
-      stopBluetoothDevicesDiscovery() {
-        uni.stopBluetoothDevicesDiscovery({
-          success: (res) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:308", "停止搜索蓝牙设备成功", res);
-          },
-          fail: (err) => {
-            formatAppLog("log", "at pages/bluetooth/bluetooth.vue:311", "停止搜索蓝牙设备失败", err);
-          }
-        });
-      },
-      stringToArrayBuffer(str) {
-        const base64 = btoa(unescape(encodeURIComponent(str)));
-        const len = base64.length;
-        const bytes = new Uint8Array(len);
-        for (let i2 = 0; i2 < len; i2++) {
-          bytes[i2] = base64.charCodeAt(i2);
-        }
-        return bytes.buffer;
-      },
-      arrayBufferToString(buffer) {
-        const bytes = new Uint8Array(buffer);
-        const binary = bytes.reduce((str, byte) => str + String.fromCharCode(byte), "");
-        return decodeURIComponent(escape(binary));
-      },
-      updateCommandHistoryDisplay() {
-        const commandHistoryEl = this.$refs.commandHistory;
-        if (commandHistoryEl) {
-          commandHistoryEl.scrollTop = commandHistoryEl.scrollHeight;
-        }
-      },
-      addCommandToHistory(command) {
-        this.commandHistory.push(`发送: ${command}`);
-        this.updateCommandHistoryDisplay();
-      }
-    }
-  };
-  function _sfc_render$2(_ctx, _cache, $props, $setup, $data, $options) {
-    return vue.openBlock(), vue.createElementBlock(
-      vue.Fragment,
-      null,
-      [
-        $data.batteryLevel !== null ? (vue.openBlock(), vue.createElementBlock("view", { key: 0 }, [
-          vue.createElementVNode(
-            "text",
-            null,
-            "当前电量: " + vue.toDisplayString($data.batteryLevel) + "%",
-            1
-            /* TEXT */
-          )
-        ])) : vue.createCommentVNode("v-if", true),
-        vue.createElementVNode("view", null, [
-          vue.createElementVNode("button", {
-            onClick: _cache[0] || (_cache[0] = (...args) => $options.openBluetoothAdapter && $options.openBluetoothAdapter(...args))
-          }, "打开蓝牙"),
-          !$data.connectedDeviceId ? (vue.openBlock(), vue.createElementBlock("button", {
-            key: 0,
-            onClick: _cache[1] || (_cache[1] = (...args) => $options.startBluetoothDevicesDiscovery && $options.startBluetoothDevicesDiscovery(...args))
-          }, "搜索蓝牙设备")) : vue.createCommentVNode("v-if", true),
-          !$data.connectedDeviceId ? (vue.openBlock(), vue.createElementBlock("button", {
-            key: 1,
-            onClick: _cache[2] || (_cache[2] = (...args) => $options.stopBluetoothDevicesDiscovery && $options.stopBluetoothDevicesDiscovery(...args))
-          }, "停止搜索蓝牙设备")) : vue.createCommentVNode("v-if", true),
-          $data.connectedDeviceId ? (vue.openBlock(), vue.createElementBlock("view", { key: 2 }, [
-            vue.createElementVNode("text", null, "当前连接的设备："),
-            $data.currentDevice ? (vue.openBlock(), vue.createElementBlock("view", { key: 0 }, [
-              vue.createElementVNode(
-                "text",
-                null,
-                vue.toDisplayString($data.currentDevice.name || "未命名设备"),
-                1
-                /* TEXT */
-              ),
-              vue.createElementVNode(
-                "text",
-                null,
-                "设备 ID: " + vue.toDisplayString($data.currentDevice.deviceId),
-                1
-                /* TEXT */
-              )
-            ])) : vue.createCommentVNode("v-if", true),
-            vue.createElementVNode("button", {
-              onClick: _cache[3] || (_cache[3] = (...args) => $options.disconnectDevice && $options.disconnectDevice(...args))
-            }, "断开连接")
-          ])) : $data.devices.length > 0 ? (vue.openBlock(), vue.createElementBlock("view", { key: 3 }, [
-            vue.createElementVNode("text", null, "发现的蓝牙设备："),
-            (vue.openBlock(true), vue.createElementBlock(
-              vue.Fragment,
-              null,
-              vue.renderList($data.devices, (device) => {
-                return vue.openBlock(), vue.createElementBlock("view", {
-                  key: device.deviceId,
-                  style: { "margin": "10px 0" }
-                }, [
-                  vue.createElementVNode(
-                    "text",
-                    null,
-                    vue.toDisplayString(device.name || "未命名设备"),
-                    1
-                    /* TEXT */
-                  ),
-                  vue.createElementVNode("button", {
-                    onClick: ($event) => $options.connectToDevice(device.deviceId)
-                  }, "连接设备", 8, ["onClick"])
-                ]);
-              }),
-              128
-              /* KEYED_FRAGMENT */
-            ))
-          ])) : vue.createCommentVNode("v-if", true),
-          vue.createElementVNode("view", null, [
-            vue.createElementVNode(
-              "text",
-              null,
-              "速度数值: " + vue.toDisplayString($data.speed),
-              1
-              /* TEXT */
-            ),
-            vue.createElementVNode("slider", {
-              value: $data.speed,
-              min: "0",
-              max: "100",
-              step: "1",
-              onChange: _cache[4] || (_cache[4] = ($event) => $options.handleSliderChange("speed", $event))
-            }, null, 40, ["value"]),
-            vue.createElementVNode(
-              "text",
-              null,
-              "频率数值: " + vue.toDisplayString($data.frequency),
-              1
-              /* TEXT */
-            ),
-            vue.createElementVNode("slider", {
-              value: $data.frequency,
-              min: "0",
-              max: "100",
-              step: "1",
-              onChange: _cache[5] || (_cache[5] = ($event) => $options.handleSliderChange("frequency", $event))
-            }, null, 40, ["value"]),
-            vue.createElementVNode(
-              "text",
-              null,
-              "角度数值: " + vue.toDisplayString($data.angle),
-              1
-              /* TEXT */
-            ),
-            vue.createElementVNode("slider", {
-              value: $data.angle,
-              min: "0",
-              max: "360",
-              step: "1",
-              onChange: _cache[6] || (_cache[6] = ($event) => $options.handleSliderChange("angle", $event))
-            }, null, 40, ["value"])
-          ]),
-          $data.connectedDeviceId ? (vue.openBlock(), vue.createElementBlock(
-            "button",
-            {
-              key: 4,
-              onClick: _cache[7] || (_cache[7] = (...args) => $options.toggleTraining && $options.toggleTraining(...args))
-            },
-            vue.toDisplayString($data.isTraining ? "结束训练" : "开始训练"),
-            1
-            /* TEXT */
-          )) : vue.createCommentVNode("v-if", true),
-          vue.createElementVNode("button", {
-            onClick: _cache[8] || (_cache[8] = (...args) => _ctx.closeBluetoothAdapter && _ctx.closeBluetoothAdapter(...args))
-          }, "关闭蓝牙"),
-          $data.commandHistory.length > 0 ? (vue.openBlock(), vue.createElementBlock("view", {
-            key: 5,
-            class: "command-history"
-          }, [
-            vue.createElementVNode("text", null, "发送的指令历史："),
-            vue.createElementVNode(
-              "view",
-              { ref: "commandHistory" },
-              [
-                (vue.openBlock(true), vue.createElementBlock(
-                  vue.Fragment,
-                  null,
-                  vue.renderList($data.commandHistory, (command, index2) => {
-                    return vue.openBlock(), vue.createElementBlock(
-                      "text",
-                      {
-                        key: index2,
-                        class: "command"
-                      },
-                      vue.toDisplayString(command),
-                      1
-                      /* TEXT */
-                    );
-                  }),
-                  128
-                  /* KEYED_FRAGMENT */
-                ))
-              ],
-              512
-              /* NEED_PATCH */
-            )
-          ])) : vue.createCommentVNode("v-if", true),
-          $data.receivedMessages.length > 0 ? (vue.openBlock(), vue.createElementBlock("view", {
-            key: 6,
-            class: "received-messages"
-          }, [
-            vue.createElementVNode("text", null, "接收到的消息："),
-            vue.createElementVNode(
-              "view",
-              { ref: "receivedMessages" },
-              [
-                (vue.openBlock(true), vue.createElementBlock(
-                  vue.Fragment,
-                  null,
-                  vue.renderList($data.receivedMessages, (message, index2) => {
-                    return vue.openBlock(), vue.createElementBlock(
-                      "text",
-                      {
-                        key: index2,
-                        style: vue.normalizeStyle({ color: message.color }),
-                        class: "message"
-                      },
-                      vue.toDisplayString(message.text),
-                      5
-                      /* TEXT, STYLE */
-                    );
-                  }),
-                  128
-                  /* KEYED_FRAGMENT */
-                ))
-              ],
-              512
-              /* NEED_PATCH */
-            )
-          ])) : vue.createCommentVNode("v-if", true)
-        ])
-      ],
-      64
-      /* STABLE_FRAGMENT */
-    );
-  }
-  const PagesBluetoothBluetooth = /* @__PURE__ */ _export_sfc(_sfc_main$2, [["render", _sfc_render$2], ["__file", "E:/work/TennisBallMachineController/pages/bluetooth/bluetooth.vue"]]);
-  const _imports_0 = "/static/image/battery.png";
-  const _imports_1 = "/static/image/tennis-court.jpg";
   const _sfc_main$1 = {
     data() {
       return {
         bluetoothName: "",
         currentLanguage: "zh",
+        isFrequencyRandom: true,
+        isRotateRandom: true,
+        isHeightRandom: true,
         showDirectionButtons: true,
         // 控制方向按钮的显示与隐藏
         upDownButtonsDisabled: false,
@@ -997,6 +531,15 @@ if (uni.restoreGlobal) {
       }
     },
     methods: {
+      toggleFrequencyRandom(event) {
+        this.isFrequencyRandom = event.detail.value;
+      },
+      toggleRotateRandom(event) {
+        this.isRotateRandom = event.detail.value;
+      },
+      toggleHeightRandom(event) {
+        this.isHeightRandom = event.detail.value;
+      },
       navigateToBluetooth() {
         uni.navigateTo({
           url: "/pages/bluetooth/bluetooth"
@@ -1061,20 +604,18 @@ if (uni.restoreGlobal) {
             ...ball,
             color: "red"
           });
-          formatAppLog("log", "at pages/index/index.vue:645", `球 ${index2 + 1} 变为红色`);
           this.selectedBalls.push(index2 + 1);
         } else {
           this.$set(this.balls, index2, {
             ...ball,
             color: "gray"
           });
-          formatAppLog("log", "at pages/index/index.vue:654", `球 ${index2 + 1} 变为灰色`);
           this.selectedBalls = this.selectedBalls.filter((ballIndex) => ballIndex !== index2 + 1);
         }
         this.inputData = this.selectedBalls.join(",");
       },
       clearInputData() {
-        this.inputData = [];
+        this.inputData = "";
         this.selectedBalls = [];
         this.balls = this.balls.map((ball) => ({
           ...ball,
@@ -1087,7 +628,7 @@ if (uni.restoreGlobal) {
           selectedModeConfig.positions = selectedModeConfig.positions.map((position) => [...position]);
           this.updateBallPositions(this.selectedMode);
         } else {
-          formatAppLog("error", "at pages/index/index.vue:683", "未找到默认位置！");
+          formatAppLog("error", "at pages/index/index.vue:719", "未找到默认位置！");
         }
       },
       // 计算网球在网球场上的位置（基于4x5网格）
@@ -1452,6 +993,9 @@ if (uni.restoreGlobal) {
         this.modeSelectable = true;
         this.resetToInitialValues();
         this.sendTrainingParams();
+        if (this.selectedMode === 7) {
+          this.clearInputData();
+        }
       },
       handleFrequencyChange(event) {
         this.frequency = event.detail.value;
@@ -1477,71 +1021,255 @@ if (uni.restoreGlobal) {
           this.servingOrder = this.balls.map((_2, index2) => index2 + 1);
         }
       },
-      sendTrainingParams() {
+      async sendTrainingParams() {
         let command = "";
         if (!this.trainingActive) {
           command = "RCS_Stop=1\n";
-          formatAppLog("log", "at pages/index/index.vue:1138", "Generated command:", command);
+          formatAppLog("log", "at pages/index/index.vue:1176", "Generated command:", command);
           return;
         }
         const mode = this.selectedMode;
         let selectedPositions = [];
+        let ballIndices = [];
+        const maxRows = 5;
+        const maxCols = 7;
         if (mode === 7) {
-          selectedPositions = this.selectedBalls.map((index2) => {
-            const ball = this.balls[index2 - 1];
-            return ball.ballIndex;
-          });
+          ballIndices = this.selectedBalls.map((index2) => {
+            const validIndex = index2 - 1;
+            const ball = this.balls[validIndex];
+            if (validIndex >= 0 && validIndex < this.balls.length && ball && Array.isArray(ball.ballIndex) && ball.ballIndex.length >= 2) {
+              const ballIndex = ball.ballIndex;
+              const row = Math.min(ballIndex[0], maxRows - 1);
+              const col = Math.min(ballIndex[1], maxCols - 1);
+              return {
+                ballIndex: [row, col],
+                arrayIndex: validIndex
+              };
+            } else {
+              formatAppLog("warn", "at pages/index/index.vue:1206", `无效的球或索引: ${validIndex}`, ball);
+              return null;
+            }
+          }).filter((item) => item !== null);
+        } else {
+          ballIndices = this.balls.map((ball, index2) => {
+            if (ball && Array.isArray(ball.ballIndex) && ball.ballIndex.length >= 2) {
+              const ballIndex = ball.ballIndex;
+              const row = Math.min(ballIndex[0], maxRows - 1);
+              const col = Math.min(ballIndex[1], maxCols - 1);
+              return {
+                ballIndex: [row, col],
+                arrayIndex: index2
+              };
+            } else {
+              formatAppLog("warn", "at pages/index/index.vue:1223", `无效的球或索引: ${index2}`, ball);
+              return null;
+            }
+          }).filter((item) => item !== null);
         }
+        const tableData = await this.getTable(this.angle, this.speed);
+        const positions = ballIndices.map(({
+          ballIndex
+        }) => {
+          const indexArray = Array.from(ballIndex);
+          if (indexArray.length !== 2) {
+            formatAppLog("error", "at pages/index/index.vue:1237", "Invalid ballIndex length:", indexArray);
+            return null;
+          }
+          const [row, col] = indexArray;
+          if (row < 0 || row >= tableData.positions.length || col < 0 || col >= tableData.positions[row].length) {
+            formatAppLog("error", "at pages/index/index.vue:1245", "Invalid row or column index:", row, col);
+            return null;
+          }
+          const positionInfo = tableData.positions[row][col];
+          return positionInfo;
+        }).filter((pos) => pos !== null);
         const angles = this.balls.map(() => this.angle || "-");
         const heights = this.balls.map(() => this.heights || "-");
         const frequencies = this.balls.map(() => this.frequency || "-");
         const speeds = this.balls.map(() => this.speed || "-");
         const rotations = this.balls.map(() => this.rotate || "-");
+        if (mode === 7) {
+          selectedPositions = this.selectedBalls.map((index2) => {
+            const validIndex = index2 - 1;
+            if (validIndex >= 0 && validIndex < this.balls.length) {
+              const ball = this.balls[validIndex];
+              if (ball) {
+                return ball.ballIndex;
+              } else {
+                formatAppLog("warn", "at pages/index/index.vue:1270", `无效的球对象在索引: ${validIndex}`);
+                return null;
+              }
+            } else {
+              formatAppLog("warn", "at pages/index/index.vue:1274", `选中的索引超出范围: ${index2}`);
+              return null;
+            }
+          }).filter((position) => position !== null);
+        }
         const trainingInfo = {
           mode,
-          positions: mode === 7 ? selectedPositions : this.balls.map((ball) => ({
-            top: ball.top || "0px",
-            left: ball.left || "0px"
-          })),
-          // 模式7记录被选中的球位置，其他模式记录所有球
+          positions: mode === 7 ? selectedPositions : [],
           angles,
           heights,
           frequencies,
           speeds,
           rotations
         };
+        const ballFrequency = this.getBallRotationSpeed(trainingInfo.frequencies);
         switch (trainingInfo.mode) {
           case 0:
           case 4:
           case 5:
           case 8:
           case 9:
-            command = `RCS_Single=20,30,${trainingInfo.speeds[0] || 5e3},${trainingInfo.frequencies[0] || 7e3},${trainingInfo.rotations[0] || 3}
+            command = `RCS_Single=${positions[0].horizontalAngle},${positions[0].verticalAngle},${positions[0].bottomMotor},${positions[0].topMotor},${ballFrequency}
 `;
             break;
           case 1:
+            command = positions.map(
+              (pos) => `${pos.horizontalAngle},${pos.verticalAngle},${pos.bottomMotor},${pos.topMotor}`
+            ).join(";") + ";\n";
+            break;
           case 2:
-            command = `RCS_Double=V,0,90,30,${trainingInfo.speeds[0] || 5e3},${trainingInfo.frequencies[0] || 7e3},${trainingInfo.rotations[0] || 3}
+            command = `RCS_Double=V,${positions[0].horizontalAngle},${positions[1].horizontalAngle},${positions[0].verticalAngle},${positions[0].bottomMotor},${positions[0].topMotor},${ballFrequency}
 `;
             break;
           case 3:
-            command = `RCS_Double=H,0,90,30,${trainingInfo.speeds[0] || 5e3},${trainingInfo.frequencies[0] || 7e3},${trainingInfo.rotations[0] || 3}
+            command = `RCS_Double=H,${positions[0].verticalAngle},${positions[1].verticalAngle},${positions[0].horizontalAngle},${positions[0].bottomMotor},${positions[0].topMotor},${ballFrequency}
 `;
-            break;
           case 6:
-            command = `RCS_Random=0,90,0,30,${trainingInfo.speeds[0] || 2e3},${trainingInfo.frequencies[0] || 5e3},1,10,-500
+            const minHorizontalAngle = 0;
+            const maxHorizontalAngle = 90;
+            const minVerticalAngle = 0;
+            const maxVerticalAngle = 30;
+            const minBottomMotorSpeed = 2e3;
+            const maxBottomMotorSpeed = 5e3;
+            const minTopMotorSpeed = 1e3;
+            const maxTopMotorSpeed = 2e3;
+            const minSpeedDifference = -1e3;
+            const maxSpeedDifference = 1e3;
+            const maxballFrequency = 1e3;
+            const minballFrequency = 100;
+            if (this.isHeightRandom && this.isFrequencyRandom && this.isRotateRandom) {
+              command = `RCS_Random=${minHorizontalAngle},${maxHorizontalAngle},${minVerticalAngle},${maxVerticalAngle},${minBottomMotorSpeed},${maxBottomMotorSpeed},${minTopMotorSpeed},${maxTopMotorSpeed},${minSpeedDifference},${maxSpeedDifference}
 `;
+            } else {
+              const heightValue = this.isHeightRandom ? `${minBottomMotorSpeed},${maxBottomMotorSpeed}` : `${this.getHeightFromTable(trainingInfo.angles[0])},${this.getHeightFromTable(trainingInfo.angles[0])}`;
+              const frequencyValue = this.isFrequencyRandom ? `${minballFrequency},${maxballFrequency}` : `${ballFrequency},${ballFrequency}`;
+              const rotationValue = this.isRotateRandom ? `${minSpeedDifference},${maxSpeedDifference}` : `${this.getRotationFromTable(trainingInfo.rotations[0])},${this.getRotationFromTable(trainingInfo.rotations[0])}`;
+              command = `RCS_Random=${minHorizontalAngle},${maxHorizontalAngle},${minVerticalAngle},${maxVerticalAngle},${heightValue},${rotationValue},${frequencyValue}
+`;
+            }
             break;
           case 7:
-            command = trainingInfo.positions.map(
-              (pos) => `20,30,${trainingInfo.speeds[0] || 5e3},${trainingInfo.frequencies[0] || 7e3},${trainingInfo.rotations[0] || 3}`
-            ).join(";") + ";\n";
+            if (positions.length === 0) {
+              formatAppLog("log", "at pages/index/index.vue:1349", "No positions available for case 7");
+            } else {
+              command = positions.map(
+                (pos) => `${pos.horizontalAngle},${pos.verticalAngle},${pos.bottomMotor},${pos.topMotor}`
+              ).join(";") + ";\n";
+              formatAppLog("log", "at pages/index/index.vue:1354", "指令的长度", command.length);
+            }
             break;
           default:
-            formatAppLog("error", "at pages/index/index.vue:1212", "Unsupported mode");
+            formatAppLog("error", "at pages/index/index.vue:1358", "Unsupported mode");
             return;
         }
-        formatAppLog("log", "at pages/index/index.vue:1217", "Generated command:", command);
+        const maxCommandLength = 128;
+        for (let i2 = 0; i2 < command.length; i2 += maxCommandLength) {
+          const part = command.slice(i2, i2 + maxCommandLength);
+          formatAppLog("log", "at pages/index/index.vue:1366", "发送指令:", `RCS_Random=${part}`);
+        }
+      },
+      // 获取高度值
+      getHeightFromTable(heightValue) {
+        formatAppLog("log", "at pages/index/index.vue:1372", "heightValue", heightValue);
+        const heightTable = {
+          20: 0,
+          // 对应的垂直角度为0
+          35: 15,
+          // 对应的垂直角度为15
+          50: 30
+          // 对应的垂直角度为30
+        };
+        return heightTable[heightValue] !== void 0 ? heightTable[heightValue] : "0";
+      },
+      // 获取旋转值
+      getRotationFromTable(rotateValue) {
+        const minSpeed = 2e3;
+        const maxSpeed = 5e3;
+        const speedDifference = maxSpeed - minSpeed;
+        const rotationTable = {
+          "-6": minSpeed,
+          // 最大逆旋
+          "-5": minSpeed + speedDifference * 1 / 6,
+          "-4": minSpeed + speedDifference * 2 / 6,
+          "-3": minSpeed + speedDifference * 3 / 6,
+          "-2": minSpeed + speedDifference * 4 / 6,
+          "-1": minSpeed + speedDifference * 5 / 6,
+          "0": (minSpeed + maxSpeed) / 2,
+          // 不旋转，取中间值
+          "1": maxSpeed - speedDifference * 5 / 6,
+          "2": maxSpeed - speedDifference * 4 / 6,
+          "3": maxSpeed - speedDifference * 3 / 6,
+          "4": maxSpeed - speedDifference * 2 / 6,
+          "5": maxSpeed - speedDifference * 1 / 6,
+          "6": maxSpeed
+          // 最大正旋
+        };
+        return rotationTable[rotateValue] !== void 0 ? rotationTable[rotateValue] : "0";
+      },
+      // 获取下球转盘转速的方法
+      getBallRotationSpeed(frequency) {
+        const speedMapping = {
+          1: 100,
+          // 对应频率1的转速
+          2: 200,
+          // 对应频率2的转速
+          3: 300,
+          // 对应频率3的转速
+          4: 400,
+          // 对应频率4的转速
+          5: 500,
+          // 对应频率5的转速
+          6: 600,
+          // 对应频率6的转速
+          7: 700,
+          // 对应频率7的转速
+          8: 800,
+          // 对应频率8的转速
+          9: 900,
+          // 对应频率9的转速
+          10: 1e3
+          // 对应频率10的转速
+        };
+        if (frequency < 1 || frequency > 10) {
+          formatAppLog("error", "at pages/index/index.vue:1429", "频率参数必须在1到10之间");
+          return null;
+        }
+        return speedMapping[frequency];
+      },
+      async getTable(angle, speed) {
+        try {
+          const response = await uni.request({
+            url: "/static/position_tables.json",
+            method: "GET"
+          });
+          const data = response.data;
+          const result = data.find((item) => item.angle === angle && item.speed === speed);
+          if (result) {
+            return result;
+          } else {
+            formatAppLog(
+              "error",
+              "at pages/index/index.vue:1452",
+              "No matching table or positions found for given angle and speed"
+            );
+            return null;
+          }
+        } catch (error) {
+          formatAppLog("error", "at pages/index/index.vue:1457", "Error fetching position tables:", error);
+          return null;
+        }
       }
     },
     mounted() {
@@ -1653,7 +1381,7 @@ if (uni.restoreGlobal) {
               class: "ball",
               key: index2,
               style: vue.normalizeStyle($options.getBallPosition(index2)),
-              onClick: ($event) => $options.handleBallInteraction(index2)
+              onClick: ($event) => $data.trainingActive ? null : $options.handleBallInteraction(index2)
             }, [
               $data.showBallNumbers ? (vue.openBlock(), vue.createElementBlock(
                 "span",
@@ -1684,10 +1412,10 @@ if (uni.restoreGlobal) {
           }, null, 8, ["value"]),
           vue.createElementVNode("button", {
             class: "clear-button",
-            onClick: _cache[4] || (_cache[4] = (...args) => $options.clearInputData && $options.clearInputData(...args))
-          }, "x")
+            onClick: _cache[4] || (_cache[4] = (...args) => $options.clearInputData && $options.clearInputData(...args)),
+            disabled: $data.trainingActive
+          }, "x", 8, ["disabled"])
         ])) : vue.createCommentVNode("v-if", true),
-        vue.createCommentVNode(" 发球高度选择 "),
         $data.showHeightSelector ? (vue.openBlock(), vue.createElementBlock("view", {
           key: 1,
           class: "height-selector"
@@ -1703,8 +1431,8 @@ if (uni.restoreGlobal) {
             vue.createElementVNode(
               "div",
               {
-                class: vue.normalizeClass(["dot", { selected: $data.selectedHeight === $data.translations.low[$data.currentLanguage] }]),
-                onClick: _cache[5] || (_cache[5] = ($event) => $options.selectHeight($data.translations.low[$data.currentLanguage]))
+                class: vue.normalizeClass(["dot", { selected: $data.selectedHeight === $data.translations.low[$data.currentLanguage], disabled: $data.isHeightRandom }]),
+                onClick: _cache[5] || (_cache[5] = ($event) => !$data.isHeightRandom && $options.selectHeight($data.translations.low[$data.currentLanguage]))
               },
               null,
               2
@@ -1713,8 +1441,8 @@ if (uni.restoreGlobal) {
             vue.createElementVNode(
               "div",
               {
-                class: vue.normalizeClass(["dot", { selected: $data.selectedHeight === "中" }]),
-                onClick: _cache[6] || (_cache[6] = ($event) => $options.selectHeight("中"))
+                class: vue.normalizeClass(["dot", { selected: $data.selectedHeight === "中", disabled: $data.isHeightRandom }]),
+                onClick: _cache[6] || (_cache[6] = ($event) => !$data.isHeightRandom && $options.selectHeight("中"))
               },
               null,
               2
@@ -1723,50 +1451,57 @@ if (uni.restoreGlobal) {
             vue.createElementVNode(
               "div",
               {
-                class: vue.normalizeClass(["dot", { selected: $data.selectedHeight === "高" }]),
-                onClick: _cache[7] || (_cache[7] = ($event) => $options.selectHeight("高"))
+                class: vue.normalizeClass(["dot", { selected: $data.selectedHeight === "高", disabled: $data.isHeightRandom }]),
+                onClick: _cache[7] || (_cache[7] = ($event) => !$data.isHeightRandom && $options.selectHeight("高"))
               },
               null,
               2
               /* CLASS */
             )
-          ])
+          ]),
+          vue.createCommentVNode(" 随机开关 "),
+          $data.selectedMode == 6 ? (vue.openBlock(), vue.createElementBlock("view", {
+            key: 0,
+            class: "switch-container"
+          }, [
+            vue.createElementVNode("text", { class: "random-label" }, "随机"),
+            vue.createElementVNode("switch", {
+              checked: $data.isHeightRandom,
+              onChange: _cache[8] || (_cache[8] = (...args) => $options.toggleHeightRandom && $options.toggleHeightRandom(...args)),
+              size: "20"
+            }, null, 40, ["checked"])
+          ])) : vue.createCommentVNode("v-if", true)
         ])) : vue.createCommentVNode("v-if", true),
         vue.createCommentVNode(" 下层按钮（方向按钮、角度调整、启动按钮） "),
         vue.createElementVNode("view", { class: "lower-controls" }, [
-          vue.createElementVNode(
-            "button",
-            {
-              ref: "startButton",
-              class: "btn-start",
-              style: vue.normalizeStyle({ backgroundColor: $data.buttonColor }),
-              onClick: _cache[8] || (_cache[8] = (...args) => $options.startTraining && $options.startTraining(...args))
-            },
-            vue.toDisplayString($data.buttonText),
-            5
-            /* TEXT, STYLE */
-          ),
+          vue.createElementVNode("button", {
+            ref: "startButton",
+            class: "btn-start",
+            style: vue.normalizeStyle({ backgroundColor: $data.buttonColor }),
+            onClick: _cache[9] || (_cache[9] = (...args) => $options.startTraining && $options.startTraining(...args)),
+            disabled: $data.selectedMode === 7 && $data.inputData === ""
+          }, vue.toDisplayString($data.buttonText), 13, ["disabled"]),
           $data.showDirectionButtons ? (vue.openBlock(), vue.createElementBlock("view", {
             key: 0,
             class: "direction-buttons"
           }, [
             vue.createElementVNode("view", { class: "up-down-buttons" }, [
               vue.createElementVNode("button", {
-                onClick: _cache[9] || (_cache[9] = ($event) => $options.handleDirectionKey("up")),
+                onClick: _cache[10] || (_cache[10] = ($event) => $options.handleDirectionKey("up")),
                 disabled: $data.upDownButtonsDisabled
               }, vue.toDisplayString($data.translations.up[$data.currentLanguage]), 9, ["disabled"]),
               vue.createElementVNode("button", {
-                onClick: _cache[10] || (_cache[10] = ($event) => $options.handleDirectionKey("down")),
+                onClick: _cache[11] || (_cache[11] = ($event) => $options.handleDirectionKey("down")),
                 disabled: $data.upDownButtonsDisabled
               }, vue.toDisplayString($data.translations.down[$data.currentLanguage]), 9, ["disabled"])
             ]),
             vue.createElementVNode("view", { class: "left-right" }, [
               vue.createElementVNode("button", {
-                onClick: _cache[11] || (_cache[11] = ($event) => $options.handleDirectionKey("left")),
+                onClick: _cache[12] || (_cache[12] = ($event) => $options.handleDirectionKey("left")),
                 disabled: $data.leftRightButtonsDisabled
               }, vue.toDisplayString($data.translations.left[$data.currentLanguage]), 9, ["disabled"]),
               vue.createElementVNode("button", {
-                onClick: _cache[12] || (_cache[12] = ($event) => $options.handleDirectionKey("right")),
+                onClick: _cache[13] || (_cache[13] = ($event) => $options.handleDirectionKey("right")),
                 disabled: $data.leftRightButtonsDisabled
               }, vue.toDisplayString($data.translations.right[$data.currentLanguage]), 9, ["disabled"])
             ])
@@ -1776,7 +1511,7 @@ if (uni.restoreGlobal) {
             class: "angle-control"
           }, [
             vue.createElementVNode("button", {
-              onClick: _cache[13] || (_cache[13] = ($event) => $options.adjustAngle(-1))
+              onClick: _cache[14] || (_cache[14] = ($event) => $options.adjustAngle(-1))
             }, "-"),
             vue.createElementVNode(
               "span",
@@ -1786,7 +1521,7 @@ if (uni.restoreGlobal) {
               /* TEXT */
             ),
             vue.createElementVNode("button", {
-              onClick: _cache[14] || (_cache[14] = ($event) => $options.adjustAngle(1))
+              onClick: _cache[15] || (_cache[15] = ($event) => $options.adjustAngle(1))
             }, "+")
           ])) : vue.createCommentVNode("v-if", true),
           $data.selectedMode === 1 || $data.selectedMode === 2 || $data.selectedMode === 3 ? (vue.openBlock(), vue.createElementBlock("view", {
@@ -1804,7 +1539,7 @@ if (uni.restoreGlobal) {
               "button",
               {
                 class: vue.normalizeClass({ selected: $data.selectedBall === 1 }),
-                onClick: _cache[15] || (_cache[15] = ($event) => $options.selectBall(1))
+                onClick: _cache[16] || (_cache[16] = ($event) => $options.selectBall(1))
               },
               "1号球",
               2
@@ -1814,7 +1549,7 @@ if (uni.restoreGlobal) {
               "button",
               {
                 class: vue.normalizeClass({ selected: $data.selectedBall === 2 }),
-                onClick: _cache[16] || (_cache[16] = ($event) => $options.selectBall(2))
+                onClick: _cache[17] || (_cache[17] = ($event) => $options.selectBall(2))
               },
               "2号球",
               2
@@ -1849,18 +1584,33 @@ if (uni.restoreGlobal) {
             "block-color": "#87ceeb",
             activeColor: "#87ceeb",
             backgroundColor: "#d3d3d3",
-            onChanging: _cache[17] || (_cache[17] = (...args) => _ctx.handleFrequencyChanging && _ctx.handleFrequencyChanging(...args)),
-            onChange: _cache[18] || (_cache[18] = (...args) => $options.handleFrequencyChange && $options.handleFrequencyChange(...args))
-          }, null, 40, ["value"]),
+            disabled: $data.isFrequencyRandom && $data.selectedMode === 6,
+            onChanging: _cache[18] || (_cache[18] = (...args) => _ctx.handleFrequencyChanging && _ctx.handleFrequencyChanging(...args)),
+            onChange: _cache[19] || (_cache[19] = (...args) => $options.handleFrequencyChange && $options.handleFrequencyChange(...args)),
+            style: vue.normalizeStyle({ opacity: $data.isFrequencyRandom && $data.selectedMode === 6 ? 0.5 : 1 })
+          }, null, 44, ["value", "disabled"]),
           vue.createElementVNode("view", { class: "range-label" }, [
             vue.createElementVNode("text", null, "1"),
             vue.createElementVNode("text", null, "10")
-          ])
+          ]),
+          $data.selectedMode === 6 ? (vue.openBlock(), vue.createElementBlock("view", {
+            key: 0,
+            class: "switch-container",
+            style: { "margin-left": "-10px" }
+          }, [
+            vue.createElementVNode("text", { class: "random-label" }, "随机"),
+            vue.createElementVNode("switch", {
+              checked: $data.isFrequencyRandom,
+              onChange: _cache[20] || (_cache[20] = (...args) => $options.toggleFrequencyRandom && $options.toggleFrequencyRandom(...args)),
+              size: "20"
+            }, null, 40, ["checked"])
+          ])) : vue.createCommentVNode("v-if", true)
         ]),
         vue.createCommentVNode(" 速度 "),
         $data.selectedMode !== 6 ? (vue.openBlock(), vue.createElementBlock("view", {
           key: 0,
-          class: "slider"
+          class: "slider",
+          style: { "margin-left": "-10px" }
         }, [
           vue.createElementVNode("view", { class: "param-label" }, [
             vue.createTextVNode(
@@ -1884,8 +1634,9 @@ if (uni.restoreGlobal) {
             "block-color": "#87ceeb",
             activeColor: "#87ceeb",
             backgroundColor: "#d3d3d3",
-            onChanging: _cache[19] || (_cache[19] = (...args) => _ctx.handleSpeedChanging && _ctx.handleSpeedChanging(...args)),
-            onChange: _cache[20] || (_cache[20] = (...args) => $options.handleSpeedChange && $options.handleSpeedChange(...args))
+            disabled: false,
+            onChanging: _cache[21] || (_cache[21] = (...args) => _ctx.handleSpeedChanging && _ctx.handleSpeedChanging(...args)),
+            onChange: _cache[22] || (_cache[22] = (...args) => $options.handleSpeedChange && $options.handleSpeedChange(...args))
           }, null, 40, ["value"]),
           vue.createElementVNode("view", { class: "range-label" }, [
             vue.createElementVNode("text", null, "20"),
@@ -1916,19 +1667,32 @@ if (uni.restoreGlobal) {
             "block-color": "#87ceeb",
             activeColor: "#87ceeb",
             backgroundColor: "#d3d3d3",
-            onChanging: _cache[21] || (_cache[21] = (...args) => _ctx.handleRotateChanging && _ctx.handleRotateChanging(...args)),
-            onChange: _cache[22] || (_cache[22] = (...args) => $options.handleRotateChange && $options.handleRotateChange(...args))
-          }, null, 40, ["value"]),
+            disabled: $data.isRotateRandom && $data.selectedMode === 6,
+            onChanging: _cache[23] || (_cache[23] = (...args) => _ctx.handleRotateChanging && _ctx.handleRotateChanging(...args)),
+            onChange: _cache[24] || (_cache[24] = (...args) => $options.handleRotateChange && $options.handleRotateChange(...args)),
+            style: vue.normalizeStyle({ opacity: $data.isRotateRandom && $data.selectedMode === 6 ? 0.5 : 1 })
+          }, null, 44, ["value", "disabled"]),
           vue.createElementVNode("view", { class: "range-label" }, [
             vue.createElementVNode("text", null, "-6"),
             vue.createElementVNode("text", null, "6")
-          ])
+          ]),
+          $data.selectedMode === 6 ? (vue.openBlock(), vue.createElementBlock("view", {
+            key: 0,
+            class: "switch-container",
+            style: { "margin-left": "-10px" }
+          }, [
+            vue.createElementVNode("text", { class: "random-label" }, "随机"),
+            vue.createElementVNode("switch", {
+              checked: $data.isRotateRandom,
+              onChange: _cache[25] || (_cache[25] = (...args) => $options.toggleRotateRandom && $options.toggleRotateRandom(...args)),
+              size: "20"
+            }, null, 40, ["checked"])
+          ])) : vue.createCommentVNode("v-if", true)
         ])
       ])
     ]);
   }
   const PagesIndexIndex = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["render", _sfc_render$1], ["__scopeId", "data-v-1cf27b2a"], ["__file", "E:/work/TennisBallMachineController/pages/index/index.vue"]]);
-  __definePage("pages/bluetooth/bluetooth", PagesBluetoothBluetooth);
   __definePage("pages/index/index", PagesIndexIndex);
   const _sfc_main = {
     mounted() {
@@ -1945,12 +1709,6 @@ if (uni.restoreGlobal) {
   }
   const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["render", _sfc_render], ["__file", "E:/work/TennisBallMachineController/App.vue"]]);
   const pages = [
-    {
-      path: "pages/bluetooth/bluetooth",
-      style: {
-        navigationBarTitleText: "蓝牙连接"
-      }
-    },
     {
       path: "pages/index/index",
       style: {
@@ -4685,7 +4443,7 @@ ${i3}
   })();
   var Vs = Js;
   var define_process_env_UNI_STATISTICS_CONFIG_default = { version: "2", enable: true };
-  var define_process_env_UNI_STAT_TITLE_JSON_default = { "pages/bluetooth/bluetooth": "蓝牙连接", "pages/index/index": "网球发球机控制器" };
+  var define_process_env_UNI_STAT_TITLE_JSON_default = { "pages/index/index": "网球发球机控制器" };
   var define_process_env_UNI_STAT_UNI_CLOUD_default = {};
   const sys = uni.getSystemInfoSync();
   const STAT_VERSION = "4.24";

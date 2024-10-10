@@ -53,16 +53,26 @@
 				<button class="clear-button" @click="clearInputData" :disabled="trainingActive">x</button>
 			</view>
 
-			<!-- 发球高度选择 -->
 			<view v-if="showHeightSelector" class="height-selector">
 				<span>{{ translations.selectedHeight[currentLanguage] }}: {{ selectedHeight }}</span>
 				<view class="height-options">
-					<div class="dot" :class="{selected: selectedHeight === translations.low[currentLanguage] }"
-						@click="selectHeight(translations.low[currentLanguage])"></div>
-					<div class="dot" :class="{ selected: selectedHeight === '中' }" @click="selectHeight('中')"></div>
-					<div class="dot" :class="{ selected: selectedHeight === '高' }" @click="selectHeight('高')"></div>
+					<div class="dot"
+						:class="{ selected: selectedHeight === translations.low[currentLanguage], disabled: isHeightRandom }"
+						@click="!isHeightRandom && selectHeight(translations.low[currentLanguage])"></div>
+					<div class="dot" :class="{ selected: selectedHeight === '中', disabled: isHeightRandom }"
+						@click="!isHeightRandom && selectHeight('中')"></div>
+					<div class="dot" :class="{ selected: selectedHeight === '高', disabled: isHeightRandom }"
+						@click="!isHeightRandom && selectHeight('高')"></div>
+				</view>
+
+				<!-- 随机开关 -->
+				<view v-if="selectedMode == 6" class="switch-container">
+					<text class="random-label">随机</text>
+					<switch :checked="isHeightRandom" @change="toggleHeightRandom" size="20" />
 				</view>
 			</view>
+
+
 
 			<!-- 下层按钮（方向按钮、角度调整、启动按钮） -->
 			<view class="lower-controls">
@@ -106,20 +116,27 @@
 					{{ translations.frequency[currentLanguage] }}:<text class="param-value">{{ frequency }}</text>
 				</view>
 				<slider :value="frequency" min="1" max="10" block-size="16" block-color="#87ceeb" activeColor="#87ceeb"
-					backgroundColor="#d3d3d3" @changing="handleFrequencyChanging" @change="handleFrequencyChange" />
+					backgroundColor="#d3d3d3" :disabled="isFrequencyRandom && selectedMode === 6"
+					@changing="handleFrequencyChanging" @change="handleFrequencyChange"
+					:style="{ opacity: isFrequencyRandom && selectedMode === 6 ? 0.5 : 1 }" />
 				<view class="range-label">
 					<text>1</text>
 					<text>10</text>
 				</view>
+				<view v-if="selectedMode === 6" class="switch-container" style="margin-left: -10px;">
+					<text class="random-label">随机</text>
+					<switch :checked="isFrequencyRandom" @change="toggleFrequencyRandom" size="20" />
+				</view>
 			</view>
 
 			<!-- 速度 -->
-			<view v-if="selectedMode !== 6" class="slider">
+			<view v-if="selectedMode !== 6" class="slider" style="margin-left: -10px;">
 				<view class="param-label">
 					{{ translations.speed[currentLanguage] }}:<text class="param-value">{{ speed }}</text>
 				</view>
 				<slider :value="speed" min="20" max="140" block-size="16" block-color="#87ceeb" activeColor="#87ceeb"
-					backgroundColor="#d3d3d3" @changing="handleSpeedChanging" @change="handleSpeedChange" />
+					backgroundColor="#d3d3d3" :disabled="false" @changing="handleSpeedChanging"
+					@change="handleSpeedChange" />
 				<view class="range-label">
 					<text>20</text>
 					<text>140</text>
@@ -132,13 +149,20 @@
 					{{ translations.rotate[currentLanguage] }}:<text class="param-value">{{ rotate }}</text>
 				</view>
 				<slider :value="rotate" min="-6" max="6" block-size="16" block-color="#87ceeb" activeColor="#87ceeb"
-					backgroundColor="#d3d3d3" @changing="handleRotateChanging" @change="handleRotateChange" />
+					backgroundColor="#d3d3d3" :disabled="isRotateRandom && selectedMode === 6"
+					@changing="handleRotateChanging" @change="handleRotateChange"
+					:style="{ opacity: isRotateRandom && selectedMode === 6 ? 0.5 : 1 }" />
 				<view class="range-label">
 					<text>-6</text>
 					<text>6</text>
 				</view>
+				<view v-if="selectedMode === 6" class="switch-container" style="margin-left: -10px;">
+					<text class="random-label">随机</text>
+					<switch :checked="isRotateRandom" @change="toggleRotateRandom" size="20" />
+				</view>
 			</view>
 		</view>
+
 	</view>
 </template>
 
@@ -148,6 +172,9 @@
 			return {
 				bluetoothName: '',
 				currentLanguage: 'zh',
+				isFrequencyRandom: true,
+				isRotateRandom: true,
+				isHeightRandom: true,
 				showDirectionButtons: true, // 控制方向按钮的显示与隐藏
 				upDownButtonsDisabled: false, // 控制上下方向按钮的禁用状态
 				leftRightButtonsDisabled: false, // 控制左右方向按钮的禁用状态
@@ -564,6 +591,17 @@
 			}
 		},
 		methods: {
+
+			toggleFrequencyRandom(event) {
+				this.isFrequencyRandom = event.detail.value;
+			},
+			toggleRotateRandom(event) {
+				this.isRotateRandom = event.detail.value;
+			},
+			toggleHeightRandom(event) {
+				this.isHeightRandom = event.detail.value;
+			},
+
 			navigateToBluetooth() {
 				// 返回蓝牙页面
 				uni.navigateTo({
@@ -1190,9 +1228,6 @@
 
 				// 获取点位表数据
 				const tableData = await this.getTable(this.angle, this.speed);
-
-				console.log('ballIndices:', ballIndices);
-				console.log('tableData:', tableData);
 				// 根据 ballIndices 获取对应的 positions 内容
 				const positions = ballIndices.map(({
 					ballIndex
@@ -1215,7 +1250,7 @@
 					return positionInfo;
 				}).filter(pos => pos !== null);
 
-				console.log('Retrieved positions based on ball indices:', positions); // 打印获取到的位置信息
+				// console.log('Retrieved positions based on ball indices:', positions); // 打印获取到的位置信息
 
 				const angles = this.balls.map(() => this.angle || '-'); // 角度信息
 				const heights = this.balls.map(() => this.heights || '-'); // 高度信息
@@ -1253,6 +1288,8 @@
 					rotations: rotations
 				};
 
+				//获取网球机下球点击速度
+				const ballFrequency = this.getBallRotationSpeed(trainingInfo.frequencies)
 				// 根据模式生成相应的指令
 				switch (trainingInfo.mode) {
 					case 0:
@@ -1261,21 +1298,20 @@
 					case 8:
 					case 9:
 						command =
-							`RCS_Single=${positions[0].horizontalAngle},${positions[0].verticalAngle},${positions[0].bottomMotor},${positions[0].topMotor},${positions[0].horizontalAngle}\n`;
+							`RCS_Single=${positions[0].horizontalAngle},${positions[0].verticalAngle},${positions[0].bottomMotor},${positions[0].topMotor},${ballFrequency}\n`;
 						break;
 					case 1:
 						command = positions.map(pos =>
 							`${pos.horizontalAngle},${pos.verticalAngle},${pos.bottomMotor},${pos.topMotor}`
 						).join(';') + ';\n';
 						break;
-					case 2:
+					case 2: // 水平循环
 						command =
-							`RCS_Double=V,${positions[0].horizontalAngle},${positions[0].verticalAngle},${positions[1].horizontalAngle},${positions[1].verticalAngle},${positions[0].bottomMotor},${positions[0].topMotor}\n`;
+							`RCS_Double=V,${positions[0].horizontalAngle},${positions[1].horizontalAngle},${positions[0].verticalAngle},${positions[0].bottomMotor},${positions[0].topMotor},${ballFrequency}\n`;
 						break;
-					case 3:
+					case 3: // 垂直循环
 						command =
-							`RCS_Double=H,${positions[0].horizontalAngle},${positions[0].verticalAngle},${positions[1].horizontalAngle},${positions[1].verticalAngle},${positions[0].bottomMotor},${positions[0].topMotor}\n`;
-						break;
+							`RCS_Double=H,${positions[0].verticalAngle},${positions[1].verticalAngle},${positions[0].horizontalAngle},${positions[0].bottomMotor},${positions[0].topMotor},${ballFrequency}\n`;
 					case 6:
 						const minHorizontalAngle = 0; // 根据表格的最小值设置
 						const maxHorizontalAngle = 90; // 根据表格的最大值设置
@@ -1286,10 +1322,28 @@
 						const minTopMotorSpeed = 1000; // 根据表格的最小值设置
 						const maxTopMotorSpeed = 2000; // 根据表格的最大值设置
 						const minSpeedDifference = -1000; // 下电机速度差的最小值
-						const maxSpeedDifference = 1000; // 下电机速度差的最大值						
-						command =
-							`RCS_Random=${minHorizontalAngle},${maxHorizontalAngle},${minVerticalAngle},${maxVerticalAngle},${minBottomMotorSpeed},${maxBottomMotorSpeed},${minTopMotorSpeed},${maxTopMotorSpeed},${minSpeedDifference},${maxSpeedDifference}\n`;
+						const maxSpeedDifference = 1000; // 下电机速度差的最大值
+						const maxballFrequency = 1000;
+						const minballFrequency = 100;
+
+						// 如果所有参数都是随机
+						if (this.isHeightRandom && this.isFrequencyRandom && this.isRotateRandom) {
+							command =
+								`RCS_Random=${minHorizontalAngle},${maxHorizontalAngle},${minVerticalAngle},${maxVerticalAngle},${minBottomMotorSpeed},${maxBottomMotorSpeed},${minTopMotorSpeed},${maxTopMotorSpeed},${minSpeedDifference},${maxSpeedDifference}\n`;
+						} else {
+							// 如果不是所有参数都是随机
+							const heightValue = this.isHeightRandom ? `${minBottomMotorSpeed},${maxBottomMotorSpeed}` :
+								`${this.getHeightFromTable(trainingInfo.angles[0])},${this.getHeightFromTable(trainingInfo.angles[0])}`;
+							const frequencyValue = this.isFrequencyRandom ? `${minballFrequency},${maxballFrequency}` :
+								`${ballFrequency},${ballFrequency}`;
+							const rotationValue = this.isRotateRandom ? `${minSpeedDifference},${maxSpeedDifference}` :
+								`${this.getRotationFromTable(trainingInfo.rotations[0])},${this.getRotationFromTable(trainingInfo.rotations[0])}`;
+
+							command =
+								`RCS_Random=${minHorizontalAngle},${maxHorizontalAngle},${minVerticalAngle},${maxVerticalAngle},${heightValue},${rotationValue},${frequencyValue}\n`;
+						}
 						break;
+
 					case 7:
 						if (positions.length === 0) {
 							console.log('No positions available for case 7');
@@ -1297,7 +1351,6 @@
 							command = positions.map(pos =>
 								`${pos.horizontalAngle},${pos.verticalAngle},${pos.bottomMotor},${pos.topMotor}`
 							).join(';') + ';\n';
-
 							console.log('指令的长度', command.length);
 						}
 						break;
@@ -1306,12 +1359,81 @@
 						return;
 				}
 
+
 				const maxCommandLength = 128;
 				for (let i = 0; i < command.length; i += maxCommandLength) {
 					const part = command.slice(i, i + maxCommandLength);
 					console.log('发送指令:', `RCS_Random=${part}`); // 添加前缀并输出
 				}
 			},
+
+			// 获取高度值
+			getHeightFromTable(heightValue) {
+				console.log('heightValue', heightValue)
+				const heightTable = {
+					20: 0, // 对应的垂直角度为0
+					35: 15, // 对应的垂直角度为15
+					50: 30 // 对应的垂直角度为30
+				};
+
+				// 返回对应的垂直角度值
+				return heightTable[heightValue] !== undefined ? heightTable[heightValue] : '0';
+			},
+
+			// 获取旋转值
+			getRotationFromTable(rotateValue) {
+				const minSpeed = 2000; // 下电机最小转速
+				const maxSpeed = 5000; // 上电机最大转速
+				const speedDifference = maxSpeed - minSpeed; // 转速差
+
+				// 根据旋转程度计算转速差
+				const rotationTable = {
+					'-6': minSpeed, // 最大逆旋
+					'-5': minSpeed + (speedDifference * 1 / 6),
+					'-4': minSpeed + (speedDifference * 2 / 6),
+					'-3': minSpeed + (speedDifference * 3 / 6),
+					'-2': minSpeed + (speedDifference * 4 / 6),
+					'-1': minSpeed + (speedDifference * 5 / 6),
+					'0': (minSpeed + maxSpeed) / 2, // 不旋转，取中间值
+					'1': maxSpeed - (speedDifference * 5 / 6),
+					'2': maxSpeed - (speedDifference * 4 / 6),
+					'3': maxSpeed - (speedDifference * 3 / 6),
+					'4': maxSpeed - (speedDifference * 2 / 6),
+					'5': maxSpeed - (speedDifference * 1 / 6),
+					'6': maxSpeed // 最大正旋
+				};
+
+				// 返回对应的转速值
+				return rotationTable[rotateValue] !== undefined ? rotationTable[rotateValue] : '0';
+			},
+
+
+			// 获取下球转盘转速的方法
+			getBallRotationSpeed(frequency) {
+				// 定义频率与转速的映射关系
+				const speedMapping = {
+					1: 100, // 对应频率1的转速
+					2: 200, // 对应频率2的转速
+					3: 300, // 对应频率3的转速
+					4: 400, // 对应频率4的转速
+					5: 500, // 对应频率5的转速
+					6: 600, // 对应频率6的转速
+					7: 700, // 对应频率7的转速
+					8: 800, // 对应频率8的转速
+					9: 900, // 对应频率9的转速
+					10: 1000 // 对应频率10的转速
+				};
+
+				// 检查频率是否在有效范围内
+				if (frequency < 1 || frequency > 10) {
+					console.error('频率参数必须在1到10之间');
+					return null; // 返回 null 表示无效
+				}
+
+				// 返回对应的转速
+				return speedMapping[frequency];
+			},
+
 
 			async getTable(angle, speed) {
 				try {
@@ -1490,6 +1612,13 @@
 		/* 距离文字的间距 */
 	}
 
+	.dot.disabled {
+		background-color: #ddd;
+		/* 灰色 */
+		cursor: not-allowed;
+		/* 表示不可点击 */
+	}
+
 	.dot {
 		width: 20px;
 		height: 20px;
@@ -1498,6 +1627,14 @@
 		margin: 0 5px;
 		cursor: pointer;
 	}
+
+	.height-options.disabled .dot {
+		background-color: #d3d3d3;
+		/* 灰色 */
+		pointer-events: none;
+		/* 禁用点击 */
+	}
+
 
 	.selected {
 		background-color: green;
@@ -1592,12 +1729,31 @@
 
 
 
-	.slider-container {
-		padding: 10px;
+	.switch-container {
+		display: flex;
+		align-items: center;
+		margin-left: 10px;
 	}
 
 	.slider {
 		margin-bottom: 10px;
+		position: relative;
+		/* 使滑动条相对定位 */
+	}
+
+	.slider .switch-container {
+		position: absolute;
+		right: 0;
+		/* 右对齐 */
+		top: -5px;
+		/* 调整上下位置 */
+	}
+
+	.random-label {
+		font-size: 14px;
+		/* 调整标签的字体大小 */
+		margin-right: 5px;
+		/* 标签和开关之间的间距 */
 	}
 
 	.param-label {

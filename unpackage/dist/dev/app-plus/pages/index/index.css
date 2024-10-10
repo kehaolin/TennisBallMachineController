@@ -122,6 +122,12 @@
 		margin-left: 10px;
 		/* 距离文字的间距 */
 }
+.dot.disabled[data-v-1cf27b2a] {
+		background-color: #ddd;
+		/* 灰色 */
+		cursor: not-allowed;
+		/* 表示不可点击 */
+}
 .dot[data-v-1cf27b2a] {
 		width: 20px;
 		height: 20px;
@@ -129,6 +135,12 @@
 		background-color: lightgray;
 		margin: 0 5px;
 		cursor: pointer;
+}
+.height-options.disabled .dot[data-v-1cf27b2a] {
+		background-color: #d3d3d3;
+		/* 灰色 */
+		pointer-events: none;
+		/* 禁用点击 */
 }
 .selected[data-v-1cf27b2a] {
 		background-color: green;
@@ -206,11 +218,28 @@ uni-input[type="text"][data-v-1cf27b2a] {
 .clear-button[data-v-1cf27b2a]:hover {
 		background-color: #d33;
 }
-.slider-container[data-v-1cf27b2a] {
-		padding: 10px;
+.switch-container[data-v-1cf27b2a] {
+		display: flex;
+		align-items: center;
+		margin-left: 10px;
 }
 .slider[data-v-1cf27b2a] {
 		margin-bottom: 10px;
+		position: relative;
+		/* 使滑动条相对定位 */
+}
+.slider .switch-container[data-v-1cf27b2a] {
+		position: absolute;
+		right: 0;
+		/* 右对齐 */
+		top: -5px;
+		/* 调整上下位置 */
+}
+.random-label[data-v-1cf27b2a] {
+		font-size: 14px;
+		/* 调整标签的字体大小 */
+		margin-right: 5px;
+		/* 标签和开关之间的间距 */
 }
 .param-label[data-v-1cf27b2a] {
 		display: flex;
