@@ -53,18 +53,20 @@
 				<input type="text" :value="inputData" readonly class="input-field" />
 				<button class="clear-button" @click="clearInputData" :disabled="trainingActive">x</button>
 			</view>
-
 			<view v-if="showHeightSelector" class="height-selector">
 				<span>{{ translations.selectedHeight[currentLanguage] }}:
 					{{ translations.heightOptions[selectedHeight][currentLanguage] }}</span>
 				<view class="height-options">
 					<div class="dot"
-						:class="{ selected: selectedHeight === translations.low[currentLanguage], disabled: isHeightRandom }"
-						@click="!isHeightRandom && selectHeight(translations.low[currentLanguage])"></div>
-					<div class="dot" :class="{ selected: selectedHeight === '中', disabled: isHeightRandom }"
-						@click="!isHeightRandom && selectHeight('中')"></div>
-					<div class="dot" :class="{ selected: selectedHeight === '高', disabled: isHeightRandom }"
-						@click="!isHeightRandom && selectHeight('高')"></div>
+						:class="{ selected: selectedHeight === translations.low[currentLanguage], disabled: selectedMode === 6 && isHeightRandom }"
+						@click="(selectedMode !== 6 || !isHeightRandom) && selectHeight('低')">
+					</div>
+					<div class="dot"
+						:class="{ selected: selectedHeight === '中', disabled: selectedMode === 6 && isHeightRandom }"
+						@click="(selectedMode !== 6 || !isHeightRandom) && selectHeight('中')"></div>
+					<div class="dot"
+						:class="{ selected: selectedHeight === '高', disabled: selectedMode === 6 && isHeightRandom }"
+						@click="(selectedMode !== 6 || !isHeightRandom) && selectHeight('高')"></div>
 				</view>
 
 				<!-- 随机开关 -->
@@ -80,7 +82,8 @@
 			<view class="lower-controls">
 				<button ref="startButton" class="btn-start" :style="{ backgroundColor: buttonColor }"
 					@click="startTraining"
-					:disabled="selectedMode === 7 && inputData === ''">{{ translations.startTraining[currentLanguage] }}</button>
+					:disabled="selectedMode === 7 && inputData === ''">{{ trainingActive ? translations.endTraining[currentLanguage] : translations.startTraining[currentLanguage] }}
+				</button>
 				<view v-if="showDirectionButtons" class="direction-buttons">
 					<view class="up-down-buttons">
 						<button @click="handleDirectionKey('up')"
@@ -470,7 +473,7 @@
 						speed: 80,
 						rotate: 0,
 						heights: '中',
-						angle: null
+						angle: 35
 					}, // 交叉循环
 					{
 						frequency: 7,
@@ -484,7 +487,7 @@
 						speed: 80,
 						rotate: 0,
 						heights: '中',
-						angle: null
+						angle: 35
 					}, // 垂直循环
 					{
 						frequency: 7,
@@ -505,14 +508,14 @@
 						speed: 80,
 						rotate: 0,
 						heights: '中',
-						angle: null
+						angle: 35
 					}, // 全场随机
 					{
 						frequency: 7,
 						speed: 80,
 						rotate: 0,
 						heights: '',
-						angle: null
+						angle: 35
 					}, // 编程练习
 					{
 						frequency: 7,
@@ -585,13 +588,77 @@
 					y: 2
 				}, // 记录网球的位置
 				trainingActive: false,
-				initialParams: {
-					frequency: 5,
-					speed: 20,
-					rotate: 0,
-					heights: '',
-					angle: 20
-				},
+				initialParams: [{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '',
+						angle: 20
+					}, // 定点练习
+					{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '中',
+						angle: 35
+					}, // 交叉循环
+					{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '',
+						angle: 30
+					}, // 水平循环
+					{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '中',
+						angle: 35
+					}, // 垂直循环
+					{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '',
+						angle: 30
+					}, // 截击练习
+					{
+						frequency: 7,
+						speed: 50,
+						rotate: 0,
+						heights: '',
+						angle: 30
+					}, // 高压练习
+					{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '中',
+						angle: 35
+					}, // 全场随机
+					{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '',
+						angle: 35
+					}, // 编程练习
+					{
+						frequency: 7,
+						speed: 20,
+						rotate: 0,
+						heights: '',
+						angle: 30
+					}, // 入门练习
+					{
+						frequency: 7,
+						speed: 80,
+						rotate: 0,
+						heights: '',
+						angle: 30
+					} // 月亮球
+				],
 				initialBallPosition: {
 					x: 0,
 					y: 0
@@ -852,6 +919,7 @@
 
 			// 选择发球高度
 			selectHeight(height) {
+				if (this.isHeightRandom) return
 				if (height == '低') {
 					this.angle = 20
 				} else if (height == '中') {
@@ -1046,10 +1114,22 @@
 					// 确定发球顺序
 					this.determineServingOrder();
 
-					// 打印信息
+					// 发送训练参数
 					this.sendTrainingParams();
 				} else {
 					this.endTraining()
+				}
+			},
+
+			endTraining() {
+				this.trainingActive = false;
+				this.buttonText = this.translations.startTraining[this.currentLanguage];
+				this.buttonColor = '#87ceeb'; // 结束训练按钮颜色
+				this.modeSelectable = true; // 启用模式选择		
+				this.resetToInitialValues(); // 恢复初始值
+				this.sendTrainingParams(); // 发送结束参数
+				if (this.selectedMode === 7) {
+					this.clearInputData()
 				}
 			},
 
@@ -1157,27 +1237,13 @@
 
 				const modeParams = this.modeParams[this.selectedMode] || {};
 				this.modeConfig = modeconfig
-				this.frequency = this.initialParams.frequency;
-				this.speed = this.initialParams.speed;
-				this.rotate = this.initialParams.rotate;
-				this.angle = this.initialParams.angle;
-				this.heights = this.initialParams.heights;
+				this.frequency = this.initialParams[this.selectedMode].frequency;
+				this.speed = this.initialParams[this.selectedMode].speed;
+				this.rotate = this.initialParams[this.selectedMode].rotate;
+				this.angle = this.initialParams[this.selectedMode].angle;
+				this.heights = this.initialParams[this.selectedMode].heights;
 				this.selectedBall = 1
 				this.restoreDefaultBallPositions()
-			},
-
-			endTraining() {
-				this.trainingActive = false;
-				this.buttonText = this.translations.startTraining[this.currentLanguage];
-				this.buttonColor = '#87ceeb'; // 结束训练按钮颜色
-				this.modeSelectable = true; // 启用模式选择		
-				this.resetToInitialValues(); // 恢复初始值
-				this.sendTrainingParams(); // 发送结束参数
-				if (this.selectedMode === 7) {
-					this.clearInputData()
-				}
-				// 重置 UI 控件的值（如需要）
-				// this.resetSlidersToDefault();
 			},
 
 			handleFrequencyChange(event) {
@@ -1268,6 +1334,10 @@
 
 				// 获取点位表数据
 				const tableData = await this.getTable(this.angle, this.speed);
+				if (!tableData) {
+					console.error('Failed to retrieve table data.');
+					return; // 提前返回，避免继续执行
+				}
 				// 根据 ballIndices 获取对应的 positions 内容
 				const positions = ballIndices.map(({
 					ballIndex
@@ -1476,11 +1546,16 @@
 
 
 			async getTable(angle, speed) {
+				console.log(angle, speed)
 				try {
 					// 根据角度和速度查询
-					const result = db.find(item => item.angle === angle && item.speed === speed);
+					const data = db;
+
+					// 根据角度和速度查询
+					const result = data.find(item => item.angle === angle && item.speed === speed);
 					if (result) {
 						return result; // 返回匹配的内容
+
 					} else {
 						console.error('No matching table or positions found for given angle and speed');
 						return null;
