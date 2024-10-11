@@ -2,8 +2,7 @@
 	<view class="container">
 		<!-- 第一层: 蓝牙功能，中英文切换，电量显示 -->
 		<view class="header">
-			<button @click="navigateToBluetooth">{{ bluetoothName || '蓝牙' }}</button>
-			<button class="btn-lang" @click="toggleLanguage">{{ translations.language[currentLanguage] }}</button>
+			<button @click="navigateToBluetooth">{{ bluetoothName || translations.bluetooth[currentLanguage] }}</button>
 			<image class="battery-icon" src="/static/image/battery.png" />
 		</view>
 
@@ -25,7 +24,7 @@
 
 		<!-- 模式选择功能 -->
 		<view class="mode-selection">
-			<picker :range="modeNames" :disabled="!modeSelectable" @change="onModeChange">
+			<picker :range="modeNames" :value="selectedMode" :disabled="!modeSelectable" @change="onModeChange">
 				<view class="selected-mode" style="border: 1px solid red;">
 					{{ translations.currentMode[currentLanguage] }}：{{ modeNames[selectedMode] }}
 				</view>
@@ -35,7 +34,9 @@
 		<!-- 第二层: 网球场和网球图片 -->
 		<view class="court-container">
 			<!-- 背景图 -->
-			<img class="tennis-court" src="/static/image/tennis-court.jpg" alt="Tennis Court" />
+			<img class="tennis-court"
+				src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD//gAXR2VuZXJhdGVkIGJ5IFNuaXBhc3Rl/9sAhAAKBwcIBwYKCAgICwoKCw4YEA4NDQ4dFRYRGCMfJSQiHyIhJis3LyYpNCkhIjBBMTQ5Oz4+PiUuRElDPEg3PT47AQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCACsASsDAREAAhEBAxEB/8QBogAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoLEAACAQMDAgQDBQUEBAAAAX0BAgMABBEFEiExQQYTUWEHInEUMoGRoQgjQrHBFVLR8CQzYnKCCQoWFxgZGiUmJygpKjQ1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4eLj5OXm5+jp6vHy8/T19vf4+foBAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKCxEAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD1apNwoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAWgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACmAUAFABQAUAFABQAUAFABQAUAFABQAUAFABQAUAFABQAUAFABQAUAFABQAUAFABQAUAFABQAUAFABQAUAFABQAUAFABQIKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKAFoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoAKACgAoEf/Z"
+				alt="Tennis Court" />
 			<!-- 网球容器 -->
 			<view class="ball" v-for="(ball, index) in balls" :key="index" :style="getBallPosition(index)"
 				@click="trainingActive ? null : handleBallInteraction(index)">
@@ -48,13 +49,14 @@
 		<view class="controls">
 			<!-- //编程模式时使用的文本框，用于记录选择的球 -->
 			<view v-if="showInputWithClear" class="input-container">
-				<text class="input-label">请选择发球顺序：</text>
+				<text class="input-label">{{ translations.selectServingOrder[currentLanguage] }}</text>
 				<input type="text" :value="inputData" readonly class="input-field" />
 				<button class="clear-button" @click="clearInputData" :disabled="trainingActive">x</button>
 			</view>
 
 			<view v-if="showHeightSelector" class="height-selector">
-				<span>{{ translations.selectedHeight[currentLanguage] }}: {{ selectedHeight }}</span>
+				<span>{{ translations.selectedHeight[currentLanguage] }}:
+					{{ translations.heightOptions[selectedHeight][currentLanguage] }}</span>
 				<view class="height-options">
 					<div class="dot"
 						:class="{ selected: selectedHeight === translations.low[currentLanguage], disabled: isHeightRandom }"
@@ -67,7 +69,7 @@
 
 				<!-- 随机开关 -->
 				<view v-if="selectedMode == 6" class="switch-container">
-					<text class="random-label">随机</text>
+					<text class="random-label">{{ translations.random[currentLanguage] }}</text>
 					<switch :checked="isHeightRandom" @change="toggleHeightRandom" size="20" />
 				</view>
 			</view>
@@ -77,7 +79,8 @@
 			<!-- 下层按钮（方向按钮、角度调整、启动按钮） -->
 			<view class="lower-controls">
 				<button ref="startButton" class="btn-start" :style="{ backgroundColor: buttonColor }"
-					@click="startTraining" :disabled="selectedMode === 7 && inputData === ''">{{ buttonText }}</button>
+					@click="startTraining"
+					:disabled="selectedMode === 7 && inputData === ''">{{ translations.startTraining[currentLanguage] }}</button>
 				<view v-if="showDirectionButtons" class="direction-buttons">
 					<view class="up-down-buttons">
 						<button @click="handleDirectionKey('up')"
@@ -100,8 +103,11 @@
 				</view>
 				<view v-if="selectedMode === 1 || selectedMode === 2 || selectedMode === 3" class="ball-selection">
 					<label>{{ translations.selectBall[currentLanguage] }}</label>
-					<button :class="{ selected: selectedBall === 1 }" @click="selectBall(1)">1号球</button>
-					<button :class="{ selected: selectedBall === 2 }" @click="selectBall(2)">2号球</button>
+					<button :class="{ selected: selectedBall === 1 }"
+						@click="selectBall(1)">{{ translations.ball1[currentLanguage] }}</button>
+					<button :class="{ selected: selectedBall === 2 }"
+						@click="selectBall(2)">{{ translations.ball2[currentLanguage] }}</button>
+
 				</view>
 			</view>
 		</view>
@@ -124,7 +130,7 @@
 					<text>10</text>
 				</view>
 				<view v-if="selectedMode === 6" class="switch-container" style="margin-left: -10px;">
-					<text class="random-label">随机</text>
+					<text class="random-label">{{ translations.random[currentLanguage] }}</text>
 					<switch :checked="isFrequencyRandom" @change="toggleFrequencyRandom" size="20" />
 				</view>
 			</view>
@@ -157,7 +163,7 @@
 					<text>6</text>
 				</view>
 				<view v-if="selectedMode === 6" class="switch-container" style="margin-left: -10px;">
-					<text class="random-label">随机</text>
+					<text class="random-label">{{ translations.random[currentLanguage] }}</text>
 					<switch :checked="isRotateRandom" @change="toggleRotateRandom" size="20" />
 				</view>
 			</view>
@@ -167,6 +173,8 @@
 </template>
 
 <script>
+	import db from '../../static/position_tables.js';
+
 	export default {
 		data() {
 			return {
@@ -259,6 +267,20 @@
 						zh: '高',
 						en: 'High'
 					},
+					heightOptions: {
+						'低': {
+							zh: '低',
+							en: 'Low'
+						},
+						'中': {
+							zh: '中',
+							en: 'Medium'
+						},
+						'高': {
+							zh: '高',
+							en: 'High'
+						}
+					},
 					selectBall: {
 						zh: '选择球',
 						en: 'selectBall'
@@ -278,6 +300,22 @@
 					rotate: {
 						zh: '旋转程度',
 						en: 'Rotate'
+					},
+					ball1: {
+						zh: '1号球',
+						en: 'Ball 1'
+					},
+					ball2: {
+						zh: '2号球',
+						en: 'Ball 2'
+					},
+					selectServingOrder: {
+						zh: '请选择发球顺序',
+						en: 'Please Select Serving Order'
+					},
+					random: {
+						zh: '随机',
+						en: 'Random'
 					}
 				},
 				modes: [{
@@ -877,6 +915,8 @@
 			},
 
 			onModeChange(event) {
+				// 震动反馈
+				uni.vibrateShort();
 				const index = event.detail.value;
 				this.selectedMode = index;
 
@@ -1437,33 +1477,43 @@
 
 			async getTable(angle, speed) {
 				try {
-					const response = await uni.request({
-						url: '/static/position_tables.json',
-						method: 'GET'
-					});
-
-					const data = response.data;
-
 					// 根据角度和速度查询
-					const result = data.find(item => item.angle === angle && item.speed === speed);
+					const result = db.find(item => item.angle === angle && item.speed === speed);
 					if (result) {
 						return result; // 返回匹配的内容
 					} else {
-						console.error(
-							'No matching table or positions found for given angle and speed');
+						console.error('No matching table or positions found for given angle and speed');
 						return null;
 					}
 				} catch (error) {
 					console.error('Error fetching position tables:', error);
 					return null;
 				}
-			}
+			},
+
+			setLanguage() {
+				// 获取系统信息
+				const systemInfo = uni.getSystemInfoSync();
+				const language = systemInfo.language; // 获取设备语言
+
+				// 根据语言设置切换
+				if (language.includes('en')) {
+					this.currentLanguage = 'en'; // 英文
+				} else {
+					this.currentLanguage = 'zh'; // 中文
+				}
+			},
+		},
+
+		onReady() {
+			this.getCourtSize();
 		},
 
 		mounted() {
 			this.updateParametersForMode(this.selectedMode);
 			this.getCourtSize();
 			this.updateBallPositions(0)
+			this.setLanguage();
 		}
 	};
 </script>

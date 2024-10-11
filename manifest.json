@@ -1,6 +1,6 @@
 {
-    "name" : "TennisBallMachineController",
-    "appid" : "",
+    "name" : "VidorTennis",
+    "appid" : "__UNI__FA0D32B",
     "description" : "uni-app 框架示例，一套代码，同时发行到iOS、Android、H5、小程序等多个平台，请使用手机扫码快速体验 uni-app 的强大功能",
     "versionName" : "1.0.0",
     "versionCode" : "100",
@@ -54,7 +54,6 @@
                     "<uses-permission android:name=\"android.permission.RECORD_AUDIO\"/>",
                     "<uses-permission android:name=\"android.permission.SEND_SMS\"/>",
                     "<uses-permission android:name=\"android.permission.SYSTEM_ALERT_WINDOW\"/>",
-                    "<uses-permission android:name=\"android.permission.VIBRATE\"/>",
                     "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
                     "<uses-permission android:name=\"android.permission.WRITE_CONTACTS\"/>",
                     "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>",
@@ -65,12 +64,14 @@
             },
             "ios" : {
                 "UIBackgroundModes" : [ "audio" ],
-                "urlschemewhitelist" : [ "baidumap", "iosamap" ]
+                "urlschemewhitelist" : [ "baidumap", "iosamap" ],
+                "dSYMs" : false
             },
             "sdkConfigs" : {
                 "speech" : {
                     "ifly" : {}
-                }
+                },
+                "ad" : {}
             },
             "orientation" : [ "portrait-primary" ]
         },
