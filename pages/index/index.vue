@@ -393,63 +393,16 @@
 						borderRadius: '9.17px',
 					}
 				],
-
+				deviceId: '',
+				serviceId: '55535343-FE7D-4AE5-8FA9-9FAFD205E455',
+				// characteristicId: '0000FFF2-0000-1000-8000-00805F9B34FB',
+				TX_UUID: '49535343884143f4a8d4ecbe34729bb3', // 接收指令UUID
+				RX_UUID: '495353431e4d4bd9ba6123c647249616', // 发送指令UUID
 				batteryLevel: 100,
 				showModePickerModal: false, // 控制弹窗显示
 				temporarySelectedMode: 0, // 临时选中的模式，在点击"Complete"前记录
 				showBluetoothPopup: false, // 控制弹窗显示
-				bluetoothDevices: [{
-						id: 1,
-						name: 'Device 1',
-						isConnected: false
-					},
-					{
-						id: 2,
-						name: 'Device 2',
-						isConnected: false
-					},
-					{
-						id: 3,
-						name: 'Device 3',
-						isConnected: false
-					},
-					{
-						id: 4,
-						name: 'Device 4',
-						isConnected: false
-					},
-					{
-						id: 5,
-						name: 'Device 5',
-						isConnected: false
-					},
-					{
-						id: 6,
-						name: 'Device 6',
-						isConnected: false
-					},
-					{
-						id: 7,
-						name: 'Device 7',
-						isConnected: false
-					},
-					{
-						id: 8,
-						name: 'Device 8',
-						isConnected: false
-					},
-					{
-						id: 9,
-						name: 'Device 9',
-						isConnected: false
-					},
-					{
-						id: 10,
-						name: 'Device 10',
-						isConnected: false
-					}
-				], // 模拟的蓝牙设备列表
-
+				bluetoothDevices: [], // 模拟的蓝牙设备列表
 				isAnyDeviceConnected: false,
 				bluetoothName: '',
 				currentLanguage: 'zh',
@@ -486,7 +439,7 @@
 				services: null, // 蓝牙服务ID
 				notifyUuid: null, // 通知特征值的UUID
 				buttonText: '开始训练',
-				buttonColor: '#87ceeb', // 默认颜色
+				buttonColor: 'rgba(95, 186, 232, 1)', // 默认颜色
 				modeSelectable: true,
 				translations: {
 					selectMode: {
@@ -1014,7 +967,7 @@
 				initialBallPosition: {
 					x: 0,
 					y: 0
-				}
+				},
 			};
 		},
 		computed: {
@@ -1037,6 +990,205 @@
 			}
 		},
 		methods: {
+
+			openBluetoothPopup() {
+				this.showBluetoothPopup = true;
+				this.openBluetoothAdapter();
+			},
+			// 关闭蓝牙弹窗
+			closeBluetoothPopup() {
+				this.showBluetoothPopup = false;
+			},
+
+			//初始化蓝牙
+			openBluetoothAdapter() {
+				uni.openBluetoothAdapter({
+					success: (res) => {
+						console.log('蓝牙模块初始化成功', res);
+						this.checkBluetoothState();
+					},
+					fail: (err) => {
+						console.log('蓝牙模块初始化失败', err);
+						uni.showToast({
+							title: '请打开蓝牙',
+							icon: 'none'
+						});
+					}
+				});
+			},
+
+			//检查蓝牙状态
+			checkBluetoothState() {
+				uni.getBluetoothAdapterState({
+					success: (res) => {
+						if (res.available) {
+							console.log('蓝牙模块可用');
+							this.startBluetoothSearch()
+						} else {
+							console.log('蓝牙模块不可用');
+						}
+					},
+					fail: (err) => {
+						console.log('获取蓝牙状态失败', err);
+					}
+				});
+			},
+
+			// 模拟蓝牙设备搜索
+			startBluetoothSearch() {
+				if (this.isAnyDeviceConnected) return;
+				this.devices = [];
+				uni.startBluetoothDevicesDiscovery({
+					success: (res) => {
+						console.log('开始搜索附近的蓝牙设备', res);
+						this.onBluetoothDeviceFound();
+					},
+					fail: (err) => {
+						console.log('搜索蓝牙设备失败', err);
+					}
+				});
+			},
+
+			//搜索到蓝牙后更新蓝牙设备
+			onBluetoothDeviceFound() {
+				uni.onBluetoothDeviceFound((res) => {
+					res.devices.forEach(device => {
+						// 直接将找到的设备添加到 devices 数组中，不进行筛选
+						this.bluetoothDevices.push(device);
+						console.log('新发现的设备！！！！！', device)
+					});
+					// 如果需要调试或查看发现的设备，可以取消注释以下行
+					console.log('发现的新设备', this.bluetoothDevices);
+				});
+			},
+
+			bindDevice(device) {
+				console.log('连接到了设备', device);
+
+				// 调用 connectToDevice，并根据返回结果判断是否继续执行
+				this.connectToDevice(device.deviceId)
+					.then((isConnected) => {
+						if (isConnected) {
+							// 如果连接成功，更新设备状态
+							device.isConnected = true; // 更新设备连接状态
+							this.isAnyDeviceConnected = true; // 有设备连接时禁用其他设备的绑定按钮
+							this.$forceUpdate(); // 强制刷新视图
+							this.showBluetoothPopup = false
+						} else {
+							// 如果连接失败，提示用户
+							uni.showToast({
+								title: '蓝牙连接失败',
+								icon: 'none',
+								duration: 2000
+							});
+						}
+					});
+			},
+
+			//连接到蓝牙
+			connectToDevice(deviceId) {
+				console.log('!!!!!!!!!', deviceId)
+				return new Promise((resolve) => {
+					uni.createBLEConnection({
+						deviceId: deviceId,
+						success: (res) => {
+							console.log('连接成功', res);
+							this.connectedDeviceId = deviceId;
+							this.currentDevice = this.devices.find(d => d.deviceId === deviceId);
+							this.devices = [];
+							this.deviceId = deviceId;
+							this.stopBluetoothDevicesDiscovery();
+
+							// 启动接收通知功能
+							let This = this;
+							setTimeout(() => {
+								uni.getBLEDeviceServices({
+									deviceId,
+									success(res) {
+										console.log('device services:', res.services);
+										This.receiveBLEData();
+										resolve(true); // 连接成功，返回 true
+									},
+									fail: () => {
+										resolve(false); // 获取服务失败
+									}
+								});
+							}, 1000);
+						},
+						fail: (err) => {
+							console.log('连接失败', err);
+							resolve(false); // 连接失败，返回 false
+						}
+					});
+
+					// 初始化电量信息
+					this.batteryLevel = 100;
+					this.batteryInterval = setInterval(() => {
+						this.writeBLECharacteristicValue('getBattery\n', this.RX_UUID);
+					}, 60000);
+				});
+			},
+
+			stopBluetoothDevicesDiscovery() {
+				uni.stopBluetoothDevicesDiscovery({
+					success: (res) => {
+						console.log('停止搜索蓝牙设备成功', res);
+					},
+					fail: (err) => {
+						console.log('停止搜索蓝牙设备失败', err);
+					}
+				});
+			},
+
+			unbindDevice(device) {
+				// 解绑设备
+				device.isConnected = false; // 更新设备连接状态
+				this.isAnyDeviceConnected = false; // 恢复所有设备按钮为可绑定状态
+				this.$forceUpdate(); // 强制刷新视图
+			},
+
+			disconnectDevice() {
+				if (!this.connectedDeviceId) {
+					uni.showToast({
+						title: '未连接设备',
+						icon: 'none'
+					});
+					return;
+				}
+				if (this.batteryInterval) {
+					clearInterval(this.batteryInterval);
+					this.batteryInterval = null;
+				}
+				uni.closeBLEConnection({
+					deviceId: this.connectedDeviceId,
+					success: (res) => {
+						console.log('断开连接成功', res);
+						this.connectedDeviceId = null;
+						this.currentDevice = null;
+						this.batteryLevel = null;
+					},
+					fail: (err) => {
+						console.log('断开连接失败', err);
+					}
+				});
+			},
+
+			receiveBLEData() {
+				uni.notifyBLECharacteristicValueChange({
+					state: true,
+					deviceId: this.deviceId,
+					serviceId: this.serviceId,
+					characteristicId: '49535343-8841-43F4-A8D4-ECBE34729BB3',
+					state: true,
+					success: () => {
+						console.log('成功启用接收通知');
+					},
+					fail: (err) => {
+						console.log('启用接收通知失败', err, this.serviceId);
+					}
+				});
+			},
+
 			simulateBatteryChange() {
 				const interval = setInterval(() => {
 					if (this.batteryLevel > 0) {
@@ -1083,34 +1235,6 @@
 				this.showModePickerModal = false; // 关闭弹窗
 			},
 
-			openBluetoothPopup() {
-				this.showBluetoothPopup = true;
-				this.startBluetoothSearch();
-			},
-			// 关闭蓝牙弹窗
-			closeBluetoothPopup() {
-				this.showBluetoothPopup = false;
-			},
-			// 模拟蓝牙设备搜索
-			startBluetoothSearch() {
-				// 显示正在搜索的状态
-				setTimeout(() => {
-					// 假设2秒后找到设备
-
-				}, 1000);
-			},
-			bindDevice(device) {
-				// 绑定设备
-				device.isConnected = true; // 更新设备连接状态
-				this.isAnyDeviceConnected = true; // 有设备连接时禁用其他设备的绑定按钮
-				this.$forceUpdate(); // 强制刷新视图
-			},
-			unbindDevice(device) {
-				// 解绑设备
-				device.isConnected = false; // 更新设备连接状态
-				this.isAnyDeviceConnected = false; // 恢复所有设备按钮为可绑定状态
-				this.$forceUpdate(); // 强制刷新视图
-			},
 			// 完成蓝牙连接
 			completeBluetoothConnection() {
 				this.showBluetoothPopup = false;
@@ -1286,7 +1410,8 @@
 
 				// 计算每个球的实际位置    (网球位置)
 				const left = horizontalBasePadding + currentRowWidth / 2 + colOffset - (ballSize / 2);
-				const top = courtTopOffset - 10 + verticalPadding + row * (ballSize + verticalPadding); // 加入图片顶部的偏移量
+				const top = courtTopOffset - 10 + verticalPadding + row * (ballSize +
+					verticalPadding); // 加入图片顶部的偏移量
 
 				return {
 					top,
@@ -1367,10 +1492,6 @@
 				} else {
 					console.error("未找到默认位置！");
 				}
-			},
-
-			toggleLanguage() {
-				this.currentLanguage = this.currentLanguage === 'zh' ? 'en' : 'zh';
 			},
 
 			toggleDirectionButtons(selectedMode) {
@@ -1782,7 +1903,8 @@
 						const ball = this.balls[validIndex];
 
 						// 检查球是否存在并且 ballIndex 也是有效的
-						if (validIndex >= 0 && validIndex < this.balls.length && ball && Array.isArray(ball
+						if (validIndex >= 0 && validIndex < this.balls.length && ball && Array.isArray(
+								ball
 								.ballIndex) && ball.ballIndex.length >= 2) {
 							const ballIndex = ball.ballIndex;
 							const row = Math.min(ballIndex[0], maxRows - 1);
@@ -1834,7 +1956,8 @@
 					const [row, col] = indexArray;
 
 					// 检查行和列索引
-					if (row < 0 || row >= tableData.positions.length || col < 0 || col >= tableData.positions[
+					if (row < 0 || row >= tableData.positions.length || col < 0 || col >= tableData
+						.positions[
 							row].length) {
 						console.error('Invalid row or column index:', row, col);
 						return null;
@@ -1927,11 +2050,14 @@
 								`RCS_Random=${minHorizontalAngle},${maxHorizontalAngle},${minVerticalAngle},${maxVerticalAngle},${minBottomMotorSpeed},${maxBottomMotorSpeed},${minTopMotorSpeed},${maxTopMotorSpeed},${minSpeedDifference},${maxSpeedDifference}\n`;
 						} else {
 							// 如果不是所有参数都是随机
-							const heightValue = this.isHeightRandom ? `${minBottomMotorSpeed},${maxBottomMotorSpeed}` :
+							const heightValue = this.isHeightRandom ?
+								`${minBottomMotorSpeed},${maxBottomMotorSpeed}` :
 								`${this.getHeightFromTable(trainingInfo.angles[0])},${this.getHeightFromTable(trainingInfo.angles[0])}`;
-							const frequencyValue = this.isFrequencyRandom ? `${minballFrequency},${maxballFrequency}` :
+							const frequencyValue = this.isFrequencyRandom ?
+								`${minballFrequency},${maxballFrequency}` :
 								`${ballFrequency},${ballFrequency}`;
-							const rotationValue = this.isRotateRandom ? `${minSpeedDifference},${maxSpeedDifference}` :
+							const rotationValue = this.isRotateRandom ?
+								`${minSpeedDifference},${maxSpeedDifference}` :
 								`${this.getRotationFromTable(trainingInfo.rotations[0])},${this.getRotationFromTable(trainingInfo.rotations[0])}`;
 
 							command =
