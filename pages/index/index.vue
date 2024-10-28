@@ -1225,9 +1225,33 @@
 				}
 				// 初始化球的颜色状态为灰色
 				this.ballColors = new Array(this.balls.length).fill('gray');
+
+				// 获取网球场图片的顶部偏移量
+				uni.createSelectorQuery().in(this)
+					.select('.tennis-court2') // 选择类名为 .tennis-court2 的元素
+					.boundingClientRect(data => {
+						if (data) {
+							const courtTopOffset = data.top; // 获取图片顶部的偏移量
+
+							// 更新每个球的位置
+							this.balls = this.balls.map((ball, index) => {
+								const [row, col] = positions[index];
+								const position = this.calculatePosition(row, col,
+									courtTopOffset); // 传入 courtTopOffset
+								return {
+									...ball,
+									top: `${position.top}px`,
+									left: `${position.left}px`
+								};
+							});
+						} else {
+							console.error("未找到网球场图片");
+						}
+					})
+					.exec();
 			},
 
-			calculatePosition(row, col) {
+			calculatePosition(row, col, courtTopOffset) {
 				const ballSize = 30; // 网球的宽度和高度（单位：px）
 				const numCols = 5; // 列数（固定为5列）
 				const numRows = 7; // 行数（固定为7行）
@@ -1260,21 +1284,14 @@
 				// 计算纵向的边距
 				const verticalPadding = (this.courtHeight - numRows * ballSize) / (numRows + 1);
 
-				const courtImage = document.querySelector('.tennis-court2'); // 获取网球场图片
-				const courtTopOffset = courtImage.getBoundingClientRect().top; // 获取图片顶部的偏移量
-
 				// 计算每个球的实际位置    (网球位置)
 				const left = horizontalBasePadding + currentRowWidth / 2 + colOffset - (ballSize / 2);
-				const top = courtTopOffset - 60 + verticalPadding + row * (ballSize + verticalPadding); // 加入图片顶部的偏移量
+				const top = courtTopOffset - 10 + verticalPadding + row * (ballSize + verticalPadding); // 加入图片顶部的偏移量
 
 				return {
 					top,
 					left
 				};
-			},
-
-			selectBall(ballNumber) {
-				this.selectedBall = ballNumber; // 选择球
 			},
 
 			// 获取网球的样式
@@ -1735,6 +1752,11 @@
 					// 其他模式：从左到右、从上到下的顺序
 					this.servingOrder = this.balls.map((_, index) => index + 1);
 				}
+			},
+
+
+			selectBall(ballNumber) {
+				this.selectedBall = ballNumber; // 选择球
 			},
 
 			async sendTrainingParams() {
