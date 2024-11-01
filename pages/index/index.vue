@@ -13,6 +13,22 @@
 				</span>
 			</button>
 
+			<view class="launcher-position-container">
+				<button :class="{ selected: selectedLauncherPosition === 'Baseline' }"
+					@click="selectLauncherPosition('Baseline')">
+					{{ translations.Baseline[currentLanguage] }} <!-- 使用 translations 获取对应文本 -->
+				</button>
+				<button :class="{ selected: selectedLauncherPosition === 'Midline' }"
+					@click="selectLauncherPosition('Midline')">
+					{{ translations.Midline[currentLanguage] }} <!-- 使用 translations 获取对应文本 -->
+				</button>
+				<button :class="{ selected: selectedLauncherPosition === 'Midcourt' }"
+					@click="selectLauncherPosition('Midcourt')">
+					{{ translations.Midcourt[currentLanguage] }} <!-- 使用 translations 获取对应文本 -->
+				</button>
+			</view>
+
+
 			<view class="battery-container">
 				<image class="battery-icon"
 					src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEsAAAAeCAYAAABkDeOuAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAEHSURBVGiB7dnhDcIgFATgu9ZBHEVHcZLWUZxE3MRNnj9sFUlbIbZC9b4/kojJywWeBIhXO5JNP8aPM7O2Gx5j5vMxIM/4g4CGdKG9DawPqyHZLlnQCjgz209NqKGgelsAFwDXsQnVtypZA69fD6q0quKRpOUuoiRmxrHvtA0TKKxpLz1MYU0g2frnT/WsgN+z/GzMjFpZ8RqtrMDYygLUs5IorAQKK4HCSqCw4jmFlUBHh4AOpZ953KBucldSsvBuXtswoPusmVQAXO4i1kIry+M9ug6qzCzqNVae29DlLSO/mFfpuvs8AQDJ3bIlFcsBOLybFP5NNsD97nn+eorjAKBrQy7mBzcBFFB/q5zO+gAAAABJRU5ErkJggg==" />
@@ -27,7 +43,6 @@
 					<view class="battery-percentage">{{ batteryLevel }}%</view>
 				</view>
 			</view>
-
 		</view>
 
 		<view>
@@ -149,7 +164,7 @@
 
 			<!-- 设置发球高度和选择球 -->
 			<view class="setHeightAndBall" :style="{
-			    'justify-content': (selectedMode === 3 || selectedMode === 5) ? 'space-between' : (selectedMode === 4 ? 'flex-end' : 'space-evenly')
+			    'justify-content': (selectedMode === 2 || selectedMode === 4) ? 'space-between' : (selectedMode === 3 ? 'flex-end' : 'space-evenly')
 			  }">
 				<!-- 展示高度选择功能 -->
 				<view v-if="showHeightSelector" class="height-selector">
@@ -158,24 +173,24 @@
 					<view class="height-options-container">
 						<div class="height-options">
 							<div class="dot"
-								:class="{ selected: selectedHeight === '低' && !(isHeightRandom && selectedMode === 9) }"
+								:class="{ selected: selectedHeight === '低' && !(isHeightRandom && selectedMode === 8) }"
 								@click="selectHeight('低')">
 								<span class="height-text"
-									:class="{ selectedText: selectedHeight === '低' && !(isHeightRandom && selectedMode === 9) }">低</span>
+									:class="{ selectedText: selectedHeight === '低' && !(isHeightRandom && selectedMode === 8) }">{{translations.low[currentLanguage]}}</span>
 							</div>
 
 							<div class="dot"
-								:class="{ selected: selectedHeight === '中' && !(isHeightRandom && selectedMode === 9) }"
+								:class="{ selected: selectedHeight === '中' && !(isHeightRandom && selectedMode === 8) }"
 								@click="selectHeight('中')">
 								<span class="height-text"
-									:class="{ selectedText: selectedHeight === '中' && !(isHeightRandom && selectedMode === 9) }">中</span>
+									:class="{ selectedText: selectedHeight === '中' && !(isHeightRandom && selectedMode === 8) }">{{translations.medium[currentLanguage]}}</span>
 							</div>
 
 							<div class="dot"
-								:class="{ selected: selectedHeight === '高' && !(isHeightRandom && selectedMode === 9) }"
+								:class="{ selected: selectedHeight === '高' && !(isHeightRandom && selectedMode === 8) }"
 								@click="selectHeight('高')">
 								<span class="height-text"
-									:class="{ selectedText: selectedHeight === '高' && !(isHeightRandom && selectedMode === 9) }">高</span>
+									:class="{ selectedText: selectedHeight === '高' && !(isHeightRandom && selectedMode === 8) }">{{translations.height[currentLanguage]}}</span>
 							</div>
 
 						</div>
@@ -183,7 +198,7 @@
 				</view>
 
 				<!-- 选择球功能 -->
-				<view v-if="selectedMode === 3 || selectedMode === 4 || selectedMode === 5" class="ball-selection">
+				<view v-if="selectedMode === 2 || selectedMode === 3 || selectedMode === 4" class="ball-selection">
 					<view class="ball-options-container">
 						<button :class="{ selected: selectedBall === 1 }" @click="selectBall(1)"
 							:style="selectedBall === 1 ? selectedBallStyle : unselectedBallStyle">
@@ -197,7 +212,7 @@
 				</view>
 
 				<!-- 随机开关 -->
-				<view v-if="selectedMode == 9" class="switch-container">
+				<view v-if="selectedMode == 8" class="switch-container">
 					<text class="random-label">{{ translations.random[currentLanguage] }}</text>
 					<switch :checked="isHeightRandom" @change="toggleHeightRandom" color=" rgba(95, 186, 232, 1)"
 						style="transform:scale(0.9)" />
@@ -231,17 +246,17 @@
 
 				<!-- 下层按钮（角度调整、方向按钮、启动按钮） -->
 				<view class="lower-controls">
-					<view v-if="showAngleControl" class="angle-control">
-						<img @click="adjustAngle(-1)" class="setAngle-top"
+					<view v-if="showHeightControl" class="height-control">
+						<img @click="adjustHeight(-1)" class="setHeight-top"
 							src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEYAAABGCAYAAABxLuKEAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAI2SURBVHic7dw9ThtRFMXx8y5pEWYF2E2aFMQ9EhQEOnB24CyBFdheAUsgO+Cjs00BEv3ggoZmxivAiJr3KGaMsOMTUjDMxHN+EoWH0dPVXx7b1XUgBlHcNmfb3mHHATWkf8tgAiBxAbfPwZ/vNxtni25y8xf6UdxyZscOqOc9YRkEIIH3vb1m4/fb6/b2xXA07pjZaVWiAIAD6s7sZDgad+aup7J/dD97sJLp/tjc6AFZmEEUt53ZSbEzlYP3/ud+s3GWPkpmnXfurwxndgwArh/FLTM7LXqgMgne/7IVZ4dFD1I25mzbgsP3ogcpG++wY6jQV/O/ckDNsDy/aD9Szd6/p5oUhlAYQmEIhSEUhlAYQmEIhSEUhlAYQmEIhSEUhlAYQmEIhSEUhlAYQmEIhSEUhviSx6Hx/R1uLi/w9PiQx/GvVtfWsbV7gMbXbx9+di7vmM+IAgBPjw+4ubzI5Ww9SkQuYbZ2D7C6tp7H0TOmj1Ie3HA0Drmc/J/To0QoDKEwhMIQCkMoDKEwhMIQCkMoDKEwhMIQCkMoDKEwhMIQCkMoDKEwhMIQCkMoDGFIdx3IrIkFhVkkMQu4KnqKsnEBt+aDvy56kLJ5Dv483e0wGsdV2gDyNwFI9jY3GgYAwfujogcqDe97QPZ1nW3d6RY5T0l0pwt2ZjYOVXyHzOvuGGDBKqZBFLdh1qnKZ04AkuD90fyuqj/CTPWjuLXi7DBbilHH8qw6mIT0B9yVD/56fjfV1Au3i4qtbOgEaQAAAABJRU5ErkJggg=="
 							alt="Minus" />
 
-						<view class="angle-text-container">
-							<span class="angle-label">{{ translations.angle[currentLanguage] }}:</span>
-							<span class="angle-value">{{ angle }}</span>
+						<view class="height-text-container">
+							<span class="height-label">{{ translations.heights[currentLanguage] }}:</span>
+							<span class="height-value">{{ serveHeight }}</span>
 						</view>
 
-						<img @click="adjustAngle(1)" class="setAngle-bottom"
+						<img @click="adjustHeight(1)" class="setHeight-bottom"
 							src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEYAAABGCAYAAABxLuKEAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAJySURBVHic7dw/T1phFMfx3zl2NeIrEJYuHSy7iQ5WN6XvgK7dXJp0AqYmXdy62nfgnw1w0MT9ytCly4VXAITZ83S491qgnKqJl+cJ93wSEkFCTr7hAs9yCIpOFNeZeFcIewSUkNxWwQhAnxzuH5xcHlYrF4ueRPMPtKO4RsynBJTznjAEDuhDpHVQrfycfpyn73R7gwYznxclCgAQUCbms25v0Jh7PJH+o7nswQLT/LC91QLSMJ0orhPzmd+ZwiAiHw+rlYvkUmJuPPH8wiDmUwCgdhTXmPnc90AhcSKfeI342PcgoWHiXXaE974HCY0Q9hgF+mp+LgJKjNX5RfuaSvz0c4rJwigsjMLCKCyMwsIoLIzCwigsjMLCKN74HgAA4t+/cHd9BQDY2T9C5e07zxMF8o65u77CZDzEZDx8DORbEGEm4+HCv30KIkyILIzCwigsjMLCKCyMwsIoLIzCwiio2xu4137R7OyT96/Y9Y3N3M5WubxjlhEFQK5nK7uUFLmE2dk/wvrGZh4vPSO7lPKQy2fMS/349mXm/uev3z1N8pddSgoLo7AwCgujsDAKC6OwMAoLo7AwiiDCTB8flnGUeI4gwmRnqzzPPi8VxFkpREG8Y0JkYRQWRmFhFBZGYWEUFkZhYRQWRmFhFIxk14GZNWJnYRbpMzvc+J4iNORwz+Lk1vcgoXlwcpnsdugN4iJtAPkfB/QPtrcqDABO5MT3QMEQaQHp13W6dafpc55ANLMFOzMbhwq+Q+ZxdwywYBVTJ4rrYG4U5TPHAX0ncjK/q+qfMJl2FNfWiI/TpRhlrM6qg5FLfsDdiJPb+d1UmT/llqyDvlQ/oAAAAABJRU5ErkJggg=="
 							alt="Add" />
 					</view>
@@ -273,9 +288,9 @@
 					<!-- 开始训练按钮 -->
 					<button ref="startButton" class="btn-start" :style="{
 					        backgroundColor: buttonColor,
-					        ...((selectedMode === 0 || selectedMode === 1 || selectedMode === 9) ? startButtonStyle[1] : startButtonStyle[0]),
-					        marginTop: selectedMode === 10 ? '-0.6vh' : '0' // -6px 转换为自适应的 vh
-					    }" @click="startTraining" :disabled="selectedMode === 10 && inputData === ''">
+					        ...((selectedMode === 0  || selectedMode === 8) ? startButtonStyle[1] : startButtonStyle[0]),
+					        marginTop: selectedMode === 9 ? '-0.6vh' : '0' // -6px 转换为自适应的 vh
+					    }" @click="startTraining" :disabled="selectedMode === 9 && inputData === ''">
 						<span class="btn-text">
 							{{ trainingActive ? translations.endTraining[currentLanguage] : translations.startTraining[currentLanguage] }}
 						</span>
@@ -298,7 +313,7 @@
 							<text class="param-value">{{ frequency }}</text>
 						</view>
 
-						<view v-if="selectedMode === 9" class="frequency-slider switch-container"
+						<view v-if="selectedMode === 8" class="frequency-slider switch-container"
 							style="margin-left: 10px;">
 							<text class="random-label">{{ translations.random[currentLanguage] }}</text>
 							<switch :checked="isFrequencyRandom" @change="toggleFrequencyRandom"
@@ -308,9 +323,9 @@
 
 					<slider class="custom-slider" :value="frequency" min="1" max="10" block-size="16"
 						activeColor="rgba(95, 186, 232, 1)" backgroundColor="background: rgba(240, 242, 251, 1);"
-						:disabled="(!isRotateRandom && selectedMode === 9) || selectedMode === 0 || selectedMode === 1"
+						:disabled="(!isRotateRandom && selectedMode === 9) || selectedMode === 0 "
 						@changing="handleFrequencyChanging" @change="handleFrequencyChange"
-						:style="{ opacity: (isFrequencyRandom && selectedMode === 9) || selectedMode === 0 || selectedMode === 1 ? 0.5 : 1 }" />
+						:style="{ opacity: (isFrequencyRandom && selectedMode === 9) || selectedMode === 0 ? 0.5 : 1 }" />
 
 					<view class="range-label">
 						<text>1</text>
@@ -320,21 +335,21 @@
 
 
 				<!-- 速度 -->
-				<view v-if="this.selectedMode != 9" class="slider speed-slider">
+				<view v-if="selectedMode != 8" class="slider speed-slider">
 					<view class="param-label">
 						<text class="param-text1">{{ translations.speed[currentLanguage] }}:</text>
 						<text class="param-value">{{ speed }}</text>
 					</view>
 					<slider class="custom-slider" :value="speed" min="20" max="140" block-size="16"
 						activeColor="rgba(95, 186, 232, 1)" backgroundColor="background: rgba(240, 242, 251, 1);"
-						:disabled="(isSpeedRandom && selectedMode === 9) || selectedMode === 0 || selectedMode === 1"
+						:disabled="(isSpeedRandom && selectedMode === 8) || selectedMode === 0"
 						@changing="handleSpeedChanging" @change="handleSpeedChange"
-						:style="{ opacity: (isSpeedRandom && selectedMode === 9) || selectedMode === 0 || selectedMode === 1 ? 0.5 : 1 }" />
+						:style="{ opacity: (isSpeedRandom && selectedMode === 8) || selectedMode === 0 ? 0.5 : 1 }" />
 					<view class="range-label">
 						<text>20</text>
 						<text>140</text>
 					</view>
-					<view v-if="selectedMode === 9" class="switch-container" style="margin-left: -10px;">
+					<view v-if="selectedMode === 8" class="switch-container" style="margin-left: -10px;">
 						<text class="random-label">{{ translations.random[currentLanguage] }}</text>
 						<switch :checked="isSpeedRandom" @change="toggleSpeedRandom" color=" rgba(95, 186, 232, 1)"
 							style="transform:scale(0.9)" />
@@ -350,7 +365,7 @@
 							<text class="param-value">{{ rotate }}</text>
 						</view>
 
-						<view v-if="selectedMode === 9" class="rotate-slider switch-container"
+						<view v-if="selectedMode === 8" class="rotate-slider switch-container"
 							style="margin-left: 10px;">
 							<text class="random-label">{{ translations.random[currentLanguage] }}</text>
 							<switch :checked="isRotateRandom" @change="toggleRotateRandom" color="rgba(95, 186, 232, 1)"
@@ -360,9 +375,9 @@
 
 					<slider class="custom-slider" :value="rotate" min="-6" max="6" block-size="16"
 						activeColor="rgba(95, 186, 232, 1)" backgroundColor="background: rgba(240, 242, 251, 1);"
-						:disabled="(isRotateRandom && selectedMode === 9) || selectedMode === 0 || selectedMode === 1"
+						:disabled="(isRotateRandom && selectedMode === 8) || selectedMode === 0 "
 						@changing="handleRotateChanging" @change="handleRotateChange"
-						:style="{ opacity: (isRotateRandom && selectedMode === 9) || selectedMode === 0 || selectedMode === 1 ? 0.5 : 1 }" />
+						:style="{ opacity: (isRotateRandom && selectedMode === 8) || selectedMode === 0  ? 0.5 : 1 }" />
 
 					<view class="range-label">
 						<text>-6</text>
@@ -406,6 +421,20 @@
 				isAnyDeviceConnected: false,
 				bluetoothName: '',
 				currentLanguage: 'zh',
+				courtSizes: [{
+						type: 'singles',
+						length: 23.77,
+						width: 8.23
+					}, // 单打场地
+					{
+						type: 'doubles',
+						length: 23.77,
+						width: 10.97
+					} // 双打场地
+				],
+				selectedCourtType: 'singles', // 默认选择单打场地
+				launcherPositions: ['底线', '中线', '中场'],
+				selectedLauncherPosition: 'Baseline', // 默认选择
 				isPickerVisible: false,
 				isFrequencyRandom: true,
 				isRotateRandom: true,
@@ -413,12 +442,13 @@
 				showDirectionButtons: false, // 控制方向按钮的显示与隐藏
 				upDownButtonsDisabled: true, // 控制上下方向按钮的禁用状态
 				leftRightButtonsDisabled: true, // 控制左右方向按钮的禁用状态
-				showAngleControl: false, // 控制角度调整功能的显示与隐藏
+				showHeightControl: false, // 控制高调整功能的显示与隐藏
 				showHeightSelector: false, // 控制发球高度选择功能的显示与隐藏
 				showInputWithClear: false, // 控制输入框和清除按钮的显示与隐藏
 				inputData: '', // 输入框显示的数据
 				angle: 30, // 初始角度				
 				heights: 30,
+				serveHeight: 30,
 				minAngle: 20, // 角度最小值
 				maxAngle: 50, // 角度最大值
 				heightOptions: ['低', '中', '高'], // 发球高度选项
@@ -433,15 +463,45 @@
 				})),
 				courtWidth: 300,
 				courtHeight: 200,
+				// 训练参数
+				Hmin: 1, // 最低高度
+				Hmax: 10, // 最大高度
+				Vmin: 20, // 最小速度
+				Vmax: 120, // 最大速度
+				AngleVmin: 10, // 最小仰角
+				AngleVMax: 45, // 最大仰角
+				AngleHmin: -45, // 最小水平角
+				AngleHMax: 45, // 最大水平角
+				ballIndices: [], // 存储转换后的球位置
+				launcherPosition: null, // 存储发射机位置
+				gridConfig: {
+					version1: {
+						rows: 7, // 版本1行数
+						cols: 5 // 版本1列数
+					},
+					version2: {
+						rows: 6, // 版本2行数
+						cols: 4 // 版本2列数
+					}
+				},
 				BluetoothList: [], // 存储发现的蓝牙设备
 				showActionSheet: false, // 控制弹窗显示
-				deviceId: null, // 当前连接的设备ID
-				services: null, // 蓝牙服务ID
-				notifyUuid: null, // 通知特征值的UUID
 				buttonText: '开始训练',
 				buttonColor: 'rgba(95, 186, 232, 1)', // 默认颜色
 				modeSelectable: true,
 				translations: {
+					Baseline: {
+						zh: '底线',
+						en: 'Baseline'
+					},
+					Midline: {
+						zh: '中线',
+						en: 'Midline'
+					},
+					Midcourt: {
+						zh: '中场',
+						en: 'Midcourt'
+					},
 					selectMode: {
 						zh: '选择模式',
 						en: 'Select Mode'
@@ -506,9 +566,9 @@
 						zh: '左',
 						en: 'Left'
 					},
-					angle: {
-						zh: '角度',
-						en: 'Angle'
+					heights: {
+						zh: '高度',
+						en: 'heights'
 					},
 					selectedHeight: {
 						zh: '高度',
@@ -578,12 +638,8 @@
 					}
 				},
 				modes: [{
-						zh: '1.0入门练习',
-						en: '1.0 Beginner Practice'
-					},
-					{
-						zh: '2.0练习',
-						en: '2.0 Practice'
+						zh: '初学者练习',
+						en: 'Beginner Practice'
 					},
 					{
 						zh: '定点练习',
@@ -628,68 +684,61 @@
 						positions: [
 							[2, 2]
 						]
-					}, // 1.0入门练习
-
+					}, // 初学者练习
 					1: {
-						ballCount: 1,
-						positions: [
-							[6, 2]
-						]
-					}, //2.0练习
-					2: {
 						ballCount: 1,
 						positions: [
 							[2, 2]
 						]
 					}, // 定点练习
-					3: {
+					2: {
 						ballCount: 2,
 						positions: [
 							[2, 2],
 							[3, 4]
 						]
 					}, // 交叉循环
-					4: {
+					3: {
 						ballCount: 2,
 						positions: [
 							[2, 0],
 							[2, 4]
 						]
 					}, // 水平循环
-					5: {
+					4: {
 						ballCount: 2,
 						positions: [
 							[0, 2],
 							[3, 2]
 						]
 					}, // 垂直循环
-					6: {
+					5: {
 						ballCount: 1,
 						positions: [
 							[2, 2]
 						]
 					}, // 高压练习
-					7: {
+					6: {
 						ballCount: 1,
 						positions: [
 							[2, 2]
 						]
 					}, // 截击练习
+					7: {
+						ballCount: 1,
+						positions: [
+							[2, 2]
+						]
+					}, // 月亮球
 					8: {
 						ballCount: 1,
 						positions: [
 							[2, 2]
 						]
-					}, // 月亮球		
-					9: {
-						ballCount: 1,
-						positions: [
-							[2, 2]
-						]
 					}, // 全场随机
-					10: {
+					9: {
 						ballCount: 35,
-						positions: [ // 编程练习
+						positions: [
 							[0, 0],
 							[0, 1],
 							[0, 2],
@@ -726,141 +775,110 @@
 							[6, 3],
 							[6, 4]
 						]
-					}, // 编程练习			
+					} // 编程练习
 				},
 				modeParams: [{
-						frequency: 4, // 低频率，适合初学者
-						speed: 40, // 低速度，便于掌握基本技巧
-						rotate: 0, // 无旋转，利于新手入门
-						heights: '', // 高度保持不变
-						angle: 25 // 角度较低，便于新手击球
-					}, // 1.0入门练习
-
-					{
-						frequency: 4, // 低频率，适合初学者
-						speed: 40, // 低速度，便于掌握基本技巧
-						rotate: 0, // 无旋转，利于新手入门
-						heights: '', // 高度保持不变
-						angle: 25 // 角度较低，便于新手击球
-					}, // 2.0练习
-
-					{
-						frequency: 5, // 调整频率为中等，适合基本技术练习
-						speed: 60, // 调整速度为中等，方便精准击球
-						rotate: 0, // 无旋转，方便初学者掌握
-						heights: '', // 高度保持不变
-						angle: 25 // 调整角度较低，以增加控制
-					}, // 定点练习
-
-					{
-						frequency: 6, // 稍微增加频率，模拟比赛中的频繁击球
-						speed: 90, // 增加速度，提高反应能力
-						rotate: 1, // 添加轻微旋转以模拟复杂情况
-						heights: '中', // 保持中等高度
-						angle: 40 // 增加角度，训练多样击球
-					}, // 交叉循环
-
-					{
-						frequency: 7, // 适中频率，侧向移动练习需要一定节奏感
-						speed: 80, // 适中速度，训练侧向移动的同时保持稳定
-						rotate: 0, // 无旋转
-						heights: '', // 高度保持不变
-						angle: 30 // 角度适中，利于训练场地覆盖
-					}, // 水平循环
-
-					{
-						frequency: 8, // 高频率，增强上下移动练习强度
-						speed: 70, // 调整速度为中速，适应垂直移动训练
-						rotate: -1, // 轻微负旋转，模拟下旋球
-						heights: '中', // 中等高度，利于上下击球
-						angle: 35 // 角度适中，便于处理高低球
-					}, // 垂直循环
-
-					{
-						frequency: 9, // 较高频率，模拟比赛中的压力情境
-						speed: 130, // 高速度，增加压力感
-						rotate: 2, // 适度旋转，模拟高压情况下的复杂球
-						heights: '', // 高度保持不变
-						angle: 40 // 增加角度，模拟更具挑战的发球
-					}, // 高压练习
-
-					{
-						frequency: 7, // 适中频率，保持截击节奏
-						speed: 100, // 高速度，模拟快速反应场景
-						rotate: 0, // 无旋转，便于截击反应训练
-						heights: '', // 高度保持不变
-						angle: 30 // 角度适中，适合截击球
-					}, // 截击练习
-
-					{
-						frequency: 6, // 适中频率，模拟真实比赛场景
-						speed: 70, // 中等速度，利于适应月亮球的训练
-						rotate: -3, // 适度负旋转，模拟高弧度球
-						heights: '', // 高度保持不变
-						angle: 40 // 增加角度，利于处理高弧度球
-					}, // 月亮球
-
-					{
-						frequency: 6, // 适中频率，增强应变能力
-						speed: 100, // 适中速度，适合应对随机发球
-						rotate: 0, // 无旋转，适应多样化击球
-						heights: '中', // 保持中等高度
-						angle: 35 // 角度适中，利于应对随机发球
-					}, // 全场随机
-
-					{
-						frequency: 7, // 适中频率，用户可自行调整
-						speed: 90, // 中等速度，适合编程训练的多样性
-						rotate: 0, // 无旋转，用户可根据需求调整
-						heights: '', // 高度保持不变
-						angle: 35 // 角度适中，适合多样化的训练设置
-					} // 编程练习
-				],
+					frequency: 4,
+					speed: 40,
+					rotate: 0,
+					heights: '',
+					serveHeight: 2 // 初学者练习，发球角度较低，适合新手
+				}, {
+					frequency: 5,
+					speed: 60,
+					rotate: 0,
+					heights: '',
+					serveHeight: 3 // 定点练习，发球高度适中，便于控制
+				}, {
+					frequency: 6,
+					speed: 90,
+					rotate: 1,
+					heights: '中',
+					serveHeight: 4 // 交叉循环，适当增加发球高度，增加挑战
+				}, {
+					frequency: 7,
+					speed: 80,
+					rotate: 0,
+					heights: '',
+					serveHeight: 5 // 水平循环，发球高度适中，适合节奏训练
+				}, {
+					frequency: 8,
+					speed: 70,
+					rotate: -1,
+					heights: '中',
+					serveHeight: 6 // 垂直循环，增加上下移动训练的难度
+				}, {
+					frequency: 9,
+					speed: 130,
+					rotate: 2,
+					heights: '',
+					serveHeight: 7 // 高压练习，适度增加发球高度以提高压力感
+				}, {
+					frequency: 7,
+					speed: 100,
+					rotate: 0,
+					heights: '',
+					serveHeight: 5 // 截击练习，发球高度适中，便于快速反应
+				}, {
+					frequency: 6,
+					speed: 70,
+					rotate: -3,
+					heights: '',
+					serveHeight: 4 // 月亮球，发球高度适中，适应高弧度球
+				}, {
+					frequency: 6,
+					speed: 100,
+					rotate: 0,
+					heights: '中',
+					serveHeight: 6 // 全场随机，适度发球高度，增加变化
+				}, {
+					frequency: 7,
+					speed: 90,
+					rotate: 0,
+					heights: '',
+					serveHeight: 5 // 编程练习，发球高度适中，用户可自行调整
+				}],
 				modeSettings: {
 					0: {
 						upDown: false,
 						leftRight: false
-					}, // 1.0入门练习
+					}, // 练习
 					1: {
-						upDown: false,
-						leftRight: false
-					}, // 2.0练习
-					2: {
 						upDown: true,
 						leftRight: true
 					}, // 定点练习
-					3: {
+					2: {
 						upDown: true,
 						leftRight: true
 					}, // 交叉循环
-					4: {
+					3: {
 						upDown: true,
 						leftRight: true
 					}, // 水平循环
-					5: {
+					4: {
 						upDown: true,
 						leftRight: true
 					}, // 垂直循环
-					6: {
+					5: {
 						upDown: true,
 						leftRight: true
 					}, // 高压练习
-					7: {
+					6: {
 						upDown: true,
 						leftRight: true
 					}, // 截击练习
-					8: {
+					7: {
 						upDown: true,
 						leftRight: true
 					}, // 月亮球
-					9: {
+					8: {
 						upDown: false,
 						leftRight: false
 					}, // 全场随机
-					10: {
+					9: {
 						upDown: false,
 						leftRight: false
-					}, // 编程练习
+					} // 编程练习
 				},
 				selectedMode: 0,
 				frequency: 5,
@@ -877,97 +895,72 @@
 				}, // 记录网球的位置
 				trainingActive: false,
 				initialParams: [{
-						frequency: 4, // 低频率，适合初学者
-						speed: 40, // 低速度，便于掌握基本技巧
-						rotate: 0, // 无旋转，利于新手入门
-						heights: '', // 高度保持不变
-						angle: 25 // 角度较低，便于新手击球
-					}, // 1.0入门练习
-
-					{
-						frequency: 4, // 低频率，适合初学者
-						speed: 40, // 低速度，便于掌握基本技巧
-						rotate: 0, // 无旋转，利于新手入门
-						heights: '', // 高度保持不变
-						angle: 25 // 角度较低，便于新手击球
-					}, // 2.0练习
-
-					{
-						frequency: 5, // 调整频率为中等，适合基本技术练习
-						speed: 60, // 调整速度为中等，方便精准击球
-						rotate: 0, // 无旋转，方便初学者掌握
-						heights: '', // 高度保持不变
-						angle: 25 // 调整角度较低，以增加控制
-					}, // 定点练习
-
-					{
-						frequency: 6, // 稍微增加频率，模拟比赛中的频繁击球
-						speed: 90, // 增加速度，提高反应能力
-						rotate: 1, // 添加轻微旋转以模拟复杂情况
-						heights: '中', // 保持中等高度
-						angle: 40 // 增加角度，训练多样击球
-					}, // 交叉循环
-
-					{
-						frequency: 7, // 适中频率，侧向移动练习需要一定节奏感
-						speed: 80, // 适中速度，训练侧向移动的同时保持稳定
-						rotate: 0, // 无旋转
-						heights: '', // 高度保持不变
-						angle: 30 // 角度适中，利于训练场地覆盖
-					}, // 水平循环
-
-					{
-						frequency: 8, // 高频率，增强上下移动练习强度
-						speed: 70, // 调整速度为中速，适应垂直移动训练
-						rotate: -1, // 轻微负旋转，模拟下旋球
-						heights: '中', // 中等高度，利于上下击球
-						angle: 35 // 角度适中，便于处理高低球
-					}, // 垂直循环
-
-					{
-						frequency: 9, // 较高频率，模拟比赛中的压力情境
-						speed: 130, // 高速度，增加压力感
-						rotate: 2, // 适度旋转，模拟高压情况下的复杂球
-						heights: '', // 高度保持不变
-						angle: 40 // 增加角度，模拟更具挑战的发球
-					}, // 高压练习
-
-					{
-						frequency: 7, // 适中频率，保持截击节奏
-						speed: 100, // 高速度，模拟快速反应场景
-						rotate: 0, // 无旋转，便于截击反应训练
-						heights: '', // 高度保持不变
-						angle: 30 // 角度适中，适合截击球
-					}, // 截击练习
-
-					{
-						frequency: 6, // 适中频率，模拟真实比赛场景
-						speed: 70, // 中等速度，利于适应月亮球的训练
-						rotate: -3, // 适度负旋转，模拟高弧度球
-						heights: '', // 高度保持不变
-						angle: 40 // 增加角度，利于处理高弧度球
-					}, // 月亮球
-
-					{
-						frequency: 6, // 适中频率，增强应变能力
-						speed: 100, // 适中速度，适合应对随机发球
-						rotate: 0, // 无旋转，适应多样化击球
-						heights: '中', // 保持中等高度
-						angle: 35 // 角度适中，利于应对随机发球
-					}, // 全场随机
-
-					{
-						frequency: 7, // 适中频率，用户可自行调整
-						speed: 90, // 中等速度，适合编程训练的多样性
-						rotate: 0, // 无旋转，用户可根据需求调整
-						heights: '', // 高度保持不变
-						angle: 35 // 角度适中，适合多样化的训练设置
-					} // 编程练习
-				],
+					frequency: 5,
+					speed: 60,
+					rotate: 0,
+					heights: '',
+					serveHeight: 3 // 定点练习，发球高度适中，便于控制
+				}, {
+					frequency: 6,
+					speed: 90,
+					rotate: 1,
+					heights: '中',
+					serveHeight: 4 // 交叉循环，适当增加发球高度，增加挑战
+				}, {
+					frequency: 7,
+					speed: 80,
+					rotate: 0,
+					heights: '',
+					serveHeight: 5 // 水平循环，发球高度适中，适合节奏训练
+				}, {
+					frequency: 8,
+					speed: 70,
+					rotate: -1,
+					heights: '中',
+					serveHeight: 6 // 垂直循环，增加上下移动训练的难度
+				}, {
+					frequency: 9,
+					speed: 130,
+					rotate: 2,
+					heights: '',
+					serveHeight: 7 // 高压练习，适度增加发球高度以提高压力感
+				}, {
+					frequency: 7,
+					speed: 100,
+					rotate: 0,
+					heights: '',
+					serveHeight: 5 // 截击练习，发球高度适中，便于快速反应
+				}, {
+					frequency: 6,
+					speed: 70,
+					rotate: -3,
+					heights: '',
+					serveHeight: 4 // 月亮球，发球高度适中，适应高弧度球
+				}, {
+					frequency: 6,
+					speed: 100,
+					rotate: 0,
+					heights: '中',
+					serveHeight: 6 // 全场随机，适度发球高度，增加变化
+				}, {
+					frequency: 7,
+					speed: 90,
+					rotate: 0,
+					heights: '',
+					serveHeight: 5 // 编程练习，发球高度适中，用户可自行调整
+				}],
 				initialBallPosition: {
 					x: 0,
 					y: 0
 				},
+				defaultParams: {
+					horizontalAngle: 0, // 默认水平角度
+					verticalAngle: 0, // 默认仰角
+					speed: 50, // 默认发球速度
+					rotation: 0, // 默认旋转程度（0表示无旋转）
+					frequency: 5 // 默认发球间隔（1-10秒）
+				},
+				currentParams: {}, // 初始化当前参数为空对象
 			};
 		},
 		computed: {
@@ -990,6 +983,10 @@
 			}
 		},
 		methods: {
+			selectLauncherPosition(position) {
+				this.selectedLauncherPosition = position; // 更新选中的发球机位置
+				// 其他逻辑...
+			},
 
 			openBluetoothPopup() {
 				this.showBluetoothPopup = true;
@@ -1252,13 +1249,13 @@
 
 			updateButtonStates() {
 				// 如果 selectedMode 是 0 或 1，则禁用上下左右按钮
-				if (this.selectedMode === 0 || this.selectedMode === 1) {
+				if (this.selectedMode === 0) {
 					this.upDownButtonsDisabled = true;
 					this.leftRightButtonsDisabled = true;
 				} else {
 					// 否则，根据其他条件更新上下和左右按钮的禁用状态
-					this.upDownButtonsDisabled = this.selectedMode === 4 && this.selectedBall === 2;
-					this.leftRightButtonsDisabled = this.selectedMode === 5 && this.selectedBall === 2;
+					this.upDownButtonsDisabled = this.selectedMode === 3 && this.selectedBall === 2;
+					this.leftRightButtonsDisabled = this.selectedMode === 4 && this.selectedBall === 2;
 				}
 			},
 
@@ -1286,7 +1283,7 @@
 					// 更新开始训练按钮的样式
 					const startButton = this.$refs.startButton; // 获取开始训练按钮的引用
 					if (startButton) {
-						if (this.selectedMode === 0 || this.selectedMode === 1) {
+						if (this.selectedMode === 0) {
 							startButton.style.width = '372.67px';
 							startButton.style.height = '57.33px';
 							startButton.style.opacity = '1';
@@ -1330,12 +1327,12 @@
 						height: `${ballSize}vw`, // 使用自适应高度
 						top: `${position.top}px`, // 保持位置为 px，计算时用到的
 						left: `${position.left}px`, // 保持位置为 px，计算时用到的
-						color: mode === 10 ? 'gray' : 'yellow' // 模式7下为灰色，其他模式为红色
+						color: mode === 9 ? 'gray' : 'yellow' // 模式7下为灰色，其他模式为红色
 					};
 				});
 
-				// 如果是模式10，确保有35个球
-				if (mode === 10) {
+				// 如果是模式9，确保有35个球
+				if (mode === 9) {
 					while (this.balls.length < 35) {
 						this.balls.push({
 							ballIndex: [0, 0], // 默认网格位置 [0, 0]
@@ -1377,8 +1374,11 @@
 
 			calculatePosition(row, col, courtTopOffset) {
 				const ballSize = 30; // 网球的宽度和高度（单位：px）
-				const numCols = 5; // 列数（固定为5列）
-				const numRows = 7; // 行数（固定为7行）
+				// const numCols = 5; // 列数（固定为5列）
+				// const numRows = 7; // 行数（固定为7行）
+
+				const numCols = this.gridConfig.version1.cols; // 版本1的列数（固定为5列）
+				const numRows = this.gridConfig.version1.rows; // 版本1的行数（固定为7行）
 
 				// 梯形的上底和下底宽度
 				const topWidthPercent = 37.5; // 上底占总宽度的百分比
@@ -1443,7 +1443,7 @@
 
 			handleBallInteraction(index) {
 				// 确保只有在模式7下生效
-				if (this.selectedMode !== 10) return;
+				if (this.selectedMode !== 9) return;
 
 				// 获取当前点击的球
 				const ball = this.balls[index];
@@ -1519,46 +1519,54 @@
 
 			// 控制角度调整功能的显示与隐藏
 			toggleAngleControl(selectedMode) {
-				if ([2, 4, 6, 7, 8].includes(selectedMode)) {
-					// if ([0, 2, 4, 5, 8, 9].includes(selectedMode)) { 原来的
-					this.showAngleControl = true;
+				if ([1, 3, 5, 6, 7].includes(selectedMode)) {
+					this.showHeightControl = true;
 				} else {
-					this.showAngleControl = false;
+					this.showHeightControl = false;
 				}
 			},
 
 			// 控制发球高度选择功能的显示与隐藏
 			toggleHeightSelector(selectedMode) {
-				if ([3, 5, 9].includes(selectedMode)) {
+				if ([2, 4, 8].includes(selectedMode)) {
 					// if ([1, 3, 6].includes(selectedMode)) {  原来的
 					this.showHeightSelector = true;
 				} else {
 					this.showHeightSelector = false;
 				}
 			},
-			// 调整角度
-			adjustAngle(change) {
-				this.angle = Math.min(Math.max(this.angle + change, this.minAngle), this.maxAngle);
-				if (this.trainingActive) {
-					this.sendTrainingParams(); // 发送调整后的参数
+
+			// 计算发球机位置
+			calculateLauncherPosition() {
+				const court = this.courtSizes.find(c => c.type === this.selectedCourtType);
+				let x = 0,
+					y = 0; // 默认位置
+
+				if (court) {
+					if (this.selectedLauncherPosition === 'Baseline') {
+						x = 0;
+						y = court.length / 2; // 底线在场地的一端中心
+					} else if (this.selectedLauncherPosition === 'Midline') {
+						x = 0;
+						y = 0; // 中线在场地中央
+					} else if (this.selectedLauncherPosition === 'Midcourt') {
+						x = 0;
+						y = -court.length / 4; // 中场大约在场地中间的前1/4处
+					}
 				}
+
+				return {
+					x,
+					y
+				};
 			},
 
-			// 选择发球高度
-			selectHeight(height) {
-				if (this.isHeightRandom && this.selectedMode == 9) return
-				if (height == '低') {
-					this.angle = 20
-				} else if (height == '中') {
-					this.angle = 35
-				} else {
-					this.angle = 50
-				}
-				this.selectedHeight = height;
-				if (this.trainingActive) {
-					this.sendTrainingParams(); // 发送调整后的参数
-				}
+			// 根据高度计算速度和角度
+			calculateHeightAndAngles(serveHeight, targetPosition, launcherPosition) {
+				const params = this.calculateLaunchParamsByHeight(serveHeight, targetPosition, launcherPosition);
+				this.sendTrainingParams(params); // 发送计算后的参数
 			},
+
 			updateParametersForMode(modeIndex) {
 				// 定义每个模式的默认参数
 				const modeParams = this.modeParams
@@ -1571,7 +1579,7 @@
 				this.speed = params.speed;
 				this.rotate = params.rotate;
 				this.heights = params.heights
-				this.angle = params.angle
+				this.serveHeight = params.serveHeight
 
 				// 重置球的位置
 				this.resetBallPosition();
@@ -1580,11 +1588,11 @@
 			// 处理方向键按下事件
 			handleDirectionKey(direction) {
 				// 模式1: 选中的球可以自由移动
-				if (this.selectedMode === 3) {
+				if (this.selectedMode === 2) {
 					this.moveBall(this.selectedBall, direction);
 				}
 				// 模式2: 1号球可以自由移动，上下移动时2号球跟随，2号球只能左右移动
-				else if (this.selectedMode === 4) {
+				else if (this.selectedMode === 3) {
 					if (this.selectedBall === 1) {
 						this.moveBall(1, direction); // 1号球可以上下左右移动
 						if (direction === 'up' || direction === 'down') {
@@ -1595,7 +1603,7 @@
 					}
 				}
 				// 模式3: 1号球可以自由移动，左右移动时2号球跟随，2号球只能上下移动
-				else if (this.selectedMode === 5) {
+				else if (this.selectedMode === 4) {
 					if (this.selectedBall === 1) {
 						this.moveBall(1, direction); // 1号球可以上下左右移动
 						if (direction === 'left' || direction === 'right') {
@@ -1609,26 +1617,79 @@
 				}
 			},
 
+			// 获取当前选定球场的真实大小
+			fetchSelectedCourtSize() {
+				return this.courtSizes.find(court => court.type === this.selectedCourtType);
+			},
+
+			// 转化球坐标，将传入的相对坐标 [row, col] 转为球场的真实坐标
+			convertBallPosition(position) {
+				const courtSize = this.fetchSelectedCourtSize(); // 获取当前球场的尺寸
+				if (!courtSize) return {
+					x: 0,
+					y: 0
+				};
+
+				const halfCourtLength = courtSize.length / 2; // 使用球场长度的一半
+				const courtWidth = courtSize.width; // 宽度保持原样
+				const balls = this.balls; // 动态获取球的数量
+				const rowCount = this.gridConfig.version1.rows; // 行数（版本1）
+				const colCount = this.gridConfig.version1.cols; // 列数（版本1）
+
+				// 计算每个网球在场地中的间隔距离
+				const spacingX = courtWidth / colCount;
+				const spacingY = halfCourtLength / rowCount;
+
+				// 获取传入位置的实际坐标，保留1位小数
+				const x = Number((position[1] * spacingX + spacingX / 2).toFixed(1));
+				const y = Number((position[0] * spacingY + spacingY / 2).toFixed(1));
+
+				return {
+					x,
+					y
+				};
+			},
+
+
 			onModeChange(mode) {
+				this.convertBallPosition([6, 4])
 				const index = mode
 				this.selectedMode = index;
 
 				// 更新参数的默认值，根据所选模式
 				this.updateParametersForMode(index);
 
+				this.initCurrentParams(); // 重新设置当前参数为默认值
+				// this.generateDefaultCommand(mode); // 生成初始指令
+
 				// 控制 UI 部件显示隐藏
-				this.showBallNumbers = [3, 4, 5, 10].includes(this.selectedMode);
+				this.showBallNumbers = [2, 3, 4, 9].includes(this.selectedMode);
 				// this.updateModeConfigStyle(); // 更新样式和布局
 
 				// 编程练习显示数字
 				this.toggleDirectionButtons(this.selectedMode); // 控制方向按钮显示
 				this.toggleAngleControl(this.selectedMode); // 控制角度调整显示
 				this.toggleHeightSelector(this.selectedMode); // 控制发球高度选择功能
-				this.showInputWithClear = (this.selectedMode === 10); // 编程练习模式下的输入框
+				this.showInputWithClear = (this.selectedMode === 9); // 编程练习模式下的输入框
 
 				// 根据模式设置网球个数及默认位置
 				this.updateBallPositions(index);
 				this.resetToInitialValues();
+			},
+
+			// 初始化当前参数为默认参数
+			initCurrentParams() {
+				this.currentParams = {
+					...this.defaultParams
+				};
+			},
+
+			// 更新当前参数
+			updateCurrentParams(newParams) {
+				this.currentParams = {
+					...this.currentParams,
+					...newParams
+				};
 			},
 
 			moveBall(ballNumber, direction) {
@@ -1663,16 +1724,16 @@
 				newPositions[ballNumber - 1] = [row, col];
 
 				// 根据不同模式，更新其他球的位置
-				if (this.selectedMode === 4 && ballNumber === 1) {
+				if (this.selectedMode === 3 && ballNumber === 1) {
 					// 模式2: 1号球上下移动时，2号球跟随上下移动，但2号球只能水平移动
 					newPositions[1][0] = row; // 2号球的行号跟随1号球
-				} else if (this.selectedMode === 4 && ballNumber === 2) {
+				} else if (this.selectedMode === 3 && ballNumber === 2) {
 					// 2号球只能左右移动，行保持不变
 					newPositions[1] = [newPositions[0][0], col]; // 保证2号球与1号球保持水平
-				} else if (this.selectedMode === 5 && ballNumber === 1) {
+				} else if (this.selectedMode === 4 && ballNumber === 1) {
 					// 模式3: 1号球左右移动时，2号球跟随左右移动，但2号球只能垂直移动
 					newPositions[1][1] = col; // 2号球的列号跟随1号球
-				} else if (this.selectedMode === 5 && ballNumber === 2) {
+				} else if (this.selectedMode === 4 && ballNumber === 2) {
 					// 2号球只能上下移动，列保持不变
 					newPositions[1] = [row, newPositions[0][1]]; // 保证2号球与1号球保持垂直
 				}
@@ -1680,12 +1741,276 @@
 				// 更新球的位置
 				selectedModeConfig.positions = newPositions;
 
+				// 调用 generateDefaultCommand 生成新的指令
+				this.generateDefaultCommand(this.selectedMode);
+
 				// 更新球在界面上的显示位置
 				this.updateBallPositions(this.selectedMode);
 				if (this.trainingActive) {
 					this.sendTrainingParams(); // 发送调整后的参数
 				}
 			},
+
+			// // 函数1：根据高度、落点位置和发射机位置计算发射速度和角度
+			calculateLaunchParamsByHeight(height, targetPosition, launcherPosition) {
+				// const g = 9.81; // 重力加速度 (m/s^2)
+				// const distanceX = targetPosition.x - launcherPosition.x;
+				// const distanceY = targetPosition.y - launcherPosition.y;
+
+				// // 计算仰角（简化为平抛运动）和发射速度
+				// const launchAngle = Math.atan2(height, distanceX) * (180 / Math.PI); // 角度转换为度
+				// const initialVelocity = Math.sqrt((g * distanceX ** 2) / (2 * height - distanceY)); // 发射速度
+
+				// // 假设水平角度是目标的相对位置
+				// const horizontalAngle = Math.atan2(distanceY, distanceX) * (180 / Math.PI);
+
+				// // 更新界面显示的参数
+				// this.serveHeight = launchAngle;
+				// this.speed = initialVelocity;
+				// this.horizontalAngle = horizontalAngle;
+
+				return {
+					// speed: initialVelocity,
+					// launchAngle,
+					// horizontalAngle
+					height
+				};
+			},
+
+			// 函数2：根据发射速度、落点位置和发射机位置计算高度和角度
+			calculateLaunchParamsBySpeed(speed, targetPosition, launcherPosition) {
+				// const g = 9.81; // 重力加速度 (m/s^2)
+				// const distanceX = targetPosition.x - launcherPosition.x;
+				// const distanceY = targetPosition.y - launcherPosition.y;
+
+				// // 使用速度和距离计算高度和仰角
+				// const height = ((speed ** 2) * distanceX) / (2 * g);
+				// const launchAngle = Math.atan2(height, distanceX) * (180 / Math.PI); // 转换为度
+				// const horizontalAngle = Math.atan2(distanceY, distanceX) * (180 / Math.PI);
+
+				// // 更新界面显示的参数
+				// this.height = height;
+				// this.serveHeight = launchAngle;
+				// this.horizontalAngle = horizontalAngle;
+
+				return {
+					speed,
+					// launchAngle,
+					// horizontalAngle
+				};
+			},
+
+			// 选择发球高度
+			selectHeight(height) {
+				if (this.isHeightRandom && this.selectedMode === 8) return; // 模式9中高度随机
+
+				// 设置高度
+				if (height === '低') {
+					this.serveHeight = this.Hmin;
+				} else if (height === '中') {
+					this.serveHeight = 0.5 * (this.Hmax + this.Hmin);
+				} else {
+					this.serveHeight = this.Hmax;
+				}
+				this.selectedHeight = height;
+
+				// 计算发射参数并设置Vmin
+				this.ballIndices.forEach(ball => {
+					const launchParams = this.calculateLaunchParamsByHeight({
+						height: this.serveHeight,
+						ballPosition: ball.coordinates,
+						launcherPosition: this.launcherPosition
+					});
+
+					if (launchParams && launchParams.Vmin !== undefined) {
+						this.Vmin = launchParams.Vmin;
+					}
+				});
+
+				// 如果训练处于激活状态，发送更新后的参数
+				if (this.trainingActive) {
+					this.sendTrainingParams();
+				}
+			},
+
+			// 调整角度
+			adjustHeight(change) {
+				this.serveHeight = Math.min(Math.max(this.serveHeight + change, this.minAngle), this.maxAngle);
+				if (this.trainingActive) {
+					this.sendTrainingParams(); // 发送调整后的参数
+				}
+
+				//调用函数1
+			},
+
+
+			handleSpeedChange(event) {
+				this.speed = event.detail.value;
+				this.sendTrainingParams(); // 发送调整后的参数
+
+				// 遍历每个球，计算发射参数并设置 Vmin
+				this.ballIndices.forEach(ball => {
+					const launchParams = this.calculateLaunchParamsBySpeed(
+						this.speed,
+						ball.coordinates, // 使用球的真实坐标作为目标位置
+						this.launcherPosition // 发射机位置
+					);
+
+					// 更新 Vmin 为当前球的发射参数中的 Vmin
+					if (launchParams && launchParams.Vmin !== undefined) {
+						this.Vmin = launchParams.Vmin;
+					}
+				});
+
+				// 如果训练已激活，发送新的参数
+				if (this.trainingActive) {
+					this.sendTrainingParams(); // 发送调整后的参数
+				}
+			},
+
+			// 生成默认指令
+			generateDefaultCommand(mode) {
+				// 确保 currentParams 已初始化
+				if (Object.keys(this.currentParams).length === 0) {
+					this.initCurrentParams();
+				}
+
+				// 1. 获取当前模式名和模式参数
+				const trainingInfo = {
+					mode: mode,
+					positions: mode === 9 ? this.selectedPositions : [],
+					angles: this.balls.map(() => this.currentParams.horizontalAngle || '-'),
+					heights: this.balls.map(() => this.currentParams.verticalAngle || '-'),
+					frequencies: this.balls.map(() => this.currentParams.frequency || '-'),
+					speeds: this.balls.map(() => this.currentParams.speed || '-'),
+					rotations: this.balls.map(() => this.convertRotationToPercentage(this.currentParams.rotation) ||
+						'-')
+				};
+
+				// 2. 转换每个球的真实坐标
+				this.ballIndices = this.balls.map((ball, index) => {
+					if (ball && Array.isArray(ball.ballIndex) && ball.ballIndex.length >= 2) {
+						const {
+							x,
+							y
+						} = this.convertBallPosition(ball.ballIndex); // 调用转换函数获取真实坐标
+						return {
+							ballIndex: ball.ballIndex, // 原始行列坐标
+							coordinates: {
+								x,
+								y
+							}, // 真实坐标
+							arrayIndex: index // 当前球的索引
+						};
+					} else {
+						console.warn(`无效的球或索引: ${index}`, ball);
+						return null;
+					}
+				}).filter(item => item !== null);
+
+				// 3. 获取发球机的位置并存储
+				const launcherPosition = this.launcherPosition
+				this.launcherPosition = this.calculateLauncherPosition();
+
+				// 4. 根据高度、网球位置、发射机位置，计算发射仰角、水平角和发射速度
+				const launchParamsByHeight = this.ballIndices.map(ball => {
+					const {
+						x,
+						y
+					} = ball.coordinates;
+					return this.calculateLaunchParamsByHeight({
+						height: this.currentParams.height,
+						ballPosition: {
+							x,
+							y
+						},
+						launcherPosition
+					});
+				});
+
+				// 5. 根据速度、网球位置、发射机位置，计算发射仰角、水平角和发射高度
+				const launchParamsBySpeed = this.ballIndices.map(ball => {
+					const {
+						x,
+						y
+					} = ball.coordinates;
+					return this.calculateLaunchParamsBySpeed({
+						speed: this.currentParams.speed,
+						ballPosition: {
+							x,
+							y
+						},
+						launcherPosition
+					});
+				});
+
+				// 6. 设置当前模式的机器参数
+				const commandParams = {
+					modeName: this.selectedModeName,
+					angles: launchParamsByHeight.map(param => param.serveHeight || launchParamsBySpeed[param.index]
+						.serveHeight),
+					heights: launchParamsByHeight.map(param => param.height || launchParamsBySpeed[param.index]
+						.height),
+					speeds: launchParamsBySpeed.map(param => param.speed),
+					frequencies: trainingInfo.frequencies,
+					rotations: trainingInfo.rotations
+				};
+
+				// 7. 拼接指令
+				let command = '';
+				switch (trainingInfo.mode) {
+					case 0:
+					case 1:
+					case 6:
+					case 7:
+						command =
+							`RCS_Single=${commandParams.angles[0]},${commandParams.heights[0]},${commandParams.speeds[0]},${commandParams.rotations[0]},${commandParams.frequencies[0]}\n`;
+						break;
+
+					case 4:
+						const horizontalRange = {
+							startAngle: 10,
+							endAngle: 45
+						};
+						command =
+							`RCS_Double=V,${horizontalRange.startAngle},${horizontalRange.endAngle},${commandParams.heights[0]},${commandParams.speeds[0]},${commandParams.rotations[0]},${commandParams.frequencies[0]}\n`;
+						break;
+
+					case 5:
+						const verticalRange = {
+							startAngle: 5,
+							endAngle: 30
+						};
+						command =
+							`RCS_Double=H,${verticalRange.startAngle},${verticalRange.endAngle},${commandParams.angles[0]},${commandParams.speeds[0]},${commandParams.rotations[0]},${commandParams.frequencies[0]}\n`;
+						break;
+
+					case 8:
+						command =
+							`RCS_Random=${horizontalRange.startAngle},${horizontalRange.endAngle},${verticalRange.startAngle},${verticalRange.endAngle},${commandParams.speeds[0] - 20},${commandParams.speeds[0] + 20},1,9,${commandParams.rotations[0] - 100},${commandParams.rotations[0] + 100}\n`;
+						break;
+
+					case 9:
+						const ball1 =
+							`RCS_Program=${commandParams.angles[0]},${commandParams.heights[0]},${commandParams.speeds[0]},${commandParams.rotations[0]},${commandParams.frequencies[0]}`;
+						const ball2 =
+							`${commandParams.angles[1] || commandParams.angles[0]},${commandParams.heights[1] || commandParams.heights[0]},${commandParams.speeds[1] || commandParams.speeds[0]},${commandParams.rotations[1] || commandParams.rotations[0]},${commandParams.frequencies[1] || commandParams.frequencies[0]}`;
+						command = `${ball1};${ball2}\n`;
+						break;
+
+					default:
+						console.error("Unsupported mode");
+						return;
+				}
+
+				return command;
+			},
+
+			// 辅助函数：将旋转程度转换为百分比
+			convertRotationToPercentage(rotate) {
+				return Math.round((rotate / 6) * 100); // -6 ~ 6 转换为 -100 ~ 100
+			},
+
 
 			startTraining() {
 				if (!this.isAnyDeviceConnected) {
@@ -1721,7 +2046,7 @@
 				this.modeSelectable = true; // 启用模式选择		
 				this.resetToInitialValues(); // 恢复初始值
 				this.sendTrainingParams(); // 发送结束参数
-				if (this.selectedMode === 10) {
+				if (this.selectedMode === 9) {
 					this.clearInputData()
 				}
 			},
@@ -1734,68 +2059,61 @@
 						positions: [
 							[2, 2]
 						]
-					}, // 1.0入门练习
-
+					}, // 初学者练习
 					1: {
-						ballCount: 1,
-						positions: [
-							[6, 2]
-						]
-					}, //2.0练习
-					2: {
 						ballCount: 1,
 						positions: [
 							[2, 2]
 						]
 					}, // 定点练习
-					3: {
+					2: {
 						ballCount: 2,
 						positions: [
 							[2, 2],
 							[3, 4]
 						]
 					}, // 交叉循环
-					4: {
+					3: {
 						ballCount: 2,
 						positions: [
 							[2, 0],
 							[2, 4]
 						]
 					}, // 水平循环
-					5: {
+					4: {
 						ballCount: 2,
 						positions: [
 							[0, 2],
 							[3, 2]
 						]
 					}, // 垂直循环
-					6: {
+					5: {
 						ballCount: 1,
 						positions: [
 							[2, 2]
 						]
 					}, // 高压练习
-					7: {
+					6: {
 						ballCount: 1,
 						positions: [
 							[2, 2]
 						]
 					}, // 截击练习
+					7: {
+						ballCount: 1,
+						positions: [
+							[2, 2]
+						]
+					}, // 月亮球
 					8: {
 						ballCount: 1,
 						positions: [
 							[2, 2]
 						]
-					}, // 月亮球		
-					9: {
-						ballCount: 1,
-						positions: [
-							[2, 2]
-						]
 					}, // 全场随机
-					10: {
+					9: {
 						ballCount: 35,
-						positions: [ // 编程练习
+						positions: [
 							[0, 0],
 							[0, 1],
 							[0, 2],
@@ -1832,7 +2150,7 @@
 							[6, 3],
 							[6, 4]
 						]
-					}, // 编程练习			
+					} // 编程练习	
 				}
 
 				const modeParams = this.modeParams[this.selectedMode] || {};
@@ -1840,7 +2158,7 @@
 				this.frequency = this.initialParams[this.selectedMode].frequency;
 				this.speed = this.initialParams[this.selectedMode].speed;
 				this.rotate = this.initialParams[this.selectedMode].rotate;
-				this.angle = this.initialParams[this.selectedMode].angle;
+				this.serveHeight = this.initialParams[this.selectedMode].serveHeight;
 				this.heights = this.initialParams[this.selectedMode].heights;
 				this.selectedBall = 1
 				this.restoreDefaultBallPositions()
@@ -1848,10 +2166,6 @@
 
 			handleFrequencyChange(event) {
 				this.frequency = event.detail.value;
-				this.sendTrainingParams(); // 发送调整后的参数
-			},
-			handleSpeedChange(event) {
-				this.speed = event.detail.value;
 				this.sendTrainingParams(); // 发送调整后的参数
 			},
 			handleRotateChange(event) {
@@ -1866,8 +2180,8 @@
 			},
 
 			determineServingOrder() {
-				if (this.selectedMode === 10) {
-					// 模式7：使用用户定义的发球顺序
+				if (this.selectedMode === 9) {
+					// 模式9：使用用户定义的发球顺序
 					this.servingOrder = this.inputData.split(',').map(Number);
 				} else {
 					// 其他模式：从左到右、从上到下的顺序
@@ -1890,201 +2204,117 @@
 
 				const mode = this.selectedMode; // 当前模式
 				let selectedPositions = [];
-
 				let ballIndices = [];
-				const maxRows = 5; // 表示 5 行
-				const maxCols = 7; // 表示 7 列
+				const maxRows = this.gridConfig.version1.rows;
+				const maxCols = this.gridConfig.version1.cols;
 
-				if (mode === 10) {
-					ballIndices = this.selectedBalls.map(index => {
-						// 将 selectedBalls 中的索引调整为 0 到 34 的范围
-						const validIndex = index - 1; // 假设 selectedBalls 是从 1 开始的序号
-
-						const ball = this.balls[validIndex];
-
-						// 检查球是否存在并且 ballIndex 也是有效的
-						if (validIndex >= 0 && validIndex < this.balls.length && ball && Array.isArray(
-								ball
-								.ballIndex) && ball.ballIndex.length >= 2) {
-							const ballIndex = ball.ballIndex;
-							const row = Math.min(ballIndex[0], maxRows - 1);
-							const col = Math.min(ballIndex[1], maxCols - 1);
-
-							return {
-								ballIndex: [row, col],
-								arrayIndex: validIndex
-							};
-						} else {
-							console.warn(`无效的球或索引: ${validIndex}`, ball);
-							return null; // 处理无效情况
-						}
-					}).filter(item => item !== null);
-				} else {
-					ballIndices = this.balls.map((ball, index) => {
-						// 确保每个球都有有效的 ballIndex
-						if (ball && Array.isArray(ball.ballIndex) && ball.ballIndex.length >= 2) {
-							const ballIndex = ball.ballIndex;
-							const row = Math.min(ballIndex[0], maxRows - 1);
-							const col = Math.min(ballIndex[1], maxCols - 1);
-
-							return {
-								ballIndex: [row, col],
-								arrayIndex: index
-							};
-						} else {
-							console.warn(`无效的球或索引: ${index}`, ball);
-							return null; // 处理无效情况
-						}
-					}).filter(item => item !== null);
-				}
-
-				// 获取点位表数据
-				const tableData = await this.getTable(this.angle, this.speed);
-				if (!tableData) {
-					console.error('Failed to retrieve table data.');
-					return; // 提前返回，避免继续执行
-				}
-				// 根据 ballIndices 获取对应的 positions 内容
-				const positions = ballIndices.map(({
-					ballIndex
-				}) => {
-					const indexArray = Array.from(ballIndex);
-					if (indexArray.length !== 2) {
-						console.error('Invalid ballIndex length:', indexArray);
+				// 获取球位置
+				ballIndices = this.balls.map((ball, index) => {
+					if (ball && Array.isArray(ball.ballIndex) && ball.ballIndex.length >= 2) {
+						const ballIndex = ball.ballIndex;
+						const row = Math.min(ballIndex[0], maxRows - 1);
+						const col = Math.min(ballIndex[1], maxCols - 1);
+						return {
+							ballIndex: [row, col],
+							arrayIndex: index
+						};
+					} else {
+						console.warn(`无效的球或索引: ${index}`, ball);
 						return null;
 					}
-					const [row, col] = indexArray;
+				}).filter(item => item !== null);
 
-					// 检查行和列索引
-					if (row < 0 || row >= tableData.positions.length || col < 0 || col >= tableData
-						.positions[
-							row].length) {
-						console.error('Invalid row or column index:', row, col);
-						return null;
-					}
-
-					const positionInfo = tableData.positions[row][col];
-					return positionInfo;
-				}).filter(pos => pos !== null);
-
-				// console.log('Retrieved positions based on ball indices:', positions); // 打印获取到的位置信息
-
-				const angles = this.balls.map(() => this.angle || '-'); // 角度信息
-				const heights = this.balls.map(() => this.heights || '-'); // 高度信息
-				const frequencies = this.balls.map(() => this.frequency || '-'); // 频率信息
-				const speeds = this.balls.map(() => this.speed || '-'); // 速度信息
-				const rotations = this.balls.map(() => this.rotate || '-'); // 旋转信息
-
-				if (mode === 10) {
-					selectedPositions = this.selectedBalls.map(index => {
-						// 使用 index - 1 来将序号转换为 0~34 的索引
-						const validIndex = index - 1; // 调整为 0~34 索引
-						if (validIndex >= 0 && validIndex < this.balls.length) {
-							const ball = this.balls[validIndex];
-							if (ball) {
-								return ball.ballIndex; // 获取 [row, col] 位置
-							} else {
-								console.warn(`无效的球对象在索引: ${validIndex}`);
-								return null; // 返回 null 表示无效的球
-							}
-						} else {
-							console.warn(`选中的索引超出范围: ${index}`);
-							return null; // 返回 null 表示索引无效
-						}
-					}).filter(position => position !== null);
-				}
-
-				// 组织成一个对象
+				// 获取当前模式的trainingInfo
 				const trainingInfo = {
 					mode: mode,
-					positions: mode === 7 ? selectedPositions : [],
-					angles: angles,
-					heights: heights,
-					frequencies: frequencies,
-					speeds: speeds,
-					rotations: rotations
+					positions: mode === 9 ? selectedPositions : [],
+					angles: this.balls.map(() => this.serveHeight || '-'),
+					heights: this.balls.map(() => this.heights || '-'),
+					frequencies: this.balls.map(() => this.frequency || '-'),
+					speeds: this.balls.map(() => this.speed || '-'),
+					rotations: this.balls.map(() => this.rotate || '-')
 				};
 
-				//获取网球机下球点击速度
-				const ballFrequency = this.getBallRotationSpeed(trainingInfo.frequencies)
 				// 根据模式生成相应的指令
 				switch (trainingInfo.mode) {
 					case 0:
-					case 3:
+					case 1:
 					case 6:
 					case 7:
 					case 8:
-					case 9:
+						const ballParams = this.calculateLaunchParams(this.heights, {
+							x: 5,
+							y: 10
+						}, {
+							x: 0,
+							y: 0
+						});
 						command =
-							`RCS_Single=${positions[0].horizontalAngle},${positions[0].verticalAngle},${positions[0].bottomMotor},${positions[0].topMotor},${trainingInfo.frequencies}\n`;
+							`RCS_Single=${ballParams.horizontalAngle},${ballParams.verticalAngle},${ballParams.launchSpeed},${trainingInfo.rotations[0]},${trainingInfo.frequencies}\n`;
 						break;
-					case 3:
-						command = positions.map(pos =>
-							`${pos.horizontalAngle},${pos.verticalAngle},${pos.bottomMotor},${pos.topMotor},${trainingInfo.frequencies}`
-						).join(';') + ';\n';
-						break;
+
 					case 4: // 水平循环
+						const horizontalRange = {
+							startAngle: 10,
+							endAngle: 45
+						}; // 示例范围
 						command =
-							`RCS_Double=V,${positions[0].horizontalAngle},${positions[1].horizontalAngle},${positions[0].verticalAngle},${positions[0].bottomMotor},${positions[0].topMotor},${trainingInfo.frequencies}\n`;
+							`RCS_Double=V,${horizontalRange.startAngle},${horizontalRange.endAngle},${ballParams.verticalAngle},${ballParams.launchSpeed},${trainingInfo.rotations[0]},${trainingInfo.frequencies}\n`;
 						break;
+
 					case 5: // 垂直循环
+						const verticalRange = {
+							startAngle: 5,
+							endAngle: 30
+						}; // 示例范围
 						command =
-							`RCS_Double=H,${positions[0].verticalAngle},${positions[1].verticalAngle},${positions[0].horizontalAngle},${positions[0].bottomMotor},${positions[0].topMotor},${trainingInfo.frequencies}\n`;
-					case 9:
-						const minHorizontalAngle = 0; // 根据表格的最小值设置
-						const maxHorizontalAngle = 90; // 根据表格的最大值设置
-						const minVerticalAngle = 0; // 根据表格的最小值设置
-						const maxVerticalAngle = 30; // 根据表格的最大值设置
-						const minBottomMotorSpeed = 2000; // 根据表格的最小值设置
-						const maxBottomMotorSpeed = 5000; // 根据表格的最大值设置
-						const minTopMotorSpeed = 1000; // 根据表格的最小值设置
-						const maxTopMotorSpeed = 2000; // 根据表格的最大值设置
-						const minSpeedDifference = -1000; // 下电机速度差的最小值
-						const maxSpeedDifference = 1000; // 下电机速度差的最大值
-						const maxballFrequency = 1000;
-						const minballFrequency = 100;
-
-						// 如果所有参数都是随机
-						if (this.isHeightRandom && this.isFrequencyRandom && this.isRotateRandom) {
-							command =
-								`RCS_Random=${minHorizontalAngle},${maxHorizontalAngle},${minVerticalAngle},${maxVerticalAngle},${minBottomMotorSpeed},${maxBottomMotorSpeed},${minTopMotorSpeed},${maxTopMotorSpeed},${minSpeedDifference},${maxSpeedDifference}\n`;
-						} else {
-							// 如果不是所有参数都是随机
-							const heightValue = this.isHeightRandom ?
-								`${minBottomMotorSpeed},${maxBottomMotorSpeed}` :
-								`${this.getHeightFromTable(trainingInfo.angles[0])},${this.getHeightFromTable(trainingInfo.angles[0])}`;
-							const frequencyValue = this.isFrequencyRandom ?
-								`${minballFrequency},${maxballFrequency}` :
-								`${ballFrequency},${ballFrequency}`;
-							const rotationValue = this.isRotateRandom ?
-								`${minSpeedDifference},${maxSpeedDifference}` :
-								`${this.getRotationFromTable(trainingInfo.rotations[0])},${this.getRotationFromTable(trainingInfo.rotations[0])}`;
-
-							command =
-								`RCS_Random=${minHorizontalAngle},${maxHorizontalAngle},${minVerticalAngle},${maxVerticalAngle},${heightValue},${rotationValue},${frequencyValue}\n`;
-						}
+							`RCS_Double=H,${verticalRange.startAngle},${verticalRange.endAngle},${ballParams.horizontalAngle},${ballParams.launchSpeed},${trainingInfo.rotations[0]},${trainingInfo.frequencies}\n`;
 						break;
 
-					case 10:
+					case 8: // 全场随机
+						command =
+							`RCS_Random=${horizontalRange.startAngle},${horizontalRange.endAngle},${verticalRange.startAngle},${verticalRange.endAngle},${ballParams.launchSpeed - 20},${ballParams.launchSpeed + 20},1,9,${trainingInfo.rotations[0] - 100},${trainingInfo.rotations[0] + 100}\n`;
+						break;
+
+					case 9: // 编程练习
+						const ball1 = calculateLaunchParams(this.heights, {
+							x: 3,
+							y: 8
+						}, {
+							x: 0,
+							y: 0
+						});
+						const ball2 = calculateLaunchParams(this.heights, {
+							x: 6,
+							y: 12
+						}, {
+							x: 0,
+							y: 0
+						});
+						command =
+							`RCS_Program=${ball1.horizontalAngle},${ball1.verticalAngle},${ball1.launchSpeed},${trainingInfo.rotations[0]},${trainingInfo.frequencies};${ball2.horizontalAngle},${ball2.verticalAngle},${ball2.launchSpeed},${trainingInfo.rotations[0]},${trainingInfo.frequencies}\n`;
+						break;
+
+					case 10: // 模式10
 						if (positions.length === 0) {
 							console.log('No positions available for case 7');
 						} else {
 							command = positions.map(pos =>
-								`${pos.horizontalAngle},${pos.verticalAngle},${pos.bottomMotor},${pos.topMotor}`
-							).join(';') + ';\n';
+									`${pos.horizontalAngle},${pos.verticalAngle},${pos.bottomMotor},${pos.topMotor}`)
+								.join(';') + ';\n';
 							console.log('指令的长度', command.length);
 						}
 						break;
+
 					default:
 						console.error("Unsupported mode");
 						return;
 				}
 
-
 				const maxCommandLength = 128;
 				for (let i = 0; i < command.length; i += maxCommandLength) {
 					const part = command.slice(i, i + maxCommandLength);
-					console.log('发送指令:', `RCS_Random=${part}`); // 添加前缀并输出
+					console.log('发送指令:', `RCS_Random=${part}`);
 				}
 			},
 
@@ -2156,19 +2386,19 @@
 			},
 
 
-			async getTable(angle, speed) {
-				console.log(angle, speed)
+			async getTable(serveHeight, speed) {
+				console.log(serveHeight, speed)
 				try {
 					// 根据角度和速度查询
 					const data = db;
 
 					// 根据角度和速度查询
-					const result = data.find(item => item.angle === angle && item.speed === speed);
+					const result = data.find(item => item.serveHeight === serveHeight && item.speed === speed);
 					if (result) {
 						return result; // 返回匹配的内容
 
 					} else {
-						console.error('No matching table or positions found for given angle and speed');
+						console.error('No matching table or positions found for given serveHeight and speed');
 						return null;
 					}
 				} catch (error) {
@@ -2537,6 +2767,32 @@
 		/* 选中的字体颜色 */
 	}
 
+	.searching-container {
+		display: flex;
+		/* 使用 flexbox 布局 */
+		flex-direction: column;
+		/* 纵向排列子元素 */
+		justify-content: center;
+		/* 垂直居中对齐 */
+		align-items: center;
+		/* 水平居中对齐 */
+	}
+
+	.searching-image {
+		width: 330px;
+		/* 确保宽度生效 */
+		height: 215px;
+		/* 确保高度生效 */
+		margin-bottom: 20px;
+		/* 确保间隔生效 */
+	}
+
+	.searching-text {
+		font-size: 16px;
+		/* 根据需要调整字体大小 */
+		color: #333;
+		/* 根据需要调整文字颜色 */
+	}
 
 	.bluetoothConnectivity {
 		font-size: 20.64px;
@@ -3082,6 +3338,23 @@
 		background-color: green;
 	}
 
+	.ball-options-container {
+		width: 28.53vw;
+		/* 宽度使用 vw 单位 */
+		height: 3.81vh;
+		/* 高度使用 vh 单位 */
+		opacity: 1;
+		border-radius: 1.60vw;
+		/* 边角半径使用 vw 单位 */
+		background: rgba(196, 219, 237, 1);
+		display: flex;
+		justify-content: space-between;
+		/* 两个按钮之间自动拉开距离 */
+		align-items: center;
+		/* 垂直居中对齐 */
+		margin-right: 10px;
+		/* 右外边距保持 px 单位 */
+	}
 
 	.ball-options-container button {
 		border: none;
@@ -3130,6 +3403,78 @@
 		/* 确保未选中时没有边框 */
 	}
 
+	.launcher-position-container {
+		width: 28.53vw;
+		/* 宽度使用 vw 单位 */
+		height: 3.81vh;
+		/* 高度使用 vh 单位 */
+		opacity: 1;
+		border-radius: 1.60vw;
+		/* 边角半径使用 vw 单位 */
+		background: rgba(196, 219, 237, 1);
+		/* 背景颜色 */
+		display: flex;
+		justify-content: space-between;
+		/* 按钮之间自动拉开距离 */
+		align-items: center;
+		/* 垂直居中对齐 */
+		margin-right: 10px;
+		/* 右外边距保持 px 单位 */
+		padding: 0 10px;
+		/* 添加内边距 */
+	}
+
+	.launcher-position-container button {
+		border: none;
+		/* 确保没有边框 */
+		cursor: pointer;
+		/* 鼠标悬停时显示为手指 */
+		font-size: 3.20vw;
+		/* 根据需要调整字体大小 */
+		font-weight: 500;
+		/* 字体加粗 */
+		letter-spacing: 0;
+		/* 字符间距 */
+		line-height: 4.63vh;
+		/* 行高 */
+		text-align: center;
+		/* 文字居中 */
+		vertical-align: top;
+		/* 垂直对齐 */
+		width: 13.47vw;
+		/* 按钮宽度 */
+		height: 3.08vh;
+		/* 按钮高度 */
+		border-radius: 1.07vw;
+		/* 按钮圆角 */
+		white-space: nowrap;
+		/* 防止文字换行 */
+		display: flex;
+		/* 使用 Flexbox */
+		align-items: center;
+		/* 垂直居中 */
+		justify-content: center;
+		/* 水平居中 */
+		background: none;
+		/* 确保未选中时没有背景色 */
+	}
+
+	.launcher-position-container button.selected {
+		background: rgba(95, 186, 232, 1);
+		/* 选中按钮的背景颜色 */
+		color: rgba(255, 255, 255, 1);
+		/* 选中文字颜色 */
+	}
+
+	.launcher-position-container button:not(.selected) {
+		background: none;
+		/* 未选中时无背景色 */
+		color: rgba(127, 135, 161, 1);
+		/* 未选中按钮的文字颜色 */
+	}
+
+
+
 	.controls {
 		display: flex;
 		/* 使用 flexbox 布局 */
@@ -3157,7 +3502,7 @@
 		/* 防止换行 */
 	}
 
-	.angle-control {
+	.height-control {
 		width: 21.5vw;
 		/* 原为 91.73px，转换为 vw */
 		height: 17.9vh;
@@ -3177,7 +3522,7 @@
 		/* 水平居中对齐 */
 	}
 
-	.setAngle-top {
+	.setHeight-top {
 		width: 9.55vw;
 		height: 9.55vw;
 		/* 将高度也改为 vw 单位 */
@@ -3186,7 +3531,7 @@
 		margin-top: 1.20vh;
 	}
 
-	.setAngle-bottom {
+	.setHeight-bottom {
 		width: 9.55vw;
 		height: 9.55vw;
 		/* 将高度也改为 vw 单位 */
@@ -3195,7 +3540,7 @@
 		margin-bottom: 1.20vh;
 	}
 
-	.angle-text-container {
+	.height-text-container {
 		display: flex;
 		align-items: center;
 		margin: 0;
@@ -3204,7 +3549,7 @@
 		/* 左右边距从 5px 转换为约 1.1vw */
 	}
 
-	.angle-label {
+	.height-label {
 		font-size: 1.48vh;
 		/* 约 13.76px */
 		font-weight: 500;
@@ -3214,7 +3559,7 @@
 		color: rgba(51, 51, 51, 1);
 	}
 
-	.angle-value {
+	.height-value {
 		font-size: 1.48vh;
 		/* 约 13.76px */
 		font-weight: 500;
@@ -3397,27 +3742,6 @@
 		text-align: center;
 		/* 确保文本在span内居中 */
 	}
-
-
-
-	.ball-options-container {
-		width: 28.53vw;
-		/* 宽度使用 vw 单位 */
-		height: 3.81vh;
-		/* 高度使用 vh 单位 */
-		opacity: 1;
-		border-radius: 1.60vw;
-		/* 边角半径使用 vw 单位 */
-		background: rgba(196, 219, 237, 1);
-		display: flex;
-		justify-content: space-between;
-		/* 两个按钮之间自动拉开距离 */
-		align-items: center;
-		/* 垂直居中对齐 */
-		margin-right: 10px;
-		/* 右外边距保持 px 单位 */
-	}
-
 
 	uni-button:after {
 		content: none;
