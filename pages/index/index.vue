@@ -1418,8 +1418,9 @@
 					fail: (err) => {
 						console.log('蓝牙模块初始化失败', err);
 						uni.showToast({
-							title: '请打开蓝牙',
-							icon: 'none'
+							title: '蓝牙初始化失败，请打开蓝牙后重试',
+							icon: 'none',
+							duration: 2000
 						});
 					}
 				});
@@ -1433,7 +1434,8 @@
 						console.log('蓝牙适配器不可用');
 						uni.showToast({
 							title: '蓝牙已关闭，请重新打开',
-							icon: 'none'
+							icon: 'none',
+							duration: 2000
 						});
 						this.disconnectDevice(); // 如果蓝牙关闭，自动断开设备
 					}
@@ -1481,6 +1483,11 @@
 					},
 					fail: (err) => {
 						console.log('搜索蓝牙设备失败', err);
+						uni.showToast({
+							title: '蓝牙设备搜索失败，请重试',
+							icon: 'none',
+							duration: 2000
+						});
 					}
 				});
 			},
@@ -1559,6 +1566,11 @@
 										resolve(true); // 连接成功，返回 true
 									},
 									fail: () => {
+										uni.showToast({
+											title: '获取蓝牙服务失败，请重试',
+											icon: 'none',
+											duration: 2000
+										});
 										resolve(false); // 获取服务失败
 									}
 								});
@@ -1566,6 +1578,11 @@
 						},
 						fail: (err) => {
 							console.log('连接失败', err);
+							uni.showToast({
+								title: '蓝牙连接失败，请确保设备在范围内',
+								icon: 'none',
+								duration: 2000
+							});
 							resolve(false); // 连接失败，返回 false
 						}
 					});
@@ -1619,6 +1636,39 @@
 				});
 			},
 
+			receiveBLEData() {
+				uni.notifyBLECharacteristicValueChange({
+					state: true,
+					deviceId: this.deviceId,
+					serviceId: this.serviceId,
+					characteristicId: '49535343-8841-43F4-A8D4-ECBE34729BB3',
+					state: true,
+					success: () => {
+						console.log('成功启用接收通知');
+					},
+					fail: (err) => {
+						console.log('启用接收通知失败', err, this.serviceId);
+						uni.showToast({
+							title: '启用接收通知失败',
+							icon: 'none',
+							duration: 2000
+						});
+					}
+				});
+
+				uni.onBLECharacteristicValueChange((res) => {
+					// 将接收到的 ArrayBuffer 转换为字符串
+					let data = String.fromCharCode.apply(null, new Uint8Array(res.value));
+					console.log('接收到的数据:', data);
+
+					// 假设接收到的数据格式为 "battery:80" 表示电量为 80%
+					if (data.startsWith('battery:')) {
+						this.batteryLevel = data.split(':')[1]; // 提取电量并更新
+						console.log('更新电池电量:', this.batteryLevel);
+					}
+				});
+			},
+
 			stopBluetoothDevicesDiscovery() {
 				uni.stopBluetoothDevicesDiscovery({
 					success: (res) => {
@@ -1626,6 +1676,11 @@
 					},
 					fail: (err) => {
 						console.log('停止搜索蓝牙设备失败', err);
+						uni.showToast({
+							title: '停止搜索蓝牙设备失败',
+							icon: 'none',
+							duration: 2000
+						});
 					}
 				});
 			},
@@ -1665,37 +1720,15 @@
 					},
 					fail: (err) => {
 						console.log('断开连接失败', err);
+						uni.showToast({
+							title: '蓝牙断开连接失败',
+							icon: 'none',
+							duration: 2000
+						});
 					}
 				});
 			},
 
-			receiveBLEData() {
-				uni.notifyBLECharacteristicValueChange({
-					state: true,
-					deviceId: this.deviceId,
-					serviceId: this.serviceId,
-					characteristicId: '49535343-8841-43F4-A8D4-ECBE34729BB3',
-					state: true,
-					success: () => {
-						console.log('成功启用接收通知');
-					},
-					fail: (err) => {
-						console.log('启用接收通知失败', err, this.serviceId);
-					}
-				});
-
-				uni.onBLECharacteristicValueChange((res) => {
-					// 将接收到的 ArrayBuffer 转换为字符串
-					let data = String.fromCharCode.apply(null, new Uint8Array(res.value));
-					console.log('接收到的数据:', data);
-
-					// 假设接收到的数据格式为 "battery:80" 表示电量为 80%
-					if (data.startsWith('battery:')) {
-						this.batteryLevel = data.split(':')[1]; // 提取电量并更新
-						console.log('更新电池电量:', this.batteryLevel);
-					}
-				});
-			},
 
 			showModePicker() {
 				if (this.trainingActive) {
@@ -2302,6 +2335,11 @@
 					this.generateDefaultCommand(this.selectedMode)
 					// 发送训练参数
 					this.sendBLEData(this.command);
+					uni.showToast({
+						title: '蓝牙数据发送失败',
+						icon: 'none',
+						duration: 2000
+					});
 
 					// 确定发球顺序
 					this.determineServingOrder();
