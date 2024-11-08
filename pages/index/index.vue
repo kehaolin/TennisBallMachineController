@@ -454,6 +454,9 @@
 				RX_UUID: '49535343-1E4D-4BD9-BA61-23C647249616', // 发送指令UUID
 				currentDevice: '',
 				connectedDeviceId: '',
+				isManualDisconnect: false, // 标记是否是主动断开
+				reconnecting: false,
+				pendingCommand: '',
 				batteryLevel: 100,
 				batteryTimer: null, // 定时器引用
 				showModePickerModal: false, // 控制弹窗显示
@@ -476,6 +479,7 @@
 				],
 				cannonX: 0,
 				cannonY: 0,
+				deviceInfo: null,
 				selectedCourtType: 'singles', // 默认选择单打场地
 				launcherPositions: ['底线', '中线', '中场'],
 				selectedLauncherPosition: 'Baseline', // 默认选择
@@ -1046,6 +1050,7 @@
 		},
 		methods: {
 			selectDifficulty(difficulty) {
+				this.sendBLEData('RS_Single=15,18,35,0,4?\r\n')
 				if (this.trainingActive) {
 					uni.showToast({
 						title: '请先结束当前训练',
@@ -1409,6 +1414,11 @@
 
 			//初始化蓝牙
 			openBluetoothAdapter() {
+				// 如果当前已连接设备，则不再执行蓝牙初始化
+				if (this.connectedDeviceId) {
+					console.log('设备已连接，跳过蓝牙初始化');
+					return;
+				}
 				uni.openBluetoothAdapter({
 					success: (res) => {
 						console.log('蓝牙模块初始化成功', res);
@@ -1443,6 +1453,14 @@
 
 				// 设备连接状态变化监听
 				uni.onBLEConnectionStateChange((res) => {
+
+					// 如果是主动断开，则不做重连
+					if (this.isManualDisconnect) {
+						console.log('主动断开，跳过重连');
+						return;
+					}
+
+					// 如果设备已断开，尝试重连
 					if (!res.connected) {
 						console.log('蓝牙设备已断开');
 						uni.showToast({
@@ -1453,6 +1471,7 @@
 					}
 				});
 			},
+
 
 			//检查蓝牙状态
 			checkBluetoothState() {
@@ -1537,7 +1556,7 @@
 					});
 			},
 
-			//连接到蓝牙
+			// 连接到蓝牙设备
 			connectToDevice(deviceId) {
 				return new Promise((resolve) => {
 					uni.createBLEConnection({
@@ -1545,36 +1564,29 @@
 						success: (res) => {
 							console.log('连接成功', res);
 							this.connectedDeviceId = deviceId;
-							this.currentDevice = this.devices.find(d => d.deviceId ===
-								deviceId);
-							this.devices = [];
 							this.deviceId = deviceId;
-							this.stopBluetoothDevicesDiscovery();
-							// 启动接收通知功能
-							let This = this;
+							this.stopBluetoothDevicesDiscovery(); // 停止设备搜索
+
+							// 设置一个1秒的定时器来启动接收通知功能
 							setTimeout(() => {
-								uni.getBLEDeviceServices({
-									deviceId,
-									success(res) {
-										console.log('device services:', res
-											.services);
-										This.receiveBLEData();
-										This.batteryTimer = setInterval(() => {
-											This.sendBLEData(
-												'getBattery'); // 发送电池请求命令
-										}, 60000);
-										resolve(true); // 连接成功，返回 true
-									},
-									fail: () => {
-										uni.showToast({
-											title: '获取蓝牙服务失败，请重试',
-											icon: 'none',
-											duration: 2000
-										});
-										resolve(false); // 获取服务失败
-									}
-								});
-							}, 1000);
+								this.receiveBLEData();
+							}, 1000); // 延迟1秒执行接收通知
+
+							// 立即获取电池电量和设备信息
+							setTimeout(() => {
+								this.getBatteryLevel(deviceId);
+							}, 2000); // 延迟3秒执行接收通知
+
+							setTimeout(() => {
+								this.getDeviceInfo(deviceId)
+							}, 3000); // 延迟3秒执行接收通知
+
+							// 每60秒发送一次电池请求
+							this.batteryTimer = setInterval(() => {
+								this.getBatteryAndDeviceInfo(deviceId);
+							}, 60000); // 每分钟获取一次电池电量
+
+							resolve(true); // 连接成功
 						},
 						fail: (err) => {
 							console.log('连接失败', err);
@@ -1583,16 +1595,61 @@
 								icon: 'none',
 								duration: 2000
 							});
-							resolve(false); // 连接失败，返回 false
+							resolve(false); // 连接失败
 						}
 					});
 				});
 			},
 
+			// 获取电池电量
+			getBatteryLevel(deviceId) {
+				console.log('请求获取电池电量');
+
+				// 获取电池电量
+				this.sendBLEData('RS_Bat?\r\n', (batteryData) => {
+					// 电池数据格式: RS_Bat=ok,0
+					const batteryLevel = batteryData.split(',')[1]; // 获取'0'这个值
+					console.log('电池电量:', batteryLevel);
+					this.batteryLevel = batteryLevel;
+				});
+			},
+
+			// 获取设备信息
+			getDeviceInfo(deviceId) {
+				console.log('请求获取设备信息');
+
+				// 获取设备信息
+				this.sendBLEData('RS_getInfo?\r\n', (infoData) => {
+					if (infoData.startsWith('info:')) {
+						let deviceInfo = infoData.split(':')[1];
+						console.log('设备信息:', deviceInfo);
+						this.deviceInfo = deviceInfo;
+					} else {
+						console.log('设备信息数据格式错误:', infoData);
+					}
+				});
+			},
+
+			// 重新连接蓝牙设备
 			reconnectDevice(deviceId) {
+				if (this.isManualDisconnect) return
+				if (!deviceId) {
+					console.log('没有设备 ID，无法重连');
+					return;
+				}
+
+				// 如果设备已经在重连中，避免重复重连
+				if (this.reconnecting) {
+					console.log('正在重连中，跳过');
+					return;
+				}
+
+				this.reconnecting = true; // 标记为正在重连状态
+				console.log('尝试重新连接设备', deviceId);
+
 				this.connectToDevice(deviceId).then((isConnected) => {
 					if (isConnected) {
-						console.log('重新连接成功');
+						console.log('蓝牙重连成功');
 						uni.showToast({
 							title: '蓝牙重连成功',
 							icon: 'none'
@@ -1604,50 +1661,69 @@
 							icon: 'none'
 						});
 					}
+					this.reconnecting = false; // 重连完成，重置状态
 				});
 			},
 
-			sendBLEData(data) {
-				const serviceId = '55535343-FE7D-4AE5-8FA9-9FAFD205E455'; // 固定的服务ID
-				const characteristicId = '49535343-1E4D-4BD9-BA61-23C647249616'; // 固定的UUID (RX_UUID)
-
+			// 统一发送蓝牙指令的方法
+			sendBLEData(command, onSuccess) {
+				console.log('command', command)
 				if (!this.connectedDeviceId) {
 					console.log('未找到有效的连接设备');
+					uni.showToast({
+						title: '未找到有效的连接设备',
+						icon: 'none',
+						duration: 2000
+					});
 					return;
 				}
 
-				let buffer = new ArrayBuffer(data.length);
+				const serviceId = '55535343-FE7D-4AE5-8FA9-9FAFD205E455';
+				const characteristicId = '49535343-1E4D-4BD9-BA61-23C647249616';
+
+				// 将字符串命令转换为 ArrayBuffer
+				let buffer = new ArrayBuffer(command.length);
 				let dataview = new DataView(buffer);
-				for (let i = 0; i < data.length; i++) {
-					dataview.setUint8(i, data.charAt(i).charCodeAt());
+				for (let i = 0; i < command.length; i++) {
+					dataview.setUint8(i, command.charCodeAt(i));
 				}
 
 				uni.writeBLECharacteristicValue({
 					deviceId: this.deviceId,
-					serviceId: '55535343-FE7D-4AE5-8FA9-9FAFD205E455',
-					characteristicId: '49535343-1E4D-4BD9-BA61-23C647249616',
+					serviceId,
+					characteristicId,
 					value: buffer,
-					success(res) {
+					success: (res) => {
 						console.log('发送数据成功', res);
+						// 成功发送后，等待回调接收数据
+						this.pendingCommand = {
+							command,
+							onSuccess
+						}; // 保存当前命令和回调
 					},
-					fail(err) {
+					fail: (err) => {
 						console.log('发送数据失败', err);
+						uni.showToast({
+							title: '蓝牙数据发送失败',
+							icon: 'none',
+							duration: 2000
+						});
 					}
 				});
 			},
 
+			// 接收蓝牙数据的方法
 			receiveBLEData() {
 				uni.notifyBLECharacteristicValueChange({
 					state: true,
 					deviceId: this.deviceId,
-					serviceId: this.serviceId,
+					serviceId: '55535343-FE7D-4AE5-8FA9-9FAFD205E455',
 					characteristicId: '49535343-8841-43F4-A8D4-ECBE34729BB3',
-					state: true,
 					success: () => {
 						console.log('成功启用接收通知');
 					},
 					fail: (err) => {
-						console.log('启用接收通知失败', err, this.serviceId);
+						console.log('启用接收通知失败', err);
 						uni.showToast({
 							title: '启用接收通知失败',
 							icon: 'none',
@@ -1656,15 +1732,16 @@
 					}
 				});
 
+				// 监听蓝牙设备数据变化
 				uni.onBLECharacteristicValueChange((res) => {
-					// 将接收到的 ArrayBuffer 转换为字符串
 					let data = String.fromCharCode.apply(null, new Uint8Array(res.value));
 					console.log('接收到的数据:', data);
 
-					// 假设接收到的数据格式为 "battery:80" 表示电量为 80%
-					if (data.startsWith('battery:')) {
-						this.batteryLevel = data.split(':')[1]; // 提取电量并更新
-						console.log('更新电池电量:', this.batteryLevel);
+					// 如果有待处理的命令且存在对应的成功回调
+					if (this.pendingCommand && this.pendingCommand.onSuccess) {
+						// 执行回调函数并传入接收到的数据
+						this.pendingCommand.onSuccess(data);
+						this.pendingCommand = null; // 清除待处理的命令
 					}
 				});
 			},
@@ -1693,6 +1770,7 @@
 				this.disconnectDevice()
 			},
 
+			// 断开蓝牙连接
 			disconnectDevice() {
 				if (!this.connectedDeviceId) {
 					uni.showToast({
@@ -1701,10 +1779,15 @@
 					});
 					return;
 				}
-				if (this.batteryInterval) {
-					clearInterval(this.batteryInterval);
-					this.batteryInterval = null;
+
+				// 标记为主动断开
+				this.isManualDisconnect = true;
+
+				if (this.batteryTimer) {
+					clearInterval(this.batteryTimer);
+					this.batteryTimer = null;
 				}
+
 				uni.closeBLEConnection({
 					deviceId: this.connectedDeviceId,
 					success: (res) => {
@@ -1728,7 +1811,6 @@
 					}
 				});
 			},
-
 
 			showModePicker() {
 				if (this.trainingActive) {
