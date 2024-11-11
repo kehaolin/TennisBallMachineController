@@ -111,13 +111,6 @@
 		<view class="court-container">
 			<!-- 背景图 -->
 			<!-- 前场 -->
-			<!-- <img class="launcher"
-					src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAuCAYAAAAyVNlIAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAIaSURBVFiF3Ze9jtpAFEbPzGyIkhSL5EiRUnmlgNxTUthb8RgoDfsAeQBY5S1ShScJLlxubyDUKEpMg0IUBXtS4GHNzwoL21LIJ400HuzveOZe3xkEqRzH8eI47gshPApIaz0SQowmk8k9gAJoNpt9rfVnIYRdxBwg9fAsyyKKIl+kAF3U+JiklLfScRyvCvMtpErzyweEYTiSYRiOqoRI2ORupYAqZF66MoAQ4hGglLqvClTZDEwtkrBJJ2BQov/WS5lOFEW+ZVlorTm36GmtR0qp9+PxeGjGxFM3m/IN8FQJN6UZHpdkXweAAvvCQErp73+4O4Bms9mnYCyklLdZyH4WFTIHSJLkyw7QdNK3L0WNRmMLyc5gUBYgGz8Jm8CWZW5kPCVAkiRu2QDjebk7mtba2wLMRRW63CXaARQ9jx6T8ax8Bld5b+x2u7iuy3q9JggChsPh6YfyArrdLp1OZ3tt+nkguQ6/rnv4obfb7ZPmjuN4/0aa+r5/MBYEQS7AVZ5CZ9b6nCALx3G8/V2oRA0qjYGU0v9//h98LNvYeCrgerFYfK/X6y0p5duyANPp9AOwksANwGq1+lSW+XK5vEu7NwK4Bt6ZH23b7tVqtd45xnEcP8xms7vM0FdzdHwGvAFeA8q27R6AUqqllGqdMoXNCszn8wcgBn4A34A/x07XL4EXwPO0vWKTDKYBJJn2E/idtl/AKmv2F0fj0jAt3qqEAAAAAElFTkSuQmCC"
-					alt="launcher" />
-				<img class="tennis-court1"
-					src="data:image/png;base64,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"
-					alt="Tennis Court" /> -->
-
 			<div class="tennis-court-container">
 				<img class="tennis-court1"
 					src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAu4AAABsCAYAAAA1+jcwAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAB3+SURBVHic7d15kBxXfQfw7+vuuWd3tZJWsiRbErZkybYua3WsDiOtZBBYwsiXjMsHDrZsBxuDU4lJuIIdXECRUIG4wK7wBwWVoipAQiDgpJI/DEkIV1EcMhBjG9uy5Eu3pZV2Zro7f+y+3p6+pmd2jtcz30/V1s7M6+7pnZ15/Ztf/95rgIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIjiEp3eASLqCuxLiOKzO70DRJRMPNgSURzsK4jai8E9EfnwYExEXuwXiNTDQJ6IeIAmIgDsC4iSggE8UQ/jwZqIptMPsA8hql8zgm8G8EQ9iAddot4U97PPPoKoM+oJzBnEE/UIHpSJek+tz309/QL7EKL61Rtox12eATxRl+NBl6h3RH3emxnMT2cdom4x3SA6bP1a22XwTtTFeGAl6m5xPuNBy4Stxz6DqDWiAu6gtnqXJ6IuwIMwUfdqJMPOIJ6oveoJwOsJ4Bm8E3UhHniJulM9QXut+/U8Vi/2QZR0rSiJsQFg+/btxpNPPlkJWS5OUB+njYgSxOj0DhBR08XNkIfev/uxGz/7u8pP3tfUvSKiuvRrZ84syWHWM0/AxNTnUwbhAtUBufc+YrYRUYJond4BImqqRoJ24bov7vjkDYtfMA/c2/Q9I6K6nLSOFN68953fhuczGnI76D48bUSUcAzcibpHnAN2rQBAnJ15/Imz9hj7BiIFPF9+6q0f+MIdu+H6jE42eW+7MXgn6lIslSHqDnGDdu/tqt/3PX7bR35d/q8lwRsS0KBDi/t9XwCmXYEFK97yRORjwsTz4sCXAczBVMmLu2wm6DG4Hvdi2QxRgvHbN1HyxRk4Ghiou39f/eCWWaVFp148a5/Wg54khTQW6EvRrw0CtoBt264t2BP3BWDbNoQQsGHjNesgXrdeavTvIkocXRjQPTkx57MSQXg+sbZtw4QJyzYBAVycHv7G39/1jVswFXSH/Y66HfUYESUAA3eiZGtK0A5A3Pr4rp+9WH76Mu/GthWuxbL0WpimiXK5PBWYBwQjwht9eMQLYKq34V7H3ZbJZKDrOiqVCkqlUuznidpH+bfVw/tctdYPe+3iPlczXuOgfXLvm3sf3c8X1OZ+LGzfgv7mqNchznPUesy7796/QQiBVCoFwzBgmibGx8dr7kfQtsLa3MtomgbbtgNfI+/fZ8HCU+M/whvWMRy1X8Yx6xVYsJASaVxibtj+d/d/9Udy04gO2hm8E3UhlsoQJVc9VzsNDNbl7fsfe/cDvyz/wBe0zzcuxLL02onsn2k6j4cFXI0GpHG3Ids0TXOCoVKpVNfz1lp2un9Dp7c/nW16fwc9X1Bb0HoAqgLqoPZaZDAbFeAH7VPc55FBtdyO+z1ez/5FtQOAZVWXi9X6ey4yVuF/xr+Nk9YRWLYFCKBsl3A49dw/AliM6Lnbhec3PLeJKME4AI0omRq5gJII+NHO39Wf/731i4e8K6VEGjuK18O2bVQqFV/w0UmpVAoAUKlUWhLIUnPIILqeYDpo/bjbr/d5TNN03kOGUX8eK86XtDj7J88AaJoGwzDQn5mBgjGAsl2q+kQfMQ/PuevxfY8i+LOMiN/e20H3iSgBGLgTdY/YGXb3z+g1m/9jzDqV8m5sQ+6tyIt+ABMBTqPBV7NpmgZdnyjDL5fLHd4bSjr5HtJ1HZrWmUOiEAK6rjs/Qghsyr8NOb3oW/YPlQN/9J6Hr7kYk1+8UV/w7nvq5vwFRNQuDNyJkqdWXXvsoP3eR2+962Dl6bXejc0xzselmY0NlaK0WjqdBsBsOzWHZVlOiYw8k9MO7jp7WWvv/uKQFllsyb3Dt17JPivGhk58C/6gPSp4h+s+M+9ECRY4ewQRKS3qwBsWtPt+BlYOZPo3lP6tZJ+rqhHQoWNP3x3IijxM04RlWXUP2GwVXded4CpoMCFRI2SpjKZpztmlVpEBu2EYMAzDuR+03KA+B6+bh3DSOlrVdto+MWPPnj36T7/7qx9EPVXI7Tj3iUhRzLgTJUujQbv3vth779bvnrZOZrxPsC53Jfq1mTBNU6kSGWAi2y6EcGa3IWoGmXWXGfBWkXXsqVTKGRRb60vxtvw1SIus7/Fn7V/+6VX3bp6N8C/nCLgduXvx/xIi6hQG7kTJEadWNeiADUx81p2fex+95eYXKr/b5N3ILH0eVue2OrPIqDQgVdYgy8GyRM0ka929JSvT4Z5m0zAMpyQmTsAuv5jm9T5szu/2tZ+1T+szV/V9DxFn1dy74vntvU1ECcFSGaJkqDVbTNjvqhlkAIjBC6EPbEn957g9VpVa1ISGPX3vQU4rolwu1z01Xqtls1kn267avlHyyakhZSZ8Ou8xd1AuM+xy0GmcoN27rdnGPBwuP4fT1omqtlPW0aHdu3eP/fR7v/5xnE15fntvB90nIsUw406UTLWmgwwM2gGIvQ9e/c+nrGM574qXZ7djhjYEy7KUyrQD1dl2ziRDrdLMrLumaUin005513QuugUAo8XrYQh/Gc8fcOAv+5b3ZRBdKsMAnahLMHAnUl/cuvaaA1Lv/eztu1+o/GbU+wSD+hyszW4HMBG8qBa4y5lkGLRTK1mW5ZRhNVrrLudil3Xs7iu1NkIG7n3aIDbk3uJrH7NPpa594IonEF0qg5DHELIcESmKgTuR2uqpa5e3g38GoR3K/fZxE6ZnIxp2FvdBE7ozIFUlMvvJbDu1Q6lUAlBf1t07taMsi5Ft0yW/SK/IbsYc4wJf+wvl/1v/3r+9+VZEf4GH63GEPEZEimPgTpQsUSUykVn3Oz51zT8cN1/r9664OrcVs/R5TrZRlakfJWbbqZ3cg59rZd3lLDG6riOdTjv18a3aLwGBHYUboInqQ7cNCwfTv/vrgYUwED1YNWw8jJdanQARORi4EyVT1IHXd7C+72/evf35ylO+qSn6tZkYzuwEMFUio9I0i3IGDmbbqZ3iZN1lwF7PTDHTIT+XA/osrM36qt1wyjqWu/ZDV38D0cF6VPDOkhmiBGDgTqSusANprdljvI9rh/JPf7liVwe+AgI7izfC0AxUKhXl6tqB6nnbidpFZt2FEM4ZH2CqJMY7tWO7yM/o5dltGNTn+NpfqPxmxz2fufUqBF9V1S1upp3BO5FiGLgTqanWAbTmQFT5c+dj137pmPnKoPcJLsuOYG7qAqdERqVMOwBncJ9lWQzcqe3cWXdZs+6e2rFTbNuGrhnYWdwH4TmEmzDxSvH3j2MwVrkMUN2PhGHwTqQQBu5E6ol7EA2bNcL5ufvT71r/vPnU9d6NFLUZ2Jjb5ZSgqJhtl/XFMoAiajeZdc9mszAMwymdaXVZTBR5JePZxnysym32tR83X+3f/6nrvowaY14QHrQzUCdSGAN3IvVF1aJGDko90n/wa2XbH/he2XcjDJFS7uqokjvbzqukUju5g/JKpQLDMJDNZhueHrIV5Nmx9bm3oE/znUzDHyoH9u5/ZN8mRGfbAX9fEnQ76D4RdQgDdyK1TKeuvTrb/ti+zx8xDw95n+CS7DqcZyyCbdsolUrKlcgAUzPJMNtOnSDr2HV9YopU27aRSqWUmXFJZt0NkcJo0XdCDWW7hOMzD38V8QapAv7+hYgUxcCdSB1xD5pRJTIAIG75+PUrnjV/dat3xZwoYCT3dgDqTq8oAyRm26mdZKZdzhQj69rL5bITyE/3aqrNJM+UzU+9Ccsz63ztr5uHhu754r7PIXigaiMlMwzqiRSgTi9ERF4Nl8iMz33162V73HegHe2/ARkth0ql4mQSVSOz7ePj4x3eE+oV7rnYvTPF1DOve7tZlgUhBLYUdyOnFX3tz9lP3Xbbh/cuQ/NKZoiowxi4E6mhabPI3PWFGz/5mvnSfO8TLM2sxqLUMmdAqqpBu8y2q3YFV+pOctBp1NSOjVxNtR1s24ZlWUiLLEaL1/nax60xUbrgja+j/pKZMEFBPxG1kTo9EFHvasYsMgAgbnjgqkUv2gfu9m4kq+WxtXA1gIkgRGbqVOKeM5vZdmoHmWmvFYyrnnUHgEXp5ViSWeVrf7ny3MJ7H7v544jxpd+1GrPuRIpi4E7UWUEHxYZLZFLLSt86a4/5PtdXFN6JrJZ3SmQAKJdxlwGRaZrMtlPLybr1uFTNugNwPi9XFK5GWmR97c9Yv3zfrjs2DSE62w5XGxAdvDOYJ+oQtXofIgo7INYaVCbu++Jtf36o8uyF3hUXppZhSWaVUyKjIne2nTPJUKu5B5vGPfPkzrq7r6aqAjnLTFYrYGvxHb72c9YZfc6G/u+gdskMA3QixXXu8m9EyRTndHPcn6jZHrSIZTTvz+YbVwyNLXz1a2W7VPVlPC2yeMeMO6HbBkqlkrLZ9nQ6DV3XUalUGLhTS7mneqz3c2CapnONAdWuNmxZFjRNwyx9Hl4pv4BT5rGq9pPm0dm79+w599Pv/erHiDdmBgHLedeptY16ynOIKAZm3Inia+ZBJuoUtfd+zSzZRdsXfGfMesP3RXxLcQ9yogDTNJ1AQ6VgA5gIpGSZDGvbqVXkdI+apjmlLvWO81A56w5M1buP9l2HlPDv3/M48OGh9YUc4gXQQSUzrcDgnagODNyJ4mnnwSuspj0weL/30Vvvf7Hy9CXeDS5IXYRlmbWwLEvZCy0BUzPJVCoVJa/iSt3Btm0n2z6dgdnys6Rirbv8/BS0AYwU3uZrP2OdTO2+c/S7CA7Ya2XcAX8/2Kx+kcE7UUz8sBBVa9dnIiq77v0dVlqjDa0v5NbdvuTFMetU1VQXKZHGTTP/BAVtAOPj405tu2rBuxACxaJ//mmiZpMzyMjMezNUKhWcO3euKdtqFnkRKQjgn45/Ea9VDla3Q8MKa8v9j77/K18BYAOwJn97byPgtvu3Wys7FrU6LaIOUytdQNRZnQ7avfdrlshctX/bE96gHQA2Fa9CQRtAuVxWtkQGADKZTKd3gXqADGabGbQDas4wI+d2FxDY2bcPumcomw0LL6Z+8+m++UghXu15rax72GPNwgQjkQs/ENTLOvX+jyqLkb+jfjQA4r2fu2X/b7Qffsb2JKTmpRZj74y7YVkWzp07p+zUipqmoVAoAADOnDnDMpkmyWQySKfTKJVKPT9mQAbpuq47gXuzZDIZpFIpJbPuAJySoJ+PPYkfn/l3X/vSzOrvf+mub+1FeMbd/QPPbaD9mfdOPA+RctRKFRC1T7OD9jizJ8hZYEKD8ZB23ywyhTcVss8bBz7hDdp1kcLOvn2wbbtqFhkVycF9rG2nVrFt2xmM2uwLjqk8rzswNbf7mtwVmKHP8bU/O35g2x9/5rY9qO6XvH1U0P2w0r1aP0TUBOr1NkSt18hBpBUHpYZLZG744Oi/nLFO+upMNhTegqI2A5ZlKR20a5rGmWSo5TRNm/Zg1DDu6yKoWPIlS2Y0oeMt/TfCe7i3YOJw4ekvoD8yAHeLKpXxLhPW1qw+lF8EqGfxzU+9JtZ7ftvnFm2Hrn2sWU9q27E/a9XLudaT28ho2bllMb7Ue7Y4JTIYMhYAmJhdQsWadklmQGVwQc3D13ZKs2vag+j6RA25ql+U5d9/yjyG09YJX3tG5I+erYz9dmJZV6cifOUosToU4V+vfqb18Pff/8KTMZdWt6MjaoH413smSr56g+ft5TPWL6b9rPGD9qlVfOvYwtlWavwiC94gQaCoFzFWGlM+aJdzaQPqf8FIIgbuE9oRtLufR9UB4MDk4FxkYFUEvH2HiTOzhKnPr9jlM5NL29XrNhAYTyN4TxW0NQAexkQ/HGc7cZcj6goM3KlXxDmC+5Z57SdvfOWZbx4LC94by6IHt4WVxQCuWtIdd6//qyOZl3wlbpdk12JZdhiWZTmlJ6oGEZlMhldJbaFUKoVUKoVyueyUcvQaXddbUtceRAjhlMqMj48r+bmTdf5HKi/jv0//q699ALNn/e/nf/0BBA9MjZoSMuyPrfUiBLYvuW7mmgWjA2tcDzF4J/JgjTtRvBrLVgy2CgraQ9s27Fqz8Vjm8GrvRvr1QSzNTBzrVJ2vXXLmmAZ6Nqik1nFfHbUdQTtQfTVVOW5DNfLMy2xjHhZnlvvaT+LIwM47N92P6LE1QPx+r97+dDrbIuopDNypFzQ6mKqeZepdN+xAGHTQBHRoqeWlByxYnoUFhvOj0ISOcrmsfOmJeyYZlfeTkqvZ0z7GIevbO/Hcccl9XJkbQVbkfe3H84d2Xrz2TYsm70YF63ED+XpeiFoBPAN8okkslaFu1sqOfjoBv/egV7NEZuedGz/8uvWi72i7NLMK/dpMmKaJcrmsdDAsT9fLqSpV3tckk7XWKtdct4I7097uv1tm3WWZkoozJdm2PfEaCQNr89vww9NPVLVXUBbztgx+7Omf405MlJ1omCqTcd+WZHlKVJlKVFsj/yTZN0Y9X6PbJkoEZtypV9WbKaq3TKbRU8q+bPvwtpWrj2UObfCuWND6cHF2LYBklJ3IMgLVv2BQssgMdzvLY4LIs0hJyLoPGQtwfupCX/txvDa047ZNt6N5JTNR4mTZiciDgTv1oqhMuAAA26papplzDNdXIgOI3KrKg6Zt+hYeLuyALnTnAkYqB8Oapjm17bIemKhZ2l3XHsRd6y5LwlTklMzkNyMt/PPPn5rx8t75Fw7NnrzbjpKZqIRIrbOWRD2HgTvRhHYeCGqVyDj3d+7f+GencKLo3cCFmRUY1IdgWVYiMtgykEnCvlKy2Lbdsoss1UsG7ipn3eXnLy2yWJnb7Gsv2eNi2VULH0JIIgHBAXxz93F6iROirsbAnbpVPZmauAcib7lM0E+ty4DXek5nuZVXLFt+PHd4q3cn8loBl2TXAUhG9lpOzQckY38pWeSZHBW4r6aahKz7+emLMMeY72s/Kg6ff8WNG65H/JKZWn1fUFs96snG12ojSjQG7tSNptNpR9W3T0fYAUxzPVZ1e8Ya/UMV2x/oDhdGoQsDpmkmYnYWZtupVdp1kaV6yM9kp0t3orgvznV5YRsM4f/yU5p79KbcQDoLf98V1Ic1UjITp8a9VuadwTv1HAbu1Etqdfz1HhgaXbZ2icydI/edxPEB74qLMssxUz/PmZlF1cBAcpcwJGEALSWLCrXtXu6su6rzugNTc7tnRQGX5Tb62s/aY8amm1c9guBMeVTJTCPZ9Hr7TqKexcCdello0G5bdjMPEHEPdgIAlg4vXnw8d2indyNZkcPK3AgAONMpqp7Bds8kQ9RscnpR1SRhXndgaj8Xpy/FoDHkaz+qH1qyde/wrsm73v4yqGRmOsICeHVfQKIOYOBOvaqZp1ijMkZhB7aw7JWYt7nvoxVUfNtbWxyFjokSGZktUxmz7dRKqmXa3ZKSdXeXzAznR6F5uikbQGXhqTt0HbKWplawXiuQb1aA3+xtEiUGA3fqRe3u+IMGcgWWyIy+e+P+Ezgyy7uBC9IXYUifXxUQqE7WtpdKpQ7vCXUTWdcuA3dVg/ekZN1l4F7Q+rE8N+xrH7NPp0f3b3gY4YPsg/q3KDVfjIAznuq+gERtxsCdekWraigbzdz7su3nXzxvzhv9r1zlXTAt0liZ3wIgOQM8DWPqosycSYaaSb7/VS2TkZKSdQemvmQszazBDMOXN8CR9MEVI28f3jR5NyrrXmvMUJy2OBjYU89i4E7dppmB93SEZaFCS2SW7DrvoRJKvv1Znb8CKaRhmiZM00xEbTuz7dRKcgpIlTPZQHKy7u4+ZTg/6usULRvQl469D7oTMzRjoOq0M/MxqPuiEzWIgTt1k2ZncZq1fNABriry3n7LyLuO4ZV53hXnGhdgQXri0uRyQKrq3LXtzLa3nywfUTlQbFTS/i55NVUhhNLzugNTXzL69EFcnF3ja3/DPpHfeefGvwhYNWygarP/UY1uLzlvGKIYGLhTt2j2YNPpiMpE2Z5lMGtB/8CZma/u824kJdJYW9xWdco9CUELs+3UKnJ+dHlBryRIwtVUJRm8L8sOo6j3+9qPZQ5tWDu6YsXk3aiymGaVzDTrBVP7hSeqQ3J6P6LmaPWBICjbZHvaq35WX7P0E+P2Od9ncVVhC7Ja3rnQkmVZymfcU6mUU3vMbHvnqB4gNsK27cRl3IHkXE0VmCqZ0TUd6wr+khnTNlFciQ/C38/5EhIh95uJde7Ukxi4Uy9r9alXgYkDWthsDNj+rpFrj4jDC70rDhnzsTC9FJZlJSrbLgfhMdtOzSZnkklStl1KUtZdXvl10JiLCzOX+tpP2Ef7r9w/8gHULpFpxUBVtV88ojYwai9CRC5xZ4oB/Jl2+VsAQLqoZ8/Off1mWNVbNYSB9X07qrLWqh/sgepsu2maidjnbiRf9yRmp6PIwF3eTppyuYxUKoV0Oq38F1vTNGEYBi7Lj+BQ+Xmcs8eq2o/nX95+ybol3/7tz555FlN9mkxSWPBn4G3XMkQ0DclLXRB1TtygPag0xmfr7Zd/8qw9ZnhbV+ZGkEbOCdyTMIuMEILZdmop99ztSeSeYUb1swZOyYwwMFzc7msv2yUxd0vxw66HwmaZsTEVtAPhfWgy/6lEHaB270GUPO6DlOQO5gUAvPna9XuOaocu8q48y5iLxZOnp8fHx5UP2CU5k4xlWaxtp5ZQfd72WmStuxCi6joHqpJfNOYY52NhZqmv/Zj96uwrb99yh+shb+AelswIw+CdKAYG7kR+QQeZuDWaQbfdde7Q03p6/IIT7/E+iS50bCheCSA5F1oCmG2n1ktypt1NXofBMIxEZN1lydua/BVIi6xvmRMDh6+ev2TunIDVG5plxrYZvBPVonbPQZQMURG2Lwu1Y/+6R87Zpw3v9DKX5TYgpxUTl7WWte2WZTlZOuqsbghygak6fRm4J/3vcgfDqs8wAwCWZcGyLKS0NC4vbvVNiVWyz4lLdi94CMHje0LLBImocQzciWqrZxYZwH/QcgZvbb1meOfr+sHl3hUHjTm4KLsStm07WeskZNzdAcj4+HiH94a6jfwMJL1Mxk2eTUtCrTswdZbg/PQSnJdeVNUmAByxX16w46bN+xA8exYQHtQ3ojveBETToH6vQaSusMFYgeUyug7DXnT6Httz7NGgYX1xJwQESqVSIuZrl2TQbpomLMvq8N5QN9J1HUD3nEVwzxaVhKy7PEsAAGvz22AIf33+2JzXbirOzLlracKuYyHbphO8E/U0Bu5EEWrUXHoPSN4526sC+x13jTx02jqV8W5keX4YRX0gcSUy7tp2Ztup2bqhNCZMErPulmUhq+exMr/Z137WPqOP3LTiU5N3vX1gUCIjcsCqbTGoJwqj/tB2IrVFnRq2MfnleOTta0eOpA6u9i7Rrw/i4uzlsCyramBnEgKWTGbiO4g8lZ6Efe4F3TKPuxAiMYFtIyqVijOvexK++JqmCU3T8KbspThY+j2OlF+uaj+iv3ThtutGrvr+N3/0Xfhn0nJPC1lzlhmhOcsTkUd39ohE0xQz4+M9HRycXdKhGcvOPWDBqlpLQDglMpVKJVGlJu4p7TiTDFH95DUakvLlxF0ys664A7qmV7cDKF9w/A5dh4GIcT6uVWr1scn91knUQur3FkStE1TqUq+guYurSmbeetfmj7xhHc9XLQ1gWe5yDOiznfmdk1LXDkzU5gohWNuuqCRn2qUkXHhsOty17rLkTHXy7Fpe68OluQ2+0PqMdSq9856Nj8CfwAjqH+H6bQOAEIH18HAvQ9TrGLgTVYs7aMo7IBXwB/EYvnLlmiPpFzdUtQIo6gNYnl1XNYtMUjDbrjZ3qUySyQt6dXMALwP3pGTdgal9XppdhRnGbF9v+bpx8LIt7xzeNnk3KIBHSFvYPzmsrTvfFEQ1JKOnIGqeOJ19rWXilcgAIn+Z9UHTNqtaBYD1xSuhCQ2VSsU5ZZ4UMtuetPIeSqZuHj8hz7YBycm627Y9+bkX2FC8EpoQVf2bZdsQi8fug14VX4QF6d5ymjDd+QYgagADd+oF9UTFYQeIoKy6dxYZuO/vunvzg6fsY0XvFpdkV2FQH3IGpCYpKJHztgshEjGgrlcl6T0VRmbak/SlthGVSsU5i5W0rHtRm4Fl2bUTD7recm/YJ7K77tr8UUT0j55NVt1vcFaZ7n6jEE36f7wS6JdBdVTwAAAAAElFTkSuQmCC"
@@ -134,7 +127,7 @@
 				alt="Tennis Court" />
 			<!-- 网球容器 -->
 			<view class="ball" v-for="(ball, index) in balls" :key="index" :style="getBallPosition(index)"
-				@click="trainingActive ? null : handleBallInteraction(index)">
+				@click=" handleBallInteraction(index)">
 				<span v-if="showBallNumbers" class="ball-text">
 					{{ index + 1 }}</span>
 			</view>
@@ -158,13 +151,13 @@
 				<view class="modeSelect-content" @click.stop> <!-- 阻止点击事件向上传递 -->
 					<!-- 顶部文字 -->
 					<view class="modeSelect-header">
-						<span class="selCancel-button" @click="closeModePicker">
+						<!-- <span class="selCancel-button" @click="closeModePicker">
 							{{ translations.cancel[currentLanguage] }}
-						</span>
+						</span> -->
 						<span class="selectMode">{{ translations.selectMode[currentLanguage] }}</span>
-						<span class="complete-modeSelect" @click="confirmModeSelection">
+						<!-- 	<span class="complete-modeSelect" @click="confirmModeSelection">
 							{{ translations.complete[currentLanguage] }}
-						</span>
+						</span> -->
 					</view>
 
 					<!-- 分割线 -->
@@ -278,7 +271,7 @@
 								<text class="number-text">{{ item }}</text>
 							</div>
 						</view>
-						<button class="clear-button" @click="clearInputData" :disabled="trainingActive">
+						<button hover-class="none" class="clear-button" @click="clearInputData">
 							<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAkCAYAAADLsGk3AAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAMHSURBVFiF1Zk/a9tAGMafk9TWGQJJx0A8pFPcZHGzxHXs4mAbEtrFQ5aUavAXSHGEDTFtIaPJF2jXlgTquSRLwWDoEAQhS5YuDVjQBmxwIKJcfR0aiVq2/p7lJL9NJ+l934f3dM8dIvDAdrmcY4Jw6OXZm0Lw8AwBIbXQK+HEVUhpZ6fICFkcRzE8EKebiqJM9iTpDMDMmOoJjGNHepL0GndABODQEUVRZnqieAZCJsdZUFAkuxtMkt4AuBMiAJuObFWriwKlJ4QQx2/oNjH0GxEprfGImIhEglcUENE6sF0u5yAIb4MGzGYyKMoyluJxtNtt/Lq48PTeSiKBoixjLZ+Hruv4cX7uK6+1I9zml1tdBQA8nJ6GvLmJpXjc9Z1sJoMX6+tmJ7PXMfzQJ2QU5nel633XG4WCo5hsJmOKN2NcXfnOa04tRVEmGSGfwblSdS8vsRCL9Y0txGJodzpoaVrf+DARAHBQr3uekgamkOV0ugLgua+3h9DSNLQ7HVcxTiJOTk995xWBf+bHCPkEQh4EKd6Km5jH8/O2Io5VNVBOCQjH/IyCNgqFvnHrtQGPCAAQt6rVRfR678MwP7vOWOEVAQCSSGkNITq4XWcMRiEC8Haw4mZ6air0HMIfSSoxxlhYCexWJwM3n/GK+K3R+JlMpWYAPOGOZsFNhIGdz/hBAABC6Tsw1g0cZQhOPnFQrw+M83ZGBIBms9lNpFL3ATwLHOk/nEQcq6pn0/SD6ezJ5WWVCcIrcPrJSiKBtXx+YNy6Oo1ajCmk2Wz+TqTTXTDGtU0pyjLuSf0HT7sl1k7Mo7k5fG00fOXtW35ru7sfCGP+NzrXTEQiA4cqN584VtWBb4Zr92vwNJn8DkJe+o4EgFIKXdcRjUZBKcXH/X1PG8CWpqGlaYjOzgKE4MvRke+pNdTRS5XKIQjJ+Yp0wwx19rBNMgwGphYAhGmSYWG71wrDJMNkaEeA0Ztk2DjufgVK9wC0xlQLF7YdAUZnkuPAy4GKbFcqJ7f9H4mXgxUDY6XQK+HkL2i9TOYUwGiAAAAAAElFTkSuQmCC"
 								class="clear-icon" />
 						</button>
@@ -479,7 +472,6 @@
 				],
 				cannonX: 0,
 				cannonY: 0,
-				deviceInfo: null,
 				selectedCourtType: 'singles', // 默认选择单打场地
 				launcherPositions: ['底线', '中线', '中场'],
 				selectedLauncherPosition: 'Baseline', // 默认选择
@@ -1050,7 +1042,7 @@
 		},
 		methods: {
 			selectDifficulty(difficulty) {
-				this.sendBLEData('RS_Single=15,18,35,0,4?\r\n')
+				this.sendBLEData('RS_Single=15,18,35,0,4\r\n', () => {})
 				if (this.trainingActive) {
 					uni.showToast({
 						title: '请先结束当前训练',
@@ -1069,134 +1061,40 @@
 
 				const rotationPercentage = this.convertRotationToPercentage(this.rotate); // 旋转程度百分比
 				const serveInterval = this.frequency; // 发球间隔1-10秒
+				console.log('this.launcherPosition', this.launcherPosition)
+				console.log('this.cannonX,this.cannonY', this.cannonX, this.cannonY)
+				const xO = this.launcherPosition.x0 + this.cannonX; // 大炮旋转中心的 x 坐标
+				const yO = this.launcherPosition.y0 + this.cannonY; //大炮旋转中心的 y 坐标
+				const zO = this.launcherPosition.z0 + 0; //大炮旋转中心的 z 坐标
 
-				// 通用变量，表示发射位置和目标位置
-				const xO = this.launcherPosition.x0; // 大炮旋转中心的 x 坐标
-				const yO = this.launcherPosition.y0; // 大炮旋转中心的 y 坐标
-				const zO = this.launcherPosition.z0; // 大炮旋转中心的 z 坐标
-				const r = this.launcherPosition.r; // 炮口 S 和旋转中心 O 之间的距离
+				// 计算发球参数的通用函数
+				const getLaunchParams = (ballIndex) => {
+					const targetPosition = this.convertBallPosition(ballIndex); // 获取目标坐标
+					const launchHeightParams = this.calculateLaunchHeightParameters(xO, yO, zO, targetPosition.x,
+						targetPosition.y, this.speed); // 计算发球高度
+					return this.calculateLaunchParameters(xO, yO, zO, targetPosition.x, targetPosition.y,
+						launchHeightParams.Hmax); // 计算发球参数
+				};
 
 				// 单球模式：0, 1, 5, 6, 7
 				if ([0, 1, 5, 6, 7].includes(mode)) {
-					const targetPosition = this.convertBallPosition(this.balls[0]
-						.ballIndex); // 使用 convertBallPosition 函数获取目标坐标
-					const xT = targetPosition.x; // 获取目标 x 坐标
-					const yT = targetPosition.y; // 获取目标 y 坐标
-					const Hmax = this.serveHeight; // 最大高度
-
-					// 调用 calculateLaunchParameters
-					const launchParams = this.calculateLaunchParameters(
-						xO, yO, zO, xT, yT, Hmax
-					);
-
-					const command = {
-						horizontalAngle: launchParams.phi, // 水平角度
-						launchAngle: launchParams.theta, // 仰角
-						speed: launchParams.v0, // 发球速度 Km/h
-						rotation: rotationPercentage, // 旋转程度 百分比
-						interval: serveInterval // 发球间隔
-					};
-
+					const launchParams = getLaunchParams(this.balls[0].ballIndex);
 					commandStr =
-						`RS_Single=${command.horizontalAngle},${command.launchAngle},${command.speed},${command.rotation},${command.interval}\n`;
+						`RS_Single=${launchParams.phi},${launchParams.theta},${launchParams.v0},${rotationPercentage},${serveInterval}\n`;
 				}
 
 				// 水平循环（模式4）
 				else if (mode === 4) {
-					// 获取第一个和第二个球的 ballIndex
-					const ballIndex1 = this.balls[0].ballIndex;
-					const ballIndex2 = this.balls[1].ballIndex;
-
-					const targetPosition1 = this.convertBallPosition(ballIndex1); // 获取第一个球的目标坐标
-					const targetPosition2 = this.convertBallPosition(ballIndex2); // 获取第二个球的目标坐标
-
-					// 调用 calculateLaunchHeightParameters 计算 Hmax
-					const launchHeightParams1 = this.calculateLaunchHeightParameters(
-						this.launcherPosition.x0,
-						this.launcherPosition.y0,
-						this.launcherPosition.z0,
-						targetPosition1.x,
-						targetPosition1.y,
-						this.speed // 使用当前发球速度
-					);
-
-					const launchHeightParams2 = this.calculateLaunchHeightParameters(
-						this.launcherPosition.x0,
-						this.launcherPosition.y0,
-						this.launcherPosition.z0,
-						targetPosition2.x,
-						targetPosition2.y,
-						this.speed // 使用当前发球速度
-					);
-
-					const launchParams1 = this.calculateLaunchParameters(
-						this.launcherPosition.x0,
-						this.launcherPosition.y0,
-						this.launcherPosition.z0,
-						targetPosition1.x,
-						targetPosition1.y,
-						launchHeightParams1.Hmax // 使用通过高度参数计算得出的 Hmax
-					);
-
-					const launchParams2 = this.calculateLaunchParameters(
-						this.launcherPosition.x0,
-						this.launcherPosition.y0,
-						this.launcherPosition.z0,
-						targetPosition2.x,
-						targetPosition2.y,
-						launchHeightParams2.Hmax // 使用通过高度参数计算得出的 Hmax
-					);
-
+					const launchParams1 = getLaunchParams(this.balls[0].ballIndex);
+					const launchParams2 = getLaunchParams(this.balls[1].ballIndex);
 					commandStr =
 						`RS_Double=V,${launchParams1.phi},${launchParams1.theta},${launchParams1.v0},${launchParams2.phi},${launchParams2.theta},${launchParams2.v0},${rotationPercentage},${serveInterval}\n`;
 				}
 
 				// 垂直循环（模式5）
 				else if (mode === 5) {
-					// 获取第一个和第二个球的 ballIndex
-					const ballIndex1 = this.balls[0].ballIndex;
-					const ballIndex2 = this.balls[1].ballIndex;
-
-					const targetPosition1 = this.convertBallPosition(ballIndex1); // 获取第一个球的目标坐标
-					const targetPosition2 = this.convertBallPosition(ballIndex2); // 获取第二个球的目标坐标
-
-					// 调用 calculateLaunchHeightParameters 计算 Hmax
-					const launchHeightParams1 = this.calculateLaunchHeightParameters(
-						this.launcherPosition.x0,
-						this.launcherPosition.y0,
-						this.launcherPosition.z0,
-						targetPosition1.x,
-						targetPosition1.y,
-						this.speed // 使用当前发球速度
-					);
-
-					const launchHeightParams2 = this.calculateLaunchHeightParameters(
-						this.launcherPosition.x0,
-						this.launcherPosition.y0,
-						this.launcherPosition.z0,
-						targetPosition2.x,
-						targetPosition2.y,
-						this.speed // 使用当前发球速度
-					);
-
-					const launchParams1 = this.calculateLaunchParameters(
-						this.launcherPosition.x0,
-						this.launcherPosition.y0,
-						this.launcherPosition.z0,
-						targetPosition1.x,
-						targetPosition1.y,
-						launchHeightParams1.Hmax // 使用通过高度参数计算得出的 Hmax
-					);
-
-					const launchParams2 = this.calculateLaunchParameters(
-						this.launcherPosition.x0,
-						this.launcherPosition.y0,
-						this.launcherPosition.z0,
-						targetPosition2.x,
-						targetPosition2.y,
-						launchHeightParams2.Hmax // 使用通过高度参数计算得出的 Hmax
-					);
-
+					const launchParams1 = getLaunchParams(this.balls[0].ballIndex);
+					const launchParams2 = getLaunchParams(this.balls[1].ballIndex);
 					commandStr =
 						`RS_Double=H,${launchParams1.phi},${launchParams1.theta},${launchParams1.v0},${launchParams2.phi},${launchParams2.theta},${launchParams2.v0},${rotationPercentage},${serveInterval}\n`;
 				}
@@ -1226,20 +1124,12 @@
 						}
 					};
 
-					// 根据 isHeightRandom 的值决定是否保留现有逻辑
 					const heightRange = this.isHeightRandom ?
-						`${command.horizontalAngleRange.min},${command.horizontalAngleRange.max}` :
-						'/* 此处添加非随机情况下的逻辑 */'; // TODO: 添加具体逻辑
-
-					// 根据 isFrequencyRandom 的值决定是否传递 intervalRange
+						`${command.horizontalAngleRange.min},${command.horizontalAngleRange.max}` : '/* 此处添加非随机情况下的逻辑 */';
 					const frequencyRange = this.isFrequencyRandom ?
-						`${command.intervalRange.min},${command.intervalRange.max}` :
-						serveInterval; // 使用 serveInterval 替代 intervalRange
-
-					// 根据 isRotateRandom 的值决定是否传递 rotationRange
+						`${command.intervalRange.min},${command.intervalRange.max}` : serveInterval;
 					const rotationRange = this.isRotateRandom ?
-						`${command.rotationRange.min},${command.rotationRange.max}` :
-						rotationPercentage; // 使用 rotationPercentage 替代 rotationRange
+						`${command.rotationRange.min},${command.rotationRange.max}` : rotationPercentage;
 
 					commandStr =
 						`RS_Random=${heightRange},${command.launchAngleRange.min},${command.launchAngleRange.max},${command.speedRange.min},${command.speedRange.max},${frequencyRange},${rotationRange}\n`;
@@ -1247,53 +1137,17 @@
 
 				// 编程练习（模式2, 9）
 				else if ([2, 9].includes(mode)) {
-					console.log(this.balls);
-
-					// 根据模式选择要遍历的球数组
-					const ballsToUse = mode === 9 ?
-						this.selectedBalls.map(index => this.balls[index - 1]) // 模式9：选择selectedBalls中的下标 - 1 对应的球
-						:
-						this.balls; // 模式2：使用所有的balls
-
-					// 输出用于验证的匹配信息
-					// if (mode === 9) {
-					// 	console.log("Selected Balls Indices (Original):", this.selectedBalls);
-					// 	console.log("Selected Balls (Adjusted -1):", this.selectedBalls.map(i => i - 1));
-					// 	console.log("Matched Balls:", ballsToUse.map(ball => ball.ballIndex));
-					// }
-
+					const ballsToUse = mode === 9 ? this.selectedBalls.map(index => this.balls[index - 1]) : this.balls;
 					const programSequence = ballsToUse.map(ball => {
-						const ballIndex = ball.ballIndex; // 获取当前球的 ballIndex
-						const targetPosition = this.convertBallPosition(ballIndex); // 获取目标坐标
-
-						// 调用 calculateLaunchHeightParameters 计算发球高度
-						const launchHeightParams = this.calculateLaunchHeightParameters(
-							this.launcherPosition.x0,
-							this.launcherPosition.y0,
-							this.launcherPosition.z0,
-							targetPosition.x, // 使用转换后的目标坐标
-							targetPosition.y, // 使用转换后的目标坐标
-							this.speed // 使用当前发球速度
-						);
-
-						const launchParams = this.calculateLaunchParameters(
-							this.launcherPosition.x0,
-							this.launcherPosition.y0,
-							this.launcherPosition.z0,
-							targetPosition.x, // 使用转换后的目标坐标
-							targetPosition.y, // 使用转换后的目标坐标
-							launchHeightParams.Hmax // 使用通过高度参数计算得出的 Hmax
-						);
-
+						const launchParams = getLaunchParams(ball.ballIndex);
 						return `${launchParams.phi},${launchParams.theta},${launchParams.v0},${rotationPercentage},${serveInterval}`;
 					}).join(';');
 
 					commandStr = `RS_Program=${programSequence}\n`;
 				}
 
-
 				console.log("Generated command:", commandStr);
-				this.command = commandStr
+				this.command = commandStr;
 				return commandStr;
 			},
 
@@ -1539,11 +1393,13 @@
 							device.isConnected = true; // 更新设备连接状态
 							this.isAnyDeviceConnected = true; // 有设备连接时禁用其他设备的绑定按钮
 							this.$forceUpdate(); // 强制刷新视图
-							this.showBluetoothPopup = false
+							setTimeout(() => {
+								this.showBluetoothPopup = false;
+							}, 1500);
 							uni.showToast({
 								title: '蓝牙连接成功',
 								icon: 'none',
-								duration: 1000
+								duration: 1500
 							})
 						} else {
 							// 如果连接失败，提示用户
@@ -1583,7 +1439,7 @@
 
 							// 每60秒发送一次电池请求
 							this.batteryTimer = setInterval(() => {
-								this.getBatteryAndDeviceInfo(deviceId);
+								this.getBatteryLevel(deviceId);
 							}, 60000); // 每分钟获取一次电池电量
 
 							resolve(true); // 连接成功
@@ -1603,8 +1459,6 @@
 
 			// 获取电池电量
 			getBatteryLevel(deviceId) {
-				console.log('请求获取电池电量');
-
 				// 获取电池电量
 				this.sendBLEData('RS_Bat?\r\n', (batteryData) => {
 					// 电池数据格式: RS_Bat=ok,0
@@ -1616,14 +1470,29 @@
 
 			// 获取设备信息
 			getDeviceInfo(deviceId) {
-				console.log('请求获取设备信息');
-
 				// 获取设备信息
-				this.sendBLEData('RS_getInfo?\r\n', (infoData) => {
-					if (infoData.startsWith('info:')) {
-						let deviceInfo = infoData.split(':')[1];
-						console.log('设备信息:', deviceInfo);
-						this.deviceInfo = deviceInfo;
+				this.sendBLEData('RS_Info?\r\n', (infoData) => {
+					if (infoData.startsWith('RS_Info=ok')) {
+						// 提取设备信息数据
+						let infoParts = infoData.split(',');
+						if (infoParts.length === 5) {
+							// 解析版本号
+							this.launcherVersion = infoParts[1];
+
+							// 解析位置数据
+							this.launcherPosition = {
+								x0: parseFloat(infoParts[2]),
+								y0: parseFloat(infoParts[3]),
+								z0: parseFloat(infoParts[4])
+							};
+
+							console.log('设备信息:', {
+								version: this.launcherVersion,
+								position: this.launcherPosition
+							});
+						} else {
+							console.log('设备信息数据格式错误:', infoData);
+						}
 					} else {
 						console.log('设备信息数据格式错误:', infoData);
 					}
@@ -1815,7 +1684,9 @@
 			showModePicker() {
 				if (this.trainingActive) {
 					uni.showToast({
-						title: '请先结束当前训练'
+						title: '请先结束当前训练',
+						icon: 'none',
+						duration: 1000
 					});
 					return
 				}
@@ -1836,6 +1707,9 @@
 			// 记录临时选择的模式索引
 			setTemporaryMode(index) {
 				this.temporarySelectedMode = index;
+				this.selectedMode = index; // 直接确认选择的模式
+				this.closeModePicker(); // 关闭模式选择弹窗
+				this.onModeChange(this.selectedMode); // 执行模式变化操作
 			},
 
 			// 点击"Complete"时，确认模式选择
@@ -1856,12 +1730,54 @@
 
 			toggleFrequencyRandom(event) {
 				this.isFrequencyRandom = event.detail.value;
+				if (this.isFrequencyRandom) {
+					// 如果是随机模式，不做额外处理
+					this.frequency = null; // 可以将frequency设置为null或其他默认值，表示启用随机
+				} else {
+					// 如果不是随机模式，直接设置频率
+					this.frequency = event.detail.value;
+				}
+				// 调整参数后
+				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
+
+				// 如果已经开始训练，则发送指令
+				if (this.trainingActive) {
+					this.sendBLEData(this.command); // 发送新的指令
+				}
 			},
 			toggleRotateRandom(event) {
 				this.isRotateRandom = event.detail.value;
+				if (this.isRotateRandom) {
+					// 如果是随机模式，不做额外处理
+					this.rotate = null; // 可以将rotate设置为null或其他默认值，表示启用随机
+				} else {
+					// 如果不是随机模式，直接设置旋转角度
+					this.rotate = event.detail.value;
+				}
+				// 调整参数后
+				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
+
+				// 如果已经开始训练，则发送指令
+				if (this.trainingActive) {
+					this.sendBLEData(this.command); // 发送新的指令
+				}
 			},
 			toggleHeightRandom(event) {
 				this.isHeightRandom = event.detail.value;
+				if (this.isHeightRandom) {
+					// 如果是随机模式，不做额外处理
+					this.height = null; // 可以将height设置为null或其他默认值，表示启用随机
+				} else {
+					// 如果不是随机模式，直接设置高度
+					this.height = event.detail.value;
+				}
+				// 调整参数后
+				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
+
+				// 如果已经开始训练，则发送指令
+				if (this.trainingActive) {
+					this.sendBLEData(this.command); // 发送新的指令
+				}
 			},
 
 			updateButtonStates() {
@@ -1987,6 +1903,14 @@
 			},
 
 			handleBallInteraction(index) {
+				if (this.trainingActive) {
+					uni.showToast({
+						title: '请先结束训练',
+						icon: 'none',
+						duration: 1000
+					})
+					return
+				}
 				// 确保只有在模式7下生效
 				if (this.selectedMode !== 9) return;
 
@@ -2015,6 +1939,14 @@
 			},
 
 			clearInputData() {
+				if (this.trainingActive) {
+					uni.showToast({
+						title: '请先结束训练',
+						icon: 'none',
+						duration: 1000
+					})
+					return
+				}
 				this.inputData = ''
 				this.selectedBalls = []
 				// 重置所有球的颜色为灰色
@@ -2099,7 +2031,7 @@
 					this.cannonX = 0;
 					this.cannonY = 0;
 				}
-				console.log(this.cannonX, this.cannonY)
+				this.generateDefaultCommand(this.selectedMode)
 			},
 
 			updateParametersForMode(modeIndex) {
@@ -2137,32 +2069,48 @@
 
 			// 转化球坐标，将传入的相对坐标 [row, col] 转为球场的真实坐标
 			convertBallPosition(position) {
-				const courtSize = this.fetchSelectedCourtSize(); // 获取当前球场的尺寸
-				if (!courtSize) return {
-					x: 0,
-					y: 0
-				};
+				console.log('开始转换网球位置，输入位置:', position);
 
-				const halfCourtLength = courtSize.length / 2; // 使用球场长度的一半
-				const courtWidth = courtSize.width; // 宽度保持原样
-				const balls = this.balls; // 动态获取球的数量
+				const courtSize = this.fetchSelectedCourtSize(); // 获取当前球场的尺寸
+				console.log('获取球场尺寸:', courtSize);
+
+				if (!courtSize) {
+					console.warn('球场尺寸未定义，返回默认坐标 {x: 0, y: 0}');
+					return {
+						x: 0,
+						y: 0
+					};
+				}
+
+				const courtWidth = courtSize.width; // 球场宽度（米）
+				const halfCourtLength = courtSize.length / 2; // 球场长度的一半（米）
+				console.log('球场宽度:', courtWidth, '球场长度的一半:', halfCourtLength);
+
 				const rowCount = this.gridConfig.version1.rows; // 行数（版本1）
 				const colCount = this.gridConfig.version1.cols; // 列数（版本1）
+				console.log('网格配置 - 行数:', rowCount, '列数:', colCount);
 
-				// 计算每个网球在场地中的间隔距离
-				const spacingX = courtWidth / colCount;
-				const spacingY = halfCourtLength / rowCount;
+				const ballDiameter = 0.0635; // 网球直径，单位为米
+				const totalBallWidth = colCount * ballDiameter; // 所有网球的宽度总和（米）
 
-				// 获取传入位置的实际坐标，保留1位小数
-				const x = Number((position[1] * spacingX + spacingX / 2).toFixed(1));
-				const y = Number((position[0] * spacingY + spacingY / 2).toFixed(1));
+				// 计算空白区域的总宽度，并均匀分配到每个空白区域
+				const totalSpacingWidth = courtWidth - totalBallWidth;
+				const spacingX = totalSpacingWidth / (colCount + 1);
+
+				// 计算每个网球在y轴上的间隔
+				const spacingY = halfCourtLength / (rowCount + 1);
+
+				// 计算传入位置的实际坐标
+				const x = position[1] * (ballDiameter + spacingX) + spacingX + ballDiameter / 2;
+				const y = position[0] * spacingY + spacingY;
+
+				console.log('计算后的坐标 - x:', x, 'y:', y);
 
 				return {
 					x,
 					y
 				};
 			},
-
 
 			onModeChange(mode) {
 				const index = mode
@@ -2186,35 +2134,54 @@
 				this.resetToInitialValues();
 			},
 
+			// 节流函数，用于限制移动频率
+			throttle(fn, delay) {
+				let lastTime = 0;
+				return function(...args) {
+					const now = Date.now();
+					if (now - lastTime >= delay) {
+						lastTime = now;
+						fn.apply(this, args);
+					}
+				};
+			},
+
+			// 调用 moveBall 时加上节流
+			moveBallThrottled(ballNumber, direction) {
+				// 使用节流包装 moveBall 调用
+				const throttledMove = this.throttle(() => this.moveBall(ballNumber, direction), 100);
+				throttledMove(); // 调用包装后的节流函数
+			},
+
 			// 处理方向键按下事件
 			handleDirectionKey(direction) {
 				// 模式1: 选中的球可以自由移动
 				if (this.selectedMode === 2) {
-					this.moveBall(this.selectedBall, direction);
+					this.moveBallThrottled(this.selectedBall, direction);
 				}
 				// 模式2: 1号球可以自由移动，上下移动时2号球跟随，2号球只能左右移动
 				else if (this.selectedMode === 3) {
 					if (this.selectedBall === 1) {
-						this.moveBall(1, direction); // 1号球可以上下左右移动
+						this.moveBallThrottled(1, direction); // 1号球可以上下左右移动
 						if (direction === 'up' || direction === 'down') {
-							this.moveBall(2, direction); // 2号球跟随上下移动
+							this.moveBallThrottled(2, direction); // 2号球跟随上下移动
 						}
 					} else if (this.selectedBall === 2 && (direction === 'left' || direction === 'right')) {
-						this.moveBall(2, direction); // 2号球只能左右移动
+						this.moveBallThrottled(2, direction); // 2号球只能左右移动
 					}
 				}
 				// 模式3: 1号球可以自由移动，左右移动时2号球跟随，2号球只能上下移动
 				else if (this.selectedMode === 4) {
 					if (this.selectedBall === 1) {
-						this.moveBall(1, direction); // 1号球可以上下左右移动
+						this.moveBallThrottled(1, direction); // 1号球可以上下左右移动
 						if (direction === 'left' || direction === 'right') {
-							this.moveBall(2, direction); // 2号球跟随左右移动
+							this.moveBallThrottled(2, direction); // 2号球跟随左右移动
 						}
 					} else if (this.selectedBall === 2 && (direction === 'up' || direction === 'down')) {
-						this.moveBall(2, direction); // 2号球只能上下移动
+						this.moveBallThrottled(2, direction); // 2号球只能上下移动
 					}
 				} else {
-					this.moveBall(1, direction)
+					this.moveBallThrottled(1, direction);
 				}
 			},
 
@@ -2269,8 +2236,12 @@
 
 				// 更新球在界面上的显示位置
 				this.updateBallPositions(this.selectedMode);
+				// 调整参数后
+				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
+
+				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
-					this.generateDefaultCommand(this.selectedMode); // 发送调整后的参数
+					this.sendBLEData(this.command); // 发送新的指令
 				}
 			},
 
@@ -2358,28 +2329,36 @@
 				this.selectedHeight = height;
 				// this.generateDefaultCommand(this.selectedMode);
 
-				// 如果训练处于激活状态，发送更新后的参数
+				// 调整参数后
+				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
+
+				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
-					this.generateDefaultCommand(this.selectedMode);
+					this.sendBLEData(this.command); // 发送新的指令
 				}
 			},
 
 			// 调整发球高度
 			adjustHeight(change) {
 				this.serveHeight = Math.min(Math.max(this.serveHeight + change, this.minAngle), this.maxAngle);
+				// 调整参数后
+				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
+
+				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
-					this.generateDefaultCommand(this.selectedMode); // 发送调整后的参数
+					this.sendBLEData(this.command); // 发送新的指令
 				}
 			},
 
 			//调整速度
 			handleSpeedChange(event) {
 				this.speed = event.detail.value;
-				// this.generateDefaultCommand(this.selectedMode); // 发送调整后的参数
+				// 调整参数后
+				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
 
-				// 如果训练已激活，发送新的参数
+				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
-					this.generateDefaultCommand(this.selectedMode); // 发送调整后的参数
+					this.sendBLEData(this.command); // 发送新的指令
 				}
 			},
 
@@ -2413,15 +2392,9 @@
 					this.buttonColor = 'rgba(232, 95, 95, 1)'; // 训练中按钮颜色
 					this.modeSelectable = false; // 禁用模式选择
 
-					console.log('command', this.command)
 					this.generateDefaultCommand(this.selectedMode)
 					// 发送训练参数
 					this.sendBLEData(this.command);
-					uni.showToast({
-						title: '蓝牙数据发送失败',
-						icon: 'none',
-						duration: 2000
-					});
 
 					// 确定发球顺序
 					this.determineServingOrder();
@@ -2559,11 +2532,23 @@
 
 			handleFrequencyChange(event) {
 				this.frequency = event.detail.value;
-				this.generateDefaultCommand(this.selectedMode); // 发送调整后的参数
+				// 调整参数后
+				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
+
+				// 如果已经开始训练，则发送指令
+				if (this.trainingActive) {
+					this.sendBLEData(this.command); // 发送新的指令
+				}
 			},
 			handleRotateChange(event) {
 				this.rotate = event.detail.value;
-				this.generateDefaultCommand(this.selectedMode); // 发送调整后的参数
+				// 调整参数后
+				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
+
+				// 如果已经开始训练，则发送指令
+				if (this.trainingActive) {
+					this.sendBLEData(this.command); // 发送新的指令
+				}
 			},
 			resetBallPosition() {
 				// 重置网球的位置
@@ -2609,6 +2594,7 @@
 			this.updateParametersForMode(this.selectedMode);
 			this.getCourtSize();
 			this.updateBallPositions(0)
+			this.calculateLauncherPosition()
 			this.setLanguage();
 			// 在组件加载后，确保 DOM 可用
 			this.$nextTick(() => {
@@ -3294,6 +3280,7 @@
 		font-size: calc(3.22vw);
 		/* 这里也可以设置为与宽度一致，确保适应 */
 		z-index: 10;
+		transition: top 0.05s ease, left 0.05s ease;
 	}
 
 	.tennis-ball-gray {
@@ -3361,10 +3348,17 @@
 		padding: 0;
 	}
 
+	.clear-button:active {
+		background-color: transparent;
+		/* 去掉点击后的背景色 */
+		box-shadow: none;
+		/* 去掉点击后的阴影 */
+	}
+
 	.clear-icon {
 		width: 6.67vw;
 		/* 根据430px宽度计算 */
-		height: 2.21vh;
+		height: 2.31vh;
 		/* 根据932px高度计算 */
 		color: rgba(102, 102, 102, 1);
 		text-align: center;
