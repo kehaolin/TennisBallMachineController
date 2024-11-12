@@ -472,7 +472,7 @@
 				],
 				cannonX: 0,
 				cannonY: 0,
-				selectedCourtType: 'singles', // 默认选择单打场地
+				selectedCourtType: 'doubles', // 默认选择单打场地
 				launcherPositions: ['底线', '中线', '中场'],
 				selectedLauncherPosition: 'Baseline', // 默认选择
 				isPickerVisible: false,
@@ -536,6 +536,48 @@
 				buttonColor: 'rgba(95, 186, 232, 1)', // 默认颜色
 				modeSelectable: true,
 				translations: {
+					Toast: {
+						zh: {
+							endTrainingFirst: '请先结束当前训练',
+							bluetoothInitFailed: '蓝牙初始化失败，请打开蓝牙后重试',
+							bluetoothDisconnectedReconnecting: '蓝牙连接已断开，正在尝试重连',
+							bluetoothSearchFailed: '蓝牙设备搜索失败，请重试',
+							bluetoothConnectSuccess: '蓝牙连接成功',
+							bluetoothConnectFailed: '蓝牙连接失败',
+							bluetoothConnectFailedRange: '蓝牙连接失败，请确保设备在范围内',
+							bluetoothReconnectSuccess: '蓝牙重连成功',
+							bluetoothReconnectFailed: '蓝牙重连失败，请检查设备',
+							bluetoothSendDataFailed: '蓝牙数据发送失败',
+							enableReceiveNotifyFailed: '启用接收通知失败',
+							stopSearchBluetoothFailed: '停止搜索蓝牙设备失败',
+							noDeviceConnected: '未连接设备',
+							bluetoothDisconnectFailed: '蓝牙断开连接失败',
+							endTrainingFirstAgain: '请先结束训练',
+							chooseTennisBallFirst: '请先选择网球',
+							connectBluetoothFirst: '请先连接蓝牙',
+							bluetoothOff: '蓝牙已关闭，请重新打开'
+						},
+						en: {
+							endTrainingFirst: 'Please end the current training first',
+							bluetoothInitFailed: 'Bluetooth initialization failed, please turn on Bluetooth and try again',
+							bluetoothDisconnectedReconnecting: 'Bluetooth connection lost, reconnecting...',
+							bluetoothSearchFailed: 'Bluetooth device search failed, please try again',
+							bluetoothConnectSuccess: 'Bluetooth connected successfully',
+							bluetoothConnectFailed: 'Bluetooth connection failed',
+							bluetoothConnectFailedRange: 'Bluetooth connection failed, please ensure the device is in range',
+							bluetoothReconnectSuccess: 'Bluetooth reconnected successfully',
+							bluetoothReconnectFailed: 'Bluetooth reconnection failed, please check the device',
+							bluetoothSendDataFailed: 'Bluetooth data sending failed',
+							bluetoothOff: 'Bluetooth is off, please turn it on',
+							enableReceiveNotifyFailed: 'Failed to enable receive notifications',
+							stopSearchBluetoothFailed: 'Failed to stop Bluetooth device search',
+							noDeviceConnected: 'No device connected',
+							bluetoothDisconnectFailed: 'Bluetooth disconnection failed',
+							endTrainingFirstAgain: 'Please end the training first',
+							chooseTennisBallFirst: 'chooseTennisBallFirst',
+							connectBluetoothFirst: 'Please connect Bluetooth first'
+						}
+					},
 					Baseline: {
 						zh: '底线',
 						en: 'Baseline'
@@ -1045,7 +1087,7 @@
 				this.sendBLEData('RS_Single=15,18,35,0,4\r\n', () => {})
 				if (this.trainingActive) {
 					uni.showToast({
-						title: '请先结束当前训练',
+						title: this.$t('Toast.endTrainingFirst'), // 使用国际化的提示文字
 						icon: 'none',
 						duration: 1000
 					});
@@ -1282,7 +1324,7 @@
 					fail: (err) => {
 						console.log('蓝牙模块初始化失败', err);
 						uni.showToast({
-							title: '蓝牙初始化失败，请打开蓝牙后重试',
+							title: this.$t('Toast.bluetoothInitFailed'), // 使用国际化翻译的文本
 							icon: 'none',
 							duration: 2000
 						});
@@ -1297,7 +1339,7 @@
 					if (!res.available) {
 						console.log('蓝牙适配器不可用');
 						uni.showToast({
-							title: '蓝牙已关闭，请重新打开',
+							title: this.$t('Toast.bluetoothOff'),
 							icon: 'none',
 							duration: 2000
 						});
@@ -1318,8 +1360,9 @@
 					if (!res.connected) {
 						console.log('蓝牙设备已断开');
 						uni.showToast({
-							title: '蓝牙连接已断开，正在尝试重连',
-							icon: 'none'
+							title: this.$t('Toast.bluetoothDisconnectedReconnecting'), // 使用国际化的提示文本
+							icon: 'none',
+							duration: 2000 // 可选：可以设置持续时间为2000ms（2秒），避免提示框太短时间消失
 						});
 						this.reconnectDevice(res.deviceId); // 断开时自动重连
 					}
@@ -1357,7 +1400,7 @@
 					fail: (err) => {
 						console.log('搜索蓝牙设备失败', err);
 						uni.showToast({
-							title: '蓝牙设备搜索失败，请重试',
+							title: this.$t('Toast.bluetoothSearchFailed'), // 使用国际化的提示文本
 							icon: 'none',
 							duration: 2000
 						});
@@ -1397,14 +1440,14 @@
 								this.showBluetoothPopup = false;
 							}, 1500);
 							uni.showToast({
-								title: '蓝牙连接成功',
+								title: this.$t('Toast.bluetoothConnectSuccess'),
 								icon: 'none',
 								duration: 1500
 							})
 						} else {
 							// 如果连接失败，提示用户
 							uni.showToast({
-								title: '蓝牙连接失败',
+								title: this.$t('Toast.bluetoothConnectFailed'),
 								icon: 'none',
 								duration: 1000
 							});
@@ -1447,7 +1490,7 @@
 						fail: (err) => {
 							console.log('连接失败', err);
 							uni.showToast({
-								title: '蓝牙连接失败，请确保设备在范围内',
+								title: this.$t('Toast.bluetoothConnectFailedRange'),
 								icon: 'none',
 								duration: 2000
 							});
@@ -1516,17 +1559,32 @@
 				this.reconnecting = true; // 标记为正在重连状态
 				console.log('尝试重新连接设备', deviceId);
 
+				// 获取设备对象，假设设备列表是 this.bluetoothDevices
+				const device = this.getDeviceById(deviceId);
+				if (!device) {
+					console.log('设备未找到，无法进行重连');
+					this.reconnecting = false; // 重连状态恢复
+					return;
+				}
+
 				this.connectToDevice(deviceId).then((isConnected) => {
 					if (isConnected) {
-						console.log('蓝牙重连成功');
+						// 如果连接成功，更新设备状态
+						device.isConnected = true; // 更新设备连接状态
+						this.isAnyDeviceConnected = true; // 有设备连接时禁用其他设备的绑定按钮
+						this.$forceUpdate(); // 强制刷新视图
+						setTimeout(() => {
+							this.showBluetoothPopup = false;
+						}, 1500);
 						uni.showToast({
-							title: '蓝牙重连成功',
-							icon: 'none'
-						});
+							title: this.$t('Toast.bluetoothReconnectSuccess'),
+							icon: 'none',
+							duration: 1500
+						})
 					} else {
 						console.log('蓝牙重连失败');
 						uni.showToast({
-							title: '蓝牙重连失败，请检查设备',
+							title: this.$t('Toast.bluetoothReconnectFailed'),
 							icon: 'none'
 						});
 					}
@@ -1534,16 +1592,16 @@
 				});
 			},
 
+			// 获取设备对象的方法
+			getDeviceById(deviceId) {
+				return this.bluetoothDevices.find(device => device.deviceId === deviceId);
+			},
+
 			// 统一发送蓝牙指令的方法
 			sendBLEData(command, onSuccess) {
 				console.log('command', command)
 				if (!this.connectedDeviceId) {
 					console.log('未找到有效的连接设备');
-					uni.showToast({
-						title: '未找到有效的连接设备',
-						icon: 'none',
-						duration: 2000
-					});
 					return;
 				}
 
@@ -1573,7 +1631,7 @@
 					fail: (err) => {
 						console.log('发送数据失败', err);
 						uni.showToast({
-							title: '蓝牙数据发送失败',
+							title: this.$t('Toast.bluetoothSendDataFailed'),
 							icon: 'none',
 							duration: 2000
 						});
@@ -1594,7 +1652,7 @@
 					fail: (err) => {
 						console.log('启用接收通知失败', err);
 						uni.showToast({
-							title: '启用接收通知失败',
+							title: this.$t('Toast.enableReceiveNotifyFailed'),
 							icon: 'none',
 							duration: 2000
 						});
@@ -1623,7 +1681,7 @@
 					fail: (err) => {
 						console.log('停止搜索蓝牙设备失败', err);
 						uni.showToast({
-							title: '停止搜索蓝牙设备失败',
+							title: this.$t('Toast.stopSearchBluetoothFailed'),
 							icon: 'none',
 							duration: 2000
 						});
@@ -1643,7 +1701,7 @@
 			disconnectDevice() {
 				if (!this.connectedDeviceId) {
 					uni.showToast({
-						title: '未连接设备',
+						title: this.$t('Toast.noDeviceConnected'),
 						icon: 'none'
 					});
 					return;
@@ -1673,7 +1731,7 @@
 					fail: (err) => {
 						console.log('断开连接失败', err);
 						uni.showToast({
-							title: '蓝牙断开连接失败',
+							title: this.$t('Toast.bluetoothDisconnectFailed'),
 							icon: 'none',
 							duration: 2000
 						});
@@ -1684,7 +1742,7 @@
 			showModePicker() {
 				if (this.trainingActive) {
 					uni.showToast({
-						title: '请先结束当前训练',
+						title: this.$t('Toast.endTrainingFirst'),
 						icon: 'none',
 						duration: 1000
 					});
@@ -1905,7 +1963,7 @@
 			handleBallInteraction(index) {
 				if (this.trainingActive) {
 					uni.showToast({
-						title: '请先结束训练',
+						title: this.$t('Toast.endTrainingFirstAgain'),
 						icon: 'none',
 						duration: 1000
 					})
@@ -1941,7 +1999,7 @@
 			clearInputData() {
 				if (this.trainingActive) {
 					uni.showToast({
-						title: '请先结束训练',
+						title: this.$t('Toast.endTrainingFirstAgain'),
 						icon: 'none',
 						duration: 1000
 					})
@@ -2371,7 +2429,7 @@
 			startTraining() {
 				if (this.selectedMode === 9 && this.inputData === '') {
 					uni.showToast({
-						title: '请先选择网球',
+						title: this.$t('Toast.chooseTennisBallFirst'),
 						icon: 'none',
 						duration: 1000
 					});
@@ -2379,7 +2437,7 @@
 				}
 				if (!this.isAnyDeviceConnected) {
 					uni.showToast({
-						title: '请先连接蓝牙',
+						title: this.$t('Toast.connectBluetoothFirst'),
 						icon: 'none',
 						duration: 1000
 					});
