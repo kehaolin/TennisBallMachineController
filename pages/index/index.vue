@@ -1087,7 +1087,7 @@
 				this.sendBLEData('RS_Single=15,18,35,0,4\r\n', () => {})
 				if (this.trainingActive) {
 					uni.showToast({
-						title: this.$t('Toast.endTrainingFirst'), // 使用国际化的提示文字
+						title: this.getTranslation('endTrainingFirst'), // 使用国际化的提示文字
 						icon: 'none',
 						duration: 1000
 					});
@@ -1324,7 +1324,7 @@
 					fail: (err) => {
 						console.log('蓝牙模块初始化失败', err);
 						uni.showToast({
-							title: this.$t('Toast.bluetoothInitFailed'), // 使用国际化翻译的文本
+							title: this.getTranslation('bluetoothInitFailed'), // 使用国际化的提示文字
 							icon: 'none',
 							duration: 2000
 						});
@@ -1339,7 +1339,7 @@
 					if (!res.available) {
 						console.log('蓝牙适配器不可用');
 						uni.showToast({
-							title: this.$t('Toast.bluetoothOff'),
+							title: this.getTranslation('bluetoothOff'),
 							icon: 'none',
 							duration: 2000
 						});
@@ -1360,7 +1360,8 @@
 					if (!res.connected) {
 						console.log('蓝牙设备已断开');
 						uni.showToast({
-							title: this.$t('Toast.bluetoothDisconnectedReconnecting'), // 使用国际化的提示文本
+							title: this.getTranslation(
+								'bluetoothDisconnectedReconnecting'), // 使用国际化的提示文本
 							icon: 'none',
 							duration: 2000 // 可选：可以设置持续时间为2000ms（2秒），避免提示框太短时间消失
 						});
@@ -1400,7 +1401,7 @@
 					fail: (err) => {
 						console.log('搜索蓝牙设备失败', err);
 						uni.showToast({
-							title: this.$t('Toast.bluetoothSearchFailed'), // 使用国际化的提示文本
+							title: this.getTranslation('bluetoothSearchFailed'), // 使用国际化的提示文本
 							icon: 'none',
 							duration: 2000
 						});
@@ -1440,14 +1441,14 @@
 								this.showBluetoothPopup = false;
 							}, 1500);
 							uni.showToast({
-								title: this.$t('Toast.bluetoothConnectSuccess'),
+								title: this.getTranslation('bluetoothConnectSuccess'),
 								icon: 'none',
 								duration: 1500
 							})
 						} else {
 							// 如果连接失败，提示用户
 							uni.showToast({
-								title: this.$t('Toast.bluetoothConnectFailed'),
+								title: this.getTranslation('bluetoothConnectFailed'),
 								icon: 'none',
 								duration: 1000
 							});
@@ -1490,7 +1491,8 @@
 						fail: (err) => {
 							console.log('连接失败', err);
 							uni.showToast({
-								title: this.$t('Toast.bluetoothConnectFailedRange'),
+								title: this.getTranslation(
+									'bluetoothConnectFailedRange'),
 								icon: 'none',
 								duration: 2000
 							});
@@ -1577,14 +1579,14 @@
 							this.showBluetoothPopup = false;
 						}, 1500);
 						uni.showToast({
-							title: this.$t('Toast.bluetoothReconnectSuccess'),
+							title: this.getTranslation('bluetoothReconnectSuccess'),
 							icon: 'none',
 							duration: 1500
 						})
 					} else {
 						console.log('蓝牙重连失败');
 						uni.showToast({
-							title: this.$t('Toast.bluetoothReconnectFailed'),
+							title: this.getTranslation('bluetoothReconnectFailed'),
 							icon: 'none'
 						});
 					}
@@ -1631,7 +1633,7 @@
 					fail: (err) => {
 						console.log('发送数据失败', err);
 						uni.showToast({
-							title: this.$t('Toast.bluetoothSendDataFailed'),
+							title: this.getTranslation('bluetoothSendDataFailed'),
 							icon: 'none',
 							duration: 2000
 						});
@@ -1652,7 +1654,7 @@
 					fail: (err) => {
 						console.log('启用接收通知失败', err);
 						uni.showToast({
-							title: this.$t('Toast.enableReceiveNotifyFailed'),
+							title: this.getTranslation('enableReceiveNotifyFailed'),
 							icon: 'none',
 							duration: 2000
 						});
@@ -1681,7 +1683,7 @@
 					fail: (err) => {
 						console.log('停止搜索蓝牙设备失败', err);
 						uni.showToast({
-							title: this.$t('Toast.stopSearchBluetoothFailed'),
+							title: this.getTranslation('stopSearchBluetoothFailed'),
 							icon: 'none',
 							duration: 2000
 						});
@@ -1701,7 +1703,7 @@
 			disconnectDevice() {
 				if (!this.connectedDeviceId) {
 					uni.showToast({
-						title: this.$t('Toast.noDeviceConnected'),
+						title: this.getTranslation('noDeviceConnected'),
 						icon: 'none'
 					});
 					return;
@@ -1731,7 +1733,7 @@
 					fail: (err) => {
 						console.log('断开连接失败', err);
 						uni.showToast({
-							title: this.$t('Toast.bluetoothDisconnectFailed'),
+							title: this.getTranslation('bluetoothDisconnectFailed'),
 							icon: 'none',
 							duration: 2000
 						});
@@ -1742,7 +1744,7 @@
 			showModePicker() {
 				if (this.trainingActive) {
 					uni.showToast({
-						title: this.$t('Toast.endTrainingFirst'),
+						title: this.getTranslation('endTrainingFirst'),
 						icon: 'none',
 						duration: 1000
 					});
@@ -1963,7 +1965,7 @@
 			handleBallInteraction(index) {
 				if (this.trainingActive) {
 					uni.showToast({
-						title: this.$t('Toast.endTrainingFirstAgain'),
+						title: this.getTranslation('endTrainingFirstAgain'),
 						icon: 'none',
 						duration: 1000
 					})
@@ -1999,7 +2001,7 @@
 			clearInputData() {
 				if (this.trainingActive) {
 					uni.showToast({
-						title: this.$t('Toast.endTrainingFirstAgain'),
+						title: this.getTranslation('endTrainingFirstAgain'),
 						icon: 'none',
 						duration: 1000
 					})
@@ -2141,26 +2143,28 @@
 				}
 
 				const courtWidth = courtSize.width; // 球场宽度（米）
-				const halfCourtLength = courtSize.length / 2; // 球场长度的一半（米）
-				console.log('球场宽度:', courtWidth, '球场长度的一半:', halfCourtLength);
+				const courtLength = courtSize.length; // 球场长度（米）
+				const halfCourtLength = courtLength / 2; // 球场长度的一半（米）
+				console.log('球场宽度:', courtWidth, '球场长度:', courtLength, '半场长度:', halfCourtLength);
 
 				const rowCount = this.gridConfig.version1.rows; // 行数（版本1）
 				const colCount = this.gridConfig.version1.cols; // 列数（版本1）
 				console.log('网格配置 - 行数:', rowCount, '列数:', colCount);
 
 				const ballDiameter = 0.0635; // 网球直径，单位为米
-				const totalBallWidth = colCount * ballDiameter; // 所有网球的宽度总和（米）
 
-				// 计算空白区域的总宽度，并均匀分配到每个空白区域
-				const totalSpacingWidth = courtWidth - totalBallWidth;
-				const spacingX = totalSpacingWidth / (colCount + 1);
+				// 列间距：确保第一列和最后一列的网球球心紧贴左右边缘
+				const firstBallX = ballDiameter / 2; // 第一列的网球球心位置
+				const lastBallX = courtWidth - ballDiameter / 2; // 最后一列的网球球心位置
+				const spacingX = (lastBallX - firstBallX) / (colCount - 1); // 计算列间距，确保第一列和最后一列网球球心紧贴左右边界
 
-				// 计算每个网球在y轴上的间隔
-				const spacingY = halfCourtLength / (rowCount + 1);
+				// 行间距：计算确保最后一行的网球球心紧贴球场底边
+				const lastBallY = halfCourtLength - ballDiameter / 2; // 最后一行的网球球心位置
+				const spacingY = (halfCourtLength - ballDiameter) / (rowCount - 1); // 计算行间距，确保最后一行球心紧贴底线
 
 				// 计算传入位置的实际坐标
-				const x = position[1] * (ballDiameter + spacingX) + spacingX + ballDiameter / 2;
-				const y = position[0] * spacingY + spacingY;
+				const x = firstBallX + position[1] * spacingX; // 根据列的索引计算 x 坐标
+				const y = halfCourtLength + (position[0] * spacingY) - (ballDiameter / 2); // 根据行的索引计算 y 坐标，并加上球场的半场高度
 
 				console.log('计算后的坐标 - x:', x, 'y:', y);
 
@@ -2425,11 +2429,14 @@
 				return Math.round((rotate / 5) * 100); // -5 ~ 5 转换为 -100 ~ 100
 			},
 
+			getTranslation(key) {
+				return this.translations.Toast[this.currentLanguage][key] || key;
+			},
 
 			startTraining() {
 				if (this.selectedMode === 9 && this.inputData === '') {
 					uni.showToast({
-						title: this.$t('Toast.chooseTennisBallFirst'),
+						title: this.getTranslation('chooseTennisBallFirst'),
 						icon: 'none',
 						duration: 1000
 					});
@@ -2437,7 +2444,7 @@
 				}
 				if (!this.isAnyDeviceConnected) {
 					uni.showToast({
-						title: this.$t('Toast.connectBluetoothFirst'),
+						title: this.getTranslation('connectBluetoothFirst'),
 						icon: 'none',
 						duration: 1000
 					});
