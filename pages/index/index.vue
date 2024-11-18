@@ -383,14 +383,14 @@
 						<text class="param-text1">{{ translations.speed[currentLanguage] }}:</text>
 						<text class="param-value">{{ speed }}</text>
 					</view>
-					<slider class="custom-slider" :value="speed" min="20" max="140" block-size="16"
+					<slider class="custom-slider" :value="speed" min="1" max="100" block-size="16"
 						activeColor="rgba(95, 186, 232, 1)" backgroundColor="background: rgba(240, 242, 251, 1);"
 						:disabled="(isSpeedRandom && selectedMode === 8) || selectedMode === 0"
 						@changing="handleSpeedChanging" @change="handleSpeedChange"
 						:style="{ opacity: (isSpeedRandom && selectedMode === 8) || selectedMode === 0 ? 0.5 : 1 }" />
 					<view class="range-label">
-						<text>20</text>
-						<text>140</text>
+						<text>1</text>
+						<text>100</text>
 					</view>
 					<view v-if="selectedMode === 8" class="switch-container" style="margin-left: -10px;">
 						<text class="random-label">{{ translations.random[currentLanguage] }}</text>
@@ -502,7 +502,7 @@
 				selectedDifficulty: '1.0',
 				angle: 30, // 初始角度				
 				heights: 30,
-				serveHeight: 30,
+				serveHeight: 5,
 				minAngle: 20, // 角度最小值
 				maxAngle: 50, // 角度最大值
 				heightOptions: ['低', '中', '高'], // 发球高度选项
@@ -527,6 +527,7 @@
 				AngleHmin: -45, // 最小水平角
 				AngleHMax: 45, // 最大水平角
 				ballIndices: [], // 存储转换后的球位置
+				tennisMachineIndices: {}, // 存储网球机器的索引分段
 				launcherPosition: {
 					x0: 0, // 大炮旋转中心的 x 坐标，您可以设置默认值
 					y0: 0, // 大炮旋转中心的 y 坐标
@@ -882,67 +883,115 @@
 						]
 					} // 编程练习
 				},
-				modeParams: [{
-					frequency: 4,
-					speed: 40,
-					rotate: 0,
-					heights: '',
-					serveHeight: 2 // 初学者练习，发球角度较低，适合新手
-				}, {
-					frequency: 5,
-					speed: 60,
-					rotate: 0,
-					heights: '',
-					serveHeight: 3 // 定点练习，发球高度适中，便于控制
-				}, {
-					frequency: 6,
-					speed: 90,
-					rotate: 1,
-					heights: '中',
-					serveHeight: 4 // 交叉循环，适当增加发球高度，增加挑战
-				}, {
-					frequency: 7,
-					speed: 80,
-					rotate: 0,
-					heights: '',
-					serveHeight: 5 // 水平循环，发球高度适中，适合节奏训练
-				}, {
-					frequency: 8,
-					speed: 70,
-					rotate: -1,
-					heights: '中',
-					serveHeight: 6 // 垂直循环，增加上下移动训练的难度
-				}, {
-					frequency: 9,
-					speed: 130,
-					rotate: 2,
-					heights: '',
-					serveHeight: 7 // 高压练习，适度增加发球高度以提高压力感
-				}, {
-					frequency: 7,
-					speed: 100,
-					rotate: 0,
-					heights: '',
-					serveHeight: 5 // 截击练习，发球高度适中，便于快速反应
-				}, {
-					frequency: 6,
-					speed: 70,
-					rotate: -3,
-					heights: '',
-					serveHeight: 4 // 月亮球，发球高度适中，适应高弧度球
-				}, {
-					frequency: 6,
-					speed: 100,
-					rotate: 0,
-					heights: '中',
-					serveHeight: 6 // 全场随机，适度发球高度，增加变化
-				}, {
-					frequency: 7,
-					speed: 90,
-					rotate: 0,
-					heights: '',
-					serveHeight: 5 // 编程练习，发球高度适中，用户可自行调整
-				}],
+				modeParams: [
+					// 初学者练习
+					[{
+						frequency: 3,
+						speed: 10,
+						rotate: 0,
+						heights: '',
+						serveHeight: 5
+					}],
+					// 定点练习
+					[{
+						frequency: 1,
+						speed: 3,
+						rotate: 0,
+						heights: '',
+						serveHeight: 5
+					}],
+					// 交叉循环
+					[{
+							frequency: 5,
+							speed: 20,
+							rotate: 0,
+							heights: '',
+							serveHeight: 5
+						},
+						{
+							frequency: 2,
+							speed: 60,
+							rotate: 0,
+							heights: '',
+							serveHeight: 5
+						}
+					],
+					// 水平循环
+					[{
+							frequency: 2,
+							speed: 3,
+							rotate: 0,
+							heights: '',
+							serveHeight: 5
+						},
+						{
+							frequency: 2,
+							speed: 3,
+							rotate: 0,
+							heights: '',
+							serveHeight: 5
+						}
+					],
+					// 垂直循环
+					[{
+							frequency: 2,
+							speed: 3,
+							rotate: 0,
+							heights: '',
+							serveHeight: 5
+						},
+						{
+							frequency: 2,
+							speed: 3,
+							rotate: 0,
+							heights: '',
+							serveHeight: 5
+						}
+					],
+					// 截击练习
+					[{
+						frequency: 1,
+						speed: 3,
+						rotate: 0,
+						heights: '',
+						serveHeight: 5
+					}],
+					// 高压练习
+					[{
+						frequency: 1,
+						speed: 3,
+						rotate: 0,
+						heights: '',
+						serveHeight: 5
+					}],
+					// 月亮球
+					[{
+						frequency: 1,
+						speed: 3,
+						rotate: 0,
+						heights: '',
+						serveHeight: 5
+					}],
+					// 全场随机
+					[{
+						frequency: 1,
+						speed: 3,
+						rotate: 0,
+						heights: '',
+						serveHeight: 5
+					}],
+					// 编程练习
+					[
+						...Array(35).fill({
+							frequency: 6, // 默认发球频率
+							speed: 80, // 默认发球速度
+							rotate: 0, // 默认旋转
+							heights: '', // 默认高度信息
+							serveHeight: 5 // 默认发球高度
+						})
+					]
+				],
+				machineConfigs: {},
 				modeSettings: {
 					0: {
 						upDown: false,
@@ -987,7 +1036,7 @@
 				},
 				selectedMode: 0,
 				frequency: 5,
-				speed: 20,
+				speed: 10,
 				rotate: 0,
 				ballCount: 1, // 网球个数
 				selectedBalls: [], // 记录被点击的网球索引
@@ -1000,8 +1049,8 @@
 				}, // 记录网球的位置
 				trainingActive: false,
 				initialParams: [{
-					frequency: 4,
-					speed: 40,
+					frequency: 3,
+					speed: 10,
 					rotate: 0,
 					heights: '',
 					serveHeight: 2 // 初学者练习，发球角度较低，适合新手
@@ -1012,8 +1061,8 @@
 					heights: '',
 					serveHeight: 3 // 定点练习，发球高度适中，便于控制
 				}, {
-					frequency: 6,
-					speed: 90,
+					frequency: 5,
+					speed: 20,
 					rotate: 1,
 					heights: '中',
 					serveHeight: 4 // 交叉循环，适当增加发球高度，增加挑战
@@ -1061,8 +1110,8 @@
 					serveHeight: 5 // 编程练习，发球高度适中，用户可自行调整
 				}],
 				initialBallPosition: {
-					x: 0,
-					y: 0
+					x: 2,
+					y: 2
 				},
 				defaultParams: {
 					horizontalAngle: 0, // 默认水平角度
@@ -1097,7 +1146,6 @@
 		},
 		methods: {
 			selectDifficulty(difficulty) {
-				this.sendBLEData('RS_Single=15,18,35,0,4\r\n', () => {})
 				if (this.trainingActive) {
 					uni.showToast({
 						title: this.getTranslation('endTrainingFirst'), // 使用国际化的提示文字
@@ -1107,7 +1155,9 @@
 					return
 				}
 				this.selectedDifficulty = difficulty; // 更新选中的难度
+				this.updateParametersForMode(this.selectedMode)
 				this.generateDefaultCommand(this.selectedMode)
+				this.modifyMachineConfigs('updateDifficulty')
 			},
 
 			// 生成默认发球指令
@@ -1300,7 +1350,7 @@
 				};
 			},
 
-			selectLauncherPosition(position) {
+			async selectLauncherPosition(position) {
 				if (this.trainingActive) {
 					uni.showToast({
 						title: this.getTranslation('endTrainingFirst'),
@@ -1326,8 +1376,72 @@
 
 				// 调用计算发射器位置的方法
 				this.calculateLauncherPosition();
-				this.updateBallPositions(this.selectedMode);
+				// this.updateBallPositions(this.selectedMode);
 				this.resetToInitialValues();
+				await this.modifyMachineConfigs('updateLauncherPosition')
+			},
+
+			/**
+			 * 根据网球位置生成网球机器参数
+			 * @param {Array} positions 当前模式的球位置数组，例如 [[2, 2], [3, 4]]
+			 * @returns {Array} 包含速度和高度索引的对象数组
+			 */
+			generateMachineParams(positions) {
+				// 假设三个发射器位置对应的表格数据
+				const tableMapping = {
+					Baseline: baselineParameters.baselineParameters,
+					Midline: midlineParameters.midlineParameters,
+					Midcourt: midcourtParameters.midcourtParameters
+				};
+
+				// 根据选定的发射器位置获取表格
+				const selectedTable = tableMapping[this.selectedLauncherPosition];
+
+				if (!selectedTable) {
+					console.error("未找到对应的发射器位置表格。");
+					return [];
+				}
+
+				// 遍历位置并生成对应的参数
+				return positions.map(([row, col]) => {
+					const linearIndex = row * 5 + col; // 计算线性索引
+
+					// 检查表格数据是否有效
+					if (!selectedTable[linearIndex] || selectedTable[linearIndex].length === 0) {
+						return {
+							position: [row, col],
+							speedIndices: [], // 无效数据，返回空索引
+							heightIndices: []
+						};
+					}
+
+					const totalLength = selectedTable[linearIndex].length;
+
+					// 生成速度和高度索引
+					const speedIndices = this.calculateIndices(totalLength, 100); // 分成 100 份
+					const heightIndices = this.calculateIndices(totalLength, 10); // 分成 10 份
+
+					return {
+						position: [row, col],
+						speedIndices,
+						heightIndices
+					};
+				});
+			},
+
+			/**
+			 * 计算分段索引
+			 * @param {Number} totalLength 数据的总长度
+			 * @param {Number} divisions 分段数
+			 * @returns {Array} 索引列表
+			 */
+			calculateIndices(totalLength, divisions) {
+				const step = totalLength / divisions; // 每份的步长
+				return Array.from({
+						length: divisions
+					}, (_, i) =>
+					Math.min(Math.round(i * step), totalLength - 1) // 确保索引不超过最大值
+				);
 			},
 
 			updateBallPositions(mode) {
@@ -1340,38 +1454,38 @@
 					]
 				};
 				const {
-					ballCount,
 					positions
 				} = config;
 
+				// 调用生成网球机器参数的方法
+				this.tennisMachineIndices = this.generateMachineParams(positions);
+
 				const ballSize = 6.29; // 自适应的球大小，以 vw 为单位
 
-				this.balls = positions.map(([row, col]) => {
-					// 更新balls数组，依据canMoveOrDisplayBall来判断每个球是否能展示
+				// 更新每个球的信息
+				this.balls = positions.map(([row, col], index) => {
+					// 检查当前球是否可以显示
 					const canDisplay = this.canMoveOrDisplayBall([row, col]);
 
-					// 判断该球是否能移动或展示
-					if (!canDisplay) {
-						return {
-							ballIndex: [row, col], // 默认的球位置 [row, col]
-							width: '0vw', // 无法展示时，宽度设置为 0
-							height: '0vw', // 无法展示时，高度设置为 0
-							top: '0px', // 设置为 0，保持布局
-							left: '0px', // 设置为 0，保持布局
-							color: 'transparent', // 设置为透明色，表示该球不可见
-							canDisplay: false // 标记该球不可展示
-						};
-					}
+					// 获取查表内容
+					const machineParams = this.tennisMachineIndices[index] || {
+						speedIndices: [],
+						heightIndices: []
+					};
 
 					const position = this.calculatePosition(row, col);
+
 					return {
 						ballIndex: [row, col], // 默认的球位置 [row, col]
-						width: `${ballSize}vw`, // 使用自适应宽度
-						height: `${ballSize}vw`, // 使用自适应高度
-						top: `${position.top}px`, // 保持位置为 px，计算时用到的
-						left: `${position.left}px`, // 保持位置为 px，计算时用到的
-						color: mode === 9 ? 'gray' : 'yellow', // 模式9下为灰色，其他模式为红色
-						canDisplay: true // 标记该球可展示
+						width: canDisplay ? `${ballSize}vw` : '0vw', // 显示与否
+						height: canDisplay ? `${ballSize}vw` : '0vw', // 显示与否
+						top: canDisplay ? `${position.top}px` : '0px', // 保持布局
+						left: canDisplay ? `${position.left}px` : '0px', // 保持布局
+						color: mode === 9 ? 'gray' : 'yellow', // 模式9下为灰色，其他模式为黄色
+						canDisplay, // 标记该球是否可显示
+						// 绑定查表内容
+						speedIndices: machineParams.speedIndices,
+						heightIndices: machineParams.heightIndices
 					};
 				});
 
@@ -1384,10 +1498,13 @@
 							height: `${ballSize}vw`, // 使用自适应高度
 							top: '0px',
 							left: '0px',
-							color: 'gray' // 模式9下为灰色
+							color: 'gray', // 模式9下为灰色
+							speedIndices: [], // 默认空的速度索引
+							heightIndices: [] // 默认空的高度索引
 						});
 					}
 				}
+
 				// 初始化球的颜色状态为灰色
 				this.ballColors = new Array(this.balls.length).fill('gray');
 
@@ -1414,6 +1531,7 @@
 						}
 					})
 					.exec();
+
 			},
 
 			openBluetoothPopup() {
@@ -1890,11 +2008,11 @@
 			},
 
 			// 点击"Complete"时，确认模式选择
-			confirmModeSelection() {
-				this.selectedMode = this.temporarySelectedMode; // 确认最终选择的模式
-				this.closeModePicker(); // 关闭模式选择弹窗
-				this.onModeChange(this.selectedMode)
-			},
+			// confirmModeSelection() {
+			// 	this.selectedMode = this.temporarySelectedMode; // 确认最终选择的模式
+			// 	this.closeModePicker(); // 关闭模式选择弹窗
+			// 	this.onModeChange(this.selectedMode)
+			// },
 
 			closeModePicker() {
 				this.showModePickerModal = false; // 关闭弹窗
@@ -1922,6 +2040,7 @@
 					this.sendBLEData(this.command); // 发送新的指令
 				}
 			},
+
 			toggleRotateRandom(event) {
 				this.isRotateRandom = event.detail.value;
 				if (this.isRotateRandom) {
@@ -1939,6 +2058,7 @@
 					this.sendBLEData(this.command); // 发送新的指令
 				}
 			},
+
 			toggleHeightRandom(event) {
 				this.isHeightRandom = event.detail.value;
 				if (this.isHeightRandom) {
@@ -1977,38 +2097,6 @@
 					this.courtHeight = rect.height;
 					this.updateBallPositions(0);
 				}).exec();
-			},
-
-			updateModeConfigStyle() {
-				const modeConfig = this.$refs.modeConfig1; // 获取 modeConfig1 的引用
-				if (modeConfig && modeConfig.children) { // 确保 modeConfig 和 children 存在
-					// 根据子元素的高度调整 modeConfig1 的高度
-					const childHeight = Array.from(modeConfig.children).reduce((total, child) => {
-						return total + child.offsetHeight;
-					}, 0);
-					modeConfig.style.height = `${childHeight}px`; // 设置 modeConfig1 的高度
-
-					// 更新开始训练按钮的样式
-					const startButton = this.$refs.startButton; // 获取开始训练按钮的引用
-					if (startButton) {
-						if (this.selectedMode === 0) {
-							startButton.style.width = '372.67px';
-							startButton.style.height = '57.33px';
-							startButton.style.opacity = '1';
-							startButton.style.borderRadius = '9.17px';
-							startButton.style.background = 'rgba(95, 186, 232, 1)';
-						} else {
-							// 恢复到默认样式
-							startButton.style.width = ''; // 恢复默认宽度
-							startButton.style.height = ''; // 恢复默认高度
-							startButton.style.opacity = ''; // 恢复默认透明度
-							startButton.style.borderRadius = ''; // 恢复默认圆角
-							startButton.style.background = ''; // 恢复默认背景色
-						}
-					}
-				} else {
-					console.warn('modeConfig1或其子元素不存在');
-				}
 			},
 
 			calculatePosition(row, col, courtTopOffset) {
@@ -2134,6 +2222,92 @@
 				this.inputData = this.selectedBalls
 					.map(realIndex => this.getDisplayableIndex(realIndex) + 1) // 获取展示序号
 					.join(',');
+
+				this.updateParametersForMode(this.selectedMode)
+				this.modifyMachineConfigs('highlightBalls')
+			},
+
+			// 修改后的打印速度和高度信息的函数
+			printBallParams(machineParams) {
+				machineParams.forEach((param, idx) => {
+					// 获取当前球的速度和高度
+					const speed = this.getSpeedFromIndex(param.speedIndices, idx);
+					const height = this.getHeightFromIndex(param.heightIndices, idx);
+
+					// 打印球的速度和高度信息
+					if (speed !== null && height !== null) {
+						console.log(`球 ${idx + 1} 的速度: ${speed}`);
+						console.log(`球 ${idx + 1} 的高度: ${height}`);
+					}
+				});
+			},
+
+			// 修改后的获取速度的函数
+			getSpeedFromIndex(speedIndices, ballIndex) {
+				// 获取当前选中的发射器位置
+				const selectedPosition = this.selectedLauncherPosition; // 假设这里有一个选中的发射器位置
+
+				// 定义不同的参数表
+				const tableMapping = {
+					Baseline: baselineParameters.baselineParameters,
+					Midline: midlineParameters.midlineParameters,
+					Midcourt: midcourtParameters.midcourtParameters
+				};
+
+				// 根据选中的位置判断使用哪个参数表
+				const speedTable = tableMapping[selectedPosition];
+
+				console.log('球索引', ballIndex, 'speedIndices', speedIndices, 'speedTable', speedTable);
+
+				// 如果速度表存在，并且ballIndex对应的数组存在
+				if (speedTable && ballIndex >= 0 && ballIndex < speedTable.length) {
+					const speedArray = speedTable[ballIndex]; // 获取对应球的速度数组
+
+					// 确保speedIndices在数组范围内
+					if (speedIndices >= 0 && speedIndices < speedArray.length) {
+						// 返回对应的速度值
+						return speedArray[speedIndices];
+					} else {
+						console.error('Speed index out of bounds for ball', ballIndex);
+						return null;
+					}
+				} else {
+					console.error('Invalid ball index or speed table');
+					return null;
+				}
+			},
+
+			// 修改后的获取高度的函数
+			getHeightFromIndex(heightIndices, ballIndex) {
+				// 获取当前选中的发射器位置
+				const selectedPosition = this.selectedLauncherPosition; // 假设这里有一个选中的发射器位置
+
+				// 定义不同的参数表
+				const tableMapping = {
+					Baseline: baselineParameters.baselineParameters,
+					Midline: midlineParameters.midlineParameters,
+					Midcourt: midcourtParameters.midcourtParameters
+				};
+
+				// 根据选中的位置判断使用哪个参数表
+				const heightTable = tableMapping[selectedPosition];
+
+				// 如果高度表存在，并且ballIndex对应的数组存在
+				if (heightTable && ballIndex >= 0 && ballIndex < heightTable.length) {
+					const heightArray = heightTable[ballIndex]; // 获取对应球的高度数组
+
+					// 确保heightIndices在数组范围内
+					if (heightIndices >= 0 && heightIndices < heightArray.length) {
+						// 返回对应的高度值
+						return heightArray[heightIndices];
+					} else {
+						console.error('Height index out of bounds for ball', ballIndex);
+						return null;
+					}
+				} else {
+					console.error('Invalid ball index or height table');
+					return null;
+				}
 			},
 
 			clearInputData() {
@@ -2232,28 +2406,103 @@
 				this.generateDefaultCommand(this.selectedMode)
 			},
 
+			//调整速度
+			handleSpeedChange(event) {
+				this.speed = event.detail.value;
+				this.modeParams[this.selectedMode][this.selectedBall - 1].speed = event.detail.value
+
+				// 调整参数后
+				// this.generateDefaultCommand(this.selectedMode); // 生成新的指令
+				this.modifyMachineConfigs('updateSpeed')
+
+				// 如果已经开始训练，则发送指令
+				if (this.trainingActive) {
+					this.sendBLEData(this.command); // 发送新的指令
+				}
+			},
+
+			// 将速度转换为真实数值并返回相关信息
+			convertSpeedWithIndex(speedRange, speed) {
+				if (!Array.isArray(speedRange) || speedRange.length < 2) {
+					console.error("Invalid speed range data");
+					return {
+						speedArray: [],
+						selectedSpeed: null,
+						index: -1
+					};
+				}
+
+				const minSpeed = speedRange[0]; // 最小速度
+				const maxSpeed = speedRange[speedRange.length - 1]; // 最大速度
+
+				// 将速度范围均分为100份
+				const step = (maxSpeed - minSpeed) / 100;
+				const speedArray = Array.from({
+					length: 100
+				}, (_, i) => minSpeed + i * step);
+
+				// 根据 speed 值（1-100），获取对应的真实速度
+				const index = Math.max(0, Math.min(speed - 1, 99)); // 确保索引在有效范围
+				const selectedSpeed = speedArray[index];
+
+				// 返回速度数组、选定速度值和下标
+				return {
+					speedArray, // 完整的速度数组
+					selectedSpeed, // 对应的速度值
+					index // 在速度数组中的下标
+				};
+			},
+
+			convertHeight(heightRange, height) {
+				if (!Array.isArray(heightRange) || heightRange.length < 2) {
+					console.error("Invalid height range data");
+					return null;
+				}
+
+				const minHeight = heightRange[0]; // 最小高度
+				const maxHeight = heightRange[heightRange.length - 1]; // 最大高度
+
+				// 将高度范围均分为10份
+				const step = (maxHeight - minHeight) / 10;
+				const splitHeightArray = Array.from({
+					length: 10
+				}, (_, i) => minHeight + i * step);
+
+				// 根据height值（1-10），获取对应的真实高度
+				const index = Math.max(0, Math.min(height - 1, 9)); // 确保索引在有效范围
+				return splitHeightArray[index];
+			},
+
 			updateParametersForMode(modeIndex) {
 				// 定义每个模式的默认参数
 				const modeParams = this.modeParams;
 
-				// 判断是否为模式0并且选中的难度为 '2.0'
 				if (modeIndex === 0 && this.selectedDifficulty === '2.0') {
-					// 如果是模式0，且难度为 '2.0'，设置默认参数为初学者模式
+					// 如果是模式0，且难度为 '2.0'，单独设置默认参数
 					this.frequency = 6;
 					this.speed = 50;
 					this.rotate = 0;
 					this.heights = '';
 					this.serveHeight = 4; // 初学者练习，发球角度较低，适合新手
 				} else {
-					// 否则，使用模式参数或初始参数
-					const params = modeParams[modeIndex] || this.initialParams;
+					// 获取当前模式的第一个球参数
+					const firstBallParams = modeParams[modeIndex]?.[0];
 
-					// 更新参数值
-					this.frequency = params.frequency;
-					this.speed = params.speed;
-					this.rotate = params.rotate;
-					this.heights = params.heights;
-					this.serveHeight = params.serveHeight;
+					if (firstBallParams) {
+						// 使用模式的第一个球参数
+						this.frequency = firstBallParams.frequency;
+						this.speed = firstBallParams.speed;
+						this.rotate = firstBallParams.rotate;
+						this.heights = firstBallParams.heights;
+						this.serveHeight = firstBallParams.serveHeight;
+					} else {
+						// 如果没有参数，使用初始默认参数
+						this.frequency = this.initialParams.frequency;
+						this.speed = this.initialParams.speed;
+						this.rotate = this.initialParams.rotate;
+						this.heights = this.initialParams.heights;
+						this.serveHeight = this.initialParams.serveHeight;
+					}
 				}
 
 				// 重置球的位置
@@ -2330,8 +2579,145 @@
 				this.showInputWithClear = (this.selectedMode === 9); // 编程练习模式下的输入框
 
 				// 根据模式设置网球个数及默认位置
-				this.updateBallPositions(index);
+				// this.updateBallPositions(index);
 				this.resetToInitialValues();
+				this.generateBallConfig()
+			},
+
+			async generateBallConfig() {
+				// 1. 获取当前模式的参数
+				const currentModeParams = this.modeParams[this.selectedMode];
+				if (!currentModeParams) {
+					console.error("未找到当前模式的配置参数");
+					return;
+				}
+
+				// 2. 初始化配置参数数组
+				const machineConfigs = [];
+
+				// 3. 遍历球，生成每个球的配置
+				for (let index = 0; index < this.balls.length; index++) {
+					const ball = this.balls[index];
+					const ballIndex = index;
+
+					if (!currentModeParams[ballIndex]) {
+						console.log(`未找到下标为 ${ballIndex} 的默认参数`);
+						continue;
+					}
+
+					const {
+						speed,
+						serveHeight
+					} = currentModeParams[ballIndex];
+
+					const row = ball.ballIndex[0];
+					const col = ball.ballIndex[1];
+
+					const tableIndex = row * 5 + col; // 转换成一维索引
+
+					// 使用 await 调用 setRealValues
+					const result = await this.setRealValues("speed", this.height, tableIndex);
+					const {
+						launchAngle,
+						horizontalAngleDeg,
+						realSpeed,
+						finalMaxHeight
+					} = result;
+
+					// 构造当前球的配置对象
+					const config = {
+						launchAngle,
+						horizontalAngleDeg,
+						realSpeed,
+						finalMaxHeight,
+						// serveHeight, // 默认高度也加上
+					};
+
+					// 将配置对象添加到数组
+					machineConfigs.push(config);
+				}
+
+				// 4. 更新到 data 并打印
+				this.machineConfigs = machineConfigs;
+				console.log("生成的机器配置参数：", machineConfigs);
+			},
+
+			async setRealValues(type, value, tableIndex) {
+				// 确定表格
+				const tableMapping = {
+					Baseline: baselineParameters.baselineParameters,
+					Midline: midlineParameters.midlineParameters,
+					Midcourt: midcourtParameters.midcourtParameters
+				};
+				const selectedTable = tableMapping[this.selectedLauncherPosition];
+
+				if (!selectedTable) {
+					console.error("Selected position is not valid");
+					return {};
+				}
+
+				// 获取数据范围的索引
+				const getDataFromBallData = (ballData, index) => {
+					if (index >= 0 && index < ballData.length) {
+						const selectedRow = ballData[index];
+						return {
+							launchAngle: selectedRow[0], // 假设 selectedRow[0] 是 launchAngle
+							horizontalAngleDeg: selectedRow[1], // 假设 selectedRow[1] 是 horizontalAngleDeg
+							realSpeed: selectedRow[2], // 假设 selectedRow[2] 是 speed
+							finalMaxHeight: selectedRow[3] // 假设 selectedRow[3] 是 finalMaxHeight
+						};
+					} else {
+						console.error("下标超出 ballData 的范围");
+						return null;
+					}
+				};
+
+				// 根据传入的 type（speed 或 height）处理数据
+				const results = [];
+
+				const ballData = selectedTable[tableIndex];
+
+				if (type === "speed") {
+					let speed = null; // 修改为 let
+
+					if (this.selectedMode === 9) {
+						if (this.selectedBalls.length > 0) {
+							speed = this.modeParams[this.selectedMode][this.selectedBalls.length - 1].speed;
+						} else {
+							speed = this.modeParams[this.selectedMode][12].speed;
+						}
+					} else if (
+						this.selectedMode === 2 ||
+						this.selectedMode === 3 ||
+						this.selectedMode === 4
+					) {
+						speed = this.modeParams[this.selectedMode][this.selectedBall - 1].speed;
+					} else {
+						speed = this.modeParams[this.selectedMode][0].speed;
+					}
+
+					const speedRange = ballData.map(row => row[2]); // 假设 [2] 是速度数据
+					const {
+						index
+					} = this.convertSpeedWithIndex(speedRange, speed);
+					const result = getDataFromBallData(ballData, index);
+
+					if (result) {
+						results.push(result);
+					}
+				} else if (type === "height") {
+					const heightRange = ballData.map(row => row[3]); // 假设 [3] 是高度数据
+					const {
+						index
+					} = this.convertHeightWithIndex(heightRange, this.serveHeight);
+					const result = getDataFromBallData(ballData, index);
+
+					if (result) {
+						results.push(result);
+					}
+				}
+
+				return results.length > 0 ? results[0] : undefined;
 			},
 
 			// 节流函数，用于限制移动频率
@@ -2446,8 +2832,13 @@
 				// 更新球在界面上的显示位置
 				this.updateBallPositions(this.selectedMode);
 
+				// 更新球的参数
+				// this.updateParametersForMode(this.selectedMode);
+
 				// 调整参数后
-				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
+				// this.generateDefaultCommand(this.selectedMode); // 生成新的指令
+
+				this.modifyMachineConfigs('updateBallPosition')
 
 				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
@@ -2504,21 +2895,10 @@
 
 			// 调整发球高度
 			adjustHeight(change) {
-				this.serveHeight = Math.min(Math.max(this.serveHeight + change, this.minAngle), this.maxAngle);
+				this.serveHeight = Math.min(Math.max(this.serveHeight + change, this.Hmin), this.Hmax);
 				// 调整参数后
 				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
 
-				// 如果已经开始训练，则发送指令
-				if (this.trainingActive) {
-					this.sendBLEData(this.command); // 发送新的指令
-				}
-			},
-
-			//调整速度
-			handleSpeedChange(event) {
-				this.speed = event.detail.value;
-				// 调整参数后
-				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
 
 				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
@@ -2699,6 +3079,7 @@
 
 			handleFrequencyChange(event) {
 				this.frequency = event.detail.value;
+				this.modeParams[this.selectedMode][this.selectedBall - 1].frequency = event.detail.value
 				// 调整参数后
 				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
 
@@ -2709,6 +3090,7 @@
 			},
 			handleRotateChange(event) {
 				this.rotate = event.detail.value;
+				this.modeParams[this.selectedMode][this.selectedBall - 1].rotate = event.detail.value
 				// 调整参数后
 				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
 
@@ -2717,6 +3099,7 @@
 					this.sendBLEData(this.command); // 发送新的指令
 				}
 			},
+
 			resetBallPosition() {
 				// 重置网球的位置
 				this.ballPosition = {
@@ -2737,6 +3120,132 @@
 
 			selectBall(ballNumber) {
 				this.selectedBall = ballNumber; // 选择球
+				const modeParams = this.modeParams[this.selectedMode]; // 获取当前模式的参数
+
+				if (modeParams && modeParams[ballNumber - 1]) {
+					const {
+						frequency,
+						speed,
+						serveHeight
+					} = modeParams[ballNumber - 1];
+					this.frequency = frequency; // 将频率赋值给 this.frequency
+					this.speed = speed; // 将速度赋值给 this.speed
+					this.serveHeight = serveHeight; // 将发球高度赋值给 this.serveHeight
+					this.modifyMachineConfigs('selectBalls')
+				} else {
+					console.error(`未找到球 ${ballNumber} 的配置参数`);
+				}
+			},
+
+			async modifyMachineConfigs(type) {
+				// 1. 获取当前的机器配置参数
+				const machineConfigs = this.machineConfigs;
+
+				// 2. 判断传入的 type 类型
+				switch (type) {
+					case "updateLauncherPosition": // 修改网球机位置√
+					case "updateBallPosition": // 修改网球位置√
+					case "updateDifficulty": // 修改难度√
+						await this.generateBallConfig();
+						break;
+					case "selectBalls": // 添加 selectBalls 的 case
+						this.modifyBallConfig(); // 调用函数以调整高度
+						break;
+					case "updateSpeed": // 修改速度
+						this.modifyBallConfig(); // 调用函数以调整高度
+						break;
+					case "updateHeight": // 修改高度
+						await this.generateBallConfig();
+						this.modifySpeedByHeight(); // 调用函数以调整速度
+						break;
+					case "highlightBalls": // 点选网球
+						this.modifyBallConfig();
+						break;
+					default:
+						console.error("Unknown operation type:", type);
+						return;
+				}
+			},
+
+			async modifyBallConfig() {
+				let currentBallParams;
+				let tableIndex;
+
+				// 1. 根据模式判断当前球的参数和 tableIndex
+				if (this.selectedMode === 9) {
+					const ballIndex = this.selectedBalls.length - 1;
+					currentBallParams = this.modeParams[this.selectedMode][ballIndex];
+
+					if (this.balls[ballIndex]) {
+						const row = this.balls[ballIndex].ballIndex[0];
+						const col = this.balls[ballIndex].ballIndex[1];
+						tableIndex = row * 5 + col; // 转换成一维索引
+					}
+				} else if ([2, 3, 4].includes(this.selectedMode)) {
+					const ballIndex = this.selectedBall - 1; // 修正为 selectedBall
+					currentBallParams = this.modeParams[this.selectedMode][ballIndex];
+
+					if (this.balls[ballIndex]) {
+						const row = this.balls[ballIndex].ballIndex[0];
+						const col = this.balls[ballIndex].ballIndex[1];
+						tableIndex = row * 5 + col; // 转换成一维索引
+					}
+				} else {
+					currentBallParams = this.modeParams[this.selectedMode][0];
+
+					if (this.balls[0]) {
+						const row = this.balls[0].ballIndex[0];
+						const col = this.balls[0].ballIndex[1];
+						tableIndex = row * 5 + col; // 转换成一维索引
+					}
+				}
+
+				// 2. 校验当前球参数和 tableIndex
+				if (!currentBallParams) {
+					console.error("未找到当前球的配置参数");
+					return;
+				}
+				if (tableIndex === undefined) {
+					console.error("无法计算当前球的 tableIndex");
+					return;
+				}
+
+				try {
+					// 3. 调用 setRealValues 修改参数
+					const result = await this.setRealValues("speed", currentBallParams.speed, tableIndex);
+
+					// 4. 更新当前球的 modeParams
+					currentBallParams.launchAngle = result.launchAngle;
+					currentBallParams.horizontalAngleDeg = result.horizontalAngleDeg;
+					currentBallParams.realSpeed = result.realSpeed;
+					currentBallParams.finalMaxHeight = result.finalMaxHeight;
+
+					// 打印更新后的 modeParams
+					console.log("更新后的当前球 modeParams 配置：", currentBallParams);
+
+					// 5. 更新 machineConfigs 中对应球的配置（根据模式判断）
+					const ballIndex = this.selectedMode === 9 ?
+						this.selectedBalls.length - 1 :
+						this.selectedMode === 2 || this.selectedMode === 3 || this.selectedMode === 4 ?
+						this.selectedBall - 1 :
+						0;
+
+					if (this.machineConfigs[ballIndex]) {
+						this.machineConfigs[ballIndex] = {
+							launchAngle: result.launchAngle,
+							horizontalAngleDeg: result.horizontalAngleDeg,
+							realSpeed: result.realSpeed,
+							finalMaxHeight: result.finalMaxHeight,
+						};
+
+						// 打印更新后的 machineConfigs
+						console.log("更新后的当前球 machineConfigs 配置：", this.machineConfigs);
+					} else {
+						console.warn(`machineConfigs 中未找到下标为 ${ballIndex} 的配置`);
+					}
+				} catch (error) {
+					console.error("更新当前球配置失败：", error);
+				}
 			},
 
 			setLanguage() {
@@ -2755,12 +3264,13 @@
 
 		onReady() {
 			this.getCourtSize();
+			this.generateBallConfig()
 		},
 
 		mounted() {
 			this.updateParametersForMode(this.selectedMode);
-			this.getCourtSize();
-			this.updateBallPositions(0)
+			// this.getCourtSize();
+			// this.updateBallPositions(0)
 			this.calculateLauncherPosition()
 			this.setLanguage();
 			// 在组件加载后，确保 DOM 可用
