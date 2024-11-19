@@ -2677,47 +2677,165 @@
 
 				const ballData = selectedTable[tableIndex];
 
-				if (type === "speed") {
-					let speed = null; // 修改为 let
+				if (type === "speed" || type === "height") {
+					const isSpeed = type === "speed"; // 判断当前是否是速度类型
+					let targetValue = null; // 动态目标值（speed 或 height）
 
+					// 根据模式设置 targetValue
 					if (this.selectedMode === 9) {
 						if (this.selectedBalls.length > 0) {
-							speed = this.modeParams[this.selectedMode][this.selectedBalls.length - 1].speed;
+							targetValue = isSpeed ?
+								this.modeParams[this.selectedMode][this.selectedBalls.length - 1].speed :
+								this.serveHeight; // 高度直接取 this.serveHeight
 						} else {
-							speed = this.modeParams[this.selectedMode][12].speed;
+							targetValue = isSpeed ?
+								this.modeParams[this.selectedMode][12].speed :
+								this.serveHeight; // 高度无需特殊处理
 						}
-					} else if (
-						this.selectedMode === 2 ||
-						this.selectedMode === 3 ||
-						this.selectedMode === 4
-					) {
-						speed = this.modeParams[this.selectedMode][this.selectedBall - 1].speed;
+					} else if ([2, 3, 4].includes(this.selectedMode)) {
+						const ballIndex = this.selectedBall - 1;
+						targetValue = isSpeed ?
+							this.modeParams[this.selectedMode][ballIndex].speed :
+							this.serveHeight; // 高度同样取 this.serveHeight
 					} else {
-						speed = this.modeParams[this.selectedMode][0].speed;
+						targetValue = isSpeed ?
+							this.modeParams[this.selectedMode][0].speed :
+							this.serveHeight;
 					}
 
-					const speedRange = ballData.map(row => row[2]); // 假设 [2] 是速度数据
+					// 根据 type 动态选择对应的数据范围和处理逻辑
+					const valueRange = isSpeed ?
+						ballData.map(row => row[2]) // 假设 [2] 是速度数据
+						:
+						ballData.map(row => row[3]); // 假设 [3] 是高度数据
+
 					const {
 						index
-					} = this.convertSpeedWithIndex(speedRange, speed);
+					} = isSpeed
+						?
+						this.convertSpeedWithIndex(valueRange, targetValue) :
+						this.convertHeightWithIndex(valueRange, targetValue);
+
 					const result = getDataFromBallData(ballData, index);
 
 					if (result) {
 						results.push(result);
-					}
-				} else if (type === "height") {
-					const heightRange = ballData.map(row => row[3]); // 假设 [3] 是高度数据
-					const {
-						index
-					} = this.convertHeightWithIndex(heightRange, this.serveHeight);
-					const result = getDataFromBallData(ballData, index);
 
-					if (result) {
-						results.push(result);
+						// 高度速度界面值互相转化
+						if (isSpeed) {
+							// 如果当前是 speed 类型，同时更新 serveHeight
+							const heightRange = ballData.map(row => row[3]); // 假设 [3] 是高度数据
+							const closestHeightIndex = this.findClosestIndex(heightRange, result.finalMaxHeight);
+							const updatedServeHeight = closestHeightIndex + 1; // 假设 serveHeight 映射为 1-10
+
+							if (this.selectedMode === 9) {
+								const index = this.selectedBalls.length > 0 ? this.selectedBalls.length - 1 : 12;
+								this.modeParams[this.selectedMode][index].serveHeight = updatedServeHeight;
+							} else if ([2, 3, 4].includes(this.selectedMode)) {
+								const index = this.selectedBall - 1;
+								this.modeParams[this.selectedMode][index].serveHeight = updatedServeHeight;
+							} else {
+								this.modeParams[this.selectedMode][0].serveHeight = updatedServeHeight;
+							}
+
+							console.log('当前高度：', this.serveHeight)
+							// 更新界面展示值
+							this.serveHeight = updatedServeHeight;
+						} else {
+							// 如果当前是 height 类型，同时更新 speed
+							const speedRange = ballData.map(row => row[2]); // 假设 [2] 是速度数据
+							const closestSpeedIndex = this.findClosestIndex(speedRange, result.realSpeed);
+							const updatedSpeed = closestSpeedIndex + 1; // 假设 speed 映射为 1-100
+
+							if (this.selectedMode === 9) {
+								const index = this.selectedBalls.length > 0 ? this.selectedBalls.length - 1 : 12;
+								this.modeParams[this.selectedMode][index].speed = updatedSpeed;
+							} else if ([2, 3, 4].includes(this.selectedMode)) {
+								const index = this.selectedBall - 1;
+								this.modeParams[this.selectedMode][index].speed = updatedSpeed;
+							} else {
+								this.modeParams[this.selectedMode][0].speed = updatedSpeed;
+							}
+
+							console.log('当前高度：', this.speed)
+							// 更新界面展示值
+							this.speed = updatedSpeed;
+						}
 					}
 				}
 
+
 				return results.length > 0 ? results[0] : undefined;
+			},
+
+
+
+			// 新增辅助方法：找到最接近的索引
+			findClosestIndex(array, targetValue) {
+				let closestIndex = 0;
+				let closestDiff = Infinity;
+
+				array.forEach((value, index) => {
+					const diff = Math.abs(value - targetValue);
+					if (diff < closestDiff) {
+						closestDiff = diff;
+						closestIndex = index;
+					}
+				});
+
+				return closestIndex;
+			},
+
+			// 将速度转换为真实数值并返回相关信息
+			convertSpeedWithIndex(speedRange, speed) {
+				if (!Array.isArray(speedRange) || speedRange.length < 2) {
+					console.error("Invalid speed range data");
+					return {
+						speedArray: [],
+						selectedSpeed: null,
+						index: -1
+					};
+				}
+
+				const minSpeed = speedRange[0]; // 最小速度
+				const maxSpeed = speedRange[speedRange.length - 1]; // 最大速度
+
+				// 将速度范围均分为100份
+				const step = (maxSpeed - minSpeed) / 100;
+				const speedArray = Array.from({
+					length: 100
+				}, (_, i) => minSpeed + i * step);
+
+				// 根据 speed 值（1-100），获取对应的真实速度
+				const index = Math.max(0, Math.min(speed - 1, 99)); // 确保索引在有效范围
+				const selectedSpeed = speedArray[index];
+
+				// 返回速度数组、选定速度值和下标
+				return {
+					speedArray, // 完整的速度数组
+					selectedSpeed, // 对应的速度值
+					index // 在速度数组中的下标
+				};
+			},
+
+			convertHeightWithIndex(heightRange, height) {
+				if (!Array.isArray(heightRange) || heightRange.length < 2) {
+					console.error("Invalid height range data");
+					return null;
+				}
+
+				const minHeight = heightRange[0]; // 最小高度
+				const maxHeight = heightRange[heightRange.length - 1]; // 最大高度
+
+				// 将高度范围均分为10份
+				const step = (maxHeight - minHeight) / 10;
+				const splitHeightArray = Array.from({
+					length: 10
+				}, (_, i) => minHeight + i * step);
+
+				// 根据height值（1-10），获取对应的真实高度
+				const index = Math.max(0, Math.min(height - 1, 9)); // 确保索引在有效范围
+				return splitHeightArray[index];
 			},
 
 			// 节流函数，用于限制移动频率
@@ -2875,12 +2993,14 @@
 
 				// 设置高度
 				if (height === '低') {
-					this.serveHeight = this.Hmin;
+					this.serveHeight = 1;
 				} else if (height === '中') {
-					this.serveHeight = 0.5 * (this.Hmax + this.Hmin);
+					this.serveHeight = 5;
 				} else {
-					this.serveHeight = this.Hmax;
+					this.serveHeight = 10;
 				}
+				console.log(this.selectedBall)
+				this.modeParams[this.selectedMode][this.selectedBall - 1].serveHeight = this.serveHeight
 				this.selectedHeight = height;
 				// this.generateDefaultCommand(this.selectedMode);
 
@@ -2896,6 +3016,8 @@
 			// 调整发球高度
 			adjustHeight(change) {
 				this.serveHeight = Math.min(Math.max(this.serveHeight + change, this.Hmin), this.Hmax);
+
+				this.modeParams[this.selectedMode][this.selectedBall - 1].serveHeight = this.serveHeight
 				// 调整参数后
 				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
 
@@ -3131,7 +3253,14 @@
 					this.frequency = frequency; // 将频率赋值给 this.frequency
 					this.speed = speed; // 将速度赋值给 this.speed
 					this.serveHeight = serveHeight; // 将发球高度赋值给 this.serveHeight
-					this.modifyMachineConfigs('selectBalls')
+					const heightMapping = {
+						1: '低',
+						5: '中',
+						10: '高',
+					};
+					this.selectedHeight = heightMapping[this.modeParams[this.selectedMode][this.selectedBall - 1]
+						.serveHeight] || ''; // 如果不在映射中，赋值为空字符串
+					// this.modifyMachineConfigs('selectBalls')
 				} else {
 					console.error(`未找到球 ${ballNumber} 的配置参数`);
 				}
@@ -3156,7 +3285,6 @@
 						break;
 					case "updateHeight": // 修改高度
 						await this.generateBallConfig();
-						this.modifySpeedByHeight(); // 调用函数以调整速度
 						break;
 					case "highlightBalls": // 点选网球
 						this.modifyBallConfig();
