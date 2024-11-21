@@ -6,414 +6,49 @@
 			:style="{ height: statusBarHeight + 'px', backgroundColor: 'linear-gradient(180deg, rgba(206, 230, 249, 1) 0%, rgba(196, 230, 255, 1) 100%)' }">
 		</view>
 		<!-- 第一层: 蓝牙功能，电量显示 -->
-		<view class="header">
-			<button
-				:style="{ backgroundColor: isAnyDeviceConnected ? 'rgba(95, 186, 232, 1)' : 'rgba(187, 209, 225, 1)',  width: currentLanguage === 'zh' ? '22vw' : (isAnyDeviceConnected ? '28vw' : '32vw') }"
-				@click="openBluetoothPopup" class="bluetooth">
-				<img :src="images.BluetoothIcon" alt="Bluetooth Icon" class="bluetooth-icon" />
-
-				<span class="bluetooth-text"
-					:style="{ color: isAnyDeviceConnected ?  'rgba(255, 255, 255, 1)':'rgba(93, 104, 112, 1)' }">
-					{{ isAnyDeviceConnected ? translations.connected[currentLanguage] : translations.disconnected[currentLanguage] }}
-				</span>
-			</button>
-
-			<view class="launcher-position-container">
-				<button :class="{ selected: selectedLauncherPosition === 'Baseline' }" :style="{
-							fontSize: currentLanguage === 'en' ? '2.20vw' : '3.20vw',
-							fontWeight: currentLanguage === 'en' ? '700' : '500'
-						}" @click="selectLauncherPosition('Baseline')">
-					{{ translations.Baseline[currentLanguage] }} <!-- 使用 translations 获取对应文本 -->
-				</button>
-				<button :class="{ selected: selectedLauncherPosition === 'Midline' }" :style="{
-							fontSize: currentLanguage === 'en' ? '2.20vw' : '3.20vw',
-							fontWeight: currentLanguage === 'en' ? '700' : '500'
-						}" @click="selectLauncherPosition('Midline')">
-					{{ translations.Midline[currentLanguage] }} <!-- 使用 translations 获取对应文本 -->
-				</button>
-				<button :class="{ selected: selectedLauncherPosition === 'Midcourt' }" :style="{
-							fontSize: currentLanguage === 'en' ? '2.20vw' : '3.20vw',
-							fontWeight: currentLanguage === 'en' ? '700' : '500'
-						}" @click="selectLauncherPosition('Midcourt')">
-					{{ translations.Midcourt[currentLanguage] }} <!-- 使用 translations 获取对应文本 -->
-				</button>
-			</view>
-
-
-
-			<view class="battery-container">
-				<image class="battery-icon" :src="images.batteryIcon" />
-				<view class="battery-content">
-					<!-- 黄色背景随电量变化，宽度从右侧减少 -->
-					<view class="battery-level">
-						<!-- 电量条宽度根据 batteryLevel 动态变化 -->
-						<view class="battery-fill" :style="{ width: (batteryLevel * 8.64 / 100) + 'vw' }">
-						</view>
-					</view>
-					<!-- 电量文字保持不动 -->
-					<view class="battery-percentage">{{ batteryLevel }}%</view>
-				</view>
-			</view>
-		</view>
+		<HeaderSection :statusBarHeight="statusBarHeight" :batteryLevel="batteryLevel"
+			:isAnyDeviceConnected="isAnyDeviceConnected" :selectedLauncherPosition="selectedLauncherPosition"
+			:currentLanguage="currentLanguage" :translations="translations" :images="images"
+			@openBluetoothPopup="openBluetoothPopup" @selectLauncherPosition="selectLauncherPosition" />
 
 		<view>
-
-			<!-- 蓝牙弹窗 -->
-			<modal v-if="showBluetoothPopup" @close="closeBluetoothPopup">
-				<view class="overlay" @click="closeBluetoothPopup"></view> <!-- 透明遮罩层 -->
-				<view class="popup-content" @click.stop> <!-- 阻止点击事件向上传递 -->
-					<!-- 顶部文字 -->
-					<view class="popup-header">
-						<span class="cancel-button"
-							@click="closeBluetoothPopup">{{translations.cancel[currentLanguage]}}</span>
-						<span
-							class="bluetoothConnectivity">{{ translations.bluetoothConnectivity[currentLanguage] }}</span>
-					</view>
-
-					<!-- 分割线 -->
-					<view class="popup-line"></view>
-
-					<!-- 搜索设备中 -->
-					<view v-if="!bluetoothDevices.length" class="searching-container">
-						<image :src="images.searchingImage" class="searching-image" />
-						<text class="searching-text">{{ translations.searching[currentLanguage] }}</text>
-					</view>
-
-					<!-- 设备列表 -->
-					<view class="device-list">
-						<view v-for="device in bluetoothDevices" :key="device.id" class="device-item" ref="deviceItem">
-							<view class="device-info">
-								<img :src="images.deviceInfo" alt="Bluetooth Icon" class="device-icon" />
-								<text class="device-name">{{ device.name }}</text>
-							</view>
-
-							<!-- 判断设备连接状态 -->
-							<button v-if="device.isConnected" @click="unbindDevice(device)" class="bluetooth-unbind">
-								{{ translations.unbind[currentLanguage] }}
-							</button>
-
-							<button v-else :disabled="isAnyDeviceConnected" @click="bindDevice(device)"
-								:class="isAnyDeviceConnected ? 'bluetooth-disabled' : 'bluetooth-bind'">
-								{{ translations.bind[currentLanguage] }}
-							</button>
-						</view>
-					</view>
-
-					<!-- 完成按钮 -->
-					<button @click="completeBluetoothConnection" class="complete-btn">
-						{{ translations.complete[currentLanguage] }}
-					</button>
-				</view>
-			</modal>
+			<!-- 在父组件中监听子组件的事件 -->
+			<BluetoothPopup :showBluetoothPopup="showBluetoothPopup" :bluetoothDevices="bluetoothDevices"
+				:isAnyDeviceConnected="isAnyDeviceConnected" :translations="translations" :images="images"
+				:currentLanguage="currentLanguage" @closeBluetoothPopup="closeBluetoothPopup" @bindDevice="bindDevice"
+				@unbindDevice="unbindDevice" @completeBluetoothConnection="completeBluetoothConnection" />
 		</view>
 
 		<!-- 第二层: 网球场和网球图片 -->
-		<view class="court-container">
-			<!-- 背景图 -->
-			<!-- 前场 -->
-			<div class="tennis-court-container">
-				<img class="tennis-court1" :src="images.tennisCourt1" alt="Tennis Court">
-				<div class="launcher-container" :style="{ top: launcherTop }">
-					<img class="launcher" :src="images.launcher" alt="Launcher">
-				</div>
-			</div>
+		<TennisCourt :images="images" :balls="balls" :launcherTop="launcherTop" :showBallNumbers="showBallNumbers"
+			@ball-interacted="handleBallInteraction" />
 
-			<img ref="courtImage" class="tennis-court2" :src="images.tennisCourt2" alt="Tennis Court" />
-			<!-- 网球容器 -->
-			<!-- // 修改handleBallInteraction的调用 -->
-			<view class="ball" v-for="(ball, index) in balls" :key="index" :style="getBallPosition(index)"
-				@click="handleBallInteraction(index)">
-				<!-- 仅当球可以展示时，才显示序号 -->
-				<span v-if="ball.canDisplay && showBallNumbers" class="ball-text">
-					{{ getDisplayableIndex(index) + 1 }}
-				</span>
-			</view>
 
-		</view>
+		<!-- 自定义模式选择弹窗 -->
+		<ModePickerModal :showModal="showModePickerModal" :modeNames="modeNames" :translations="translations"
+			:currentLanguage="currentLanguage" :temporarySelectedMode="temporarySelectedMode"
+			@closeModal="closeModePicker" @setTemporaryMode="setTemporaryMode" />
 
 		<!-- 模式配置区 -->
-		<view class="modeConfig1" ref="modeConfig1">
-			<!-- 模式选择功能 -->
-			<view class="mode-selection" @click="showModePicker">
-				<view class="mode-label">
-					{{ translations.currentMode[currentLanguage] }}
-				</view>
-				<view class="mode-value">
-					{{ modeNames[selectedMode] }}
-				</view>
-			</view>
-
-			<!-- 自定义模式选择弹窗 -->
-			<modal v-if="showModePickerModal">
-				<view class="overlay" @click="closeModePicker"></view> <!-- 透明遮罩层 -->
-				<view class="modeSelect-content" @click.stop> <!-- 阻止点击事件向上传递 -->
-					<!-- 顶部文字 -->
-					<view class="modeSelect-header">
-						<!-- <span class="selCancel-button" @click="closeModePicker">
-							{{ translations.cancel[currentLanguage] }}
-						</span> -->
-						<span class="selectMode">{{ translations.selectMode[currentLanguage] }}</span>
-						<!-- 	<span class="complete-modeSelect" @click="confirmModeSelection">
-							{{ translations.complete[currentLanguage] }}
-						</span> -->
-					</view>
-
-					<!-- 分割线 -->
-					<view class="modeSelect-line"></view>
-
-					<!-- 模式选项列表 -->
-					<view class="mode-item-container">
-						<view v-for="(mode, index) in modeNames" :key="index"
-							:class="['mode-item', { 'selected-mode-item': index === temporarySelectedMode }]"
-							@click="setTemporaryMode(index)">
-							{{ mode }}
-						</view>
-					</view>
-				</view>
-			</modal>
-
-
-
-			<view class="divider-line"></view>
-
-			<!-- 设置发球高度和选择球 -->
-			<view class="setHeightAndBall" :style="{
-					'justify-content': (selectedMode === 2 || selectedMode === 4) ? 'space-between' : (selectedMode === 0 || selectedMode === 3 ? 'flex-end' : 'space-evenly')
-				  }">
-				<view v-if="selectedMode === 0" class="difficulty-selector">
-					<span>{{ translations.selectedDifficulty[currentLanguage] }}</span>
-					<view class="difficulty-options-container">
-						<div class="difficulty-options">
-							<div class="dot" :class="{ selected: selectedDifficulty === '1.0' }"
-								@click="selectDifficulty('1.0')">
-								<span class="difficulty-text"
-									:class="{ selectedText: selectedDifficulty === '1.0' }">1.0</span>
-							</div>
-
-							<div class="dot" :class="{ selected: selectedDifficulty === '2.0' }"
-								@click="selectDifficulty('2.0')">
-								<span class="difficulty-text"
-									:class="{ selectedText: selectedDifficulty === '2.0' }">2.0</span>
-							</div>
-						</div>
-					</view>
-				</view>
-
-				<!-- 展示高度选择功能 -->
-				<view v-if="showHeightSelector" class="height-selector">
-					<span>{{ translations.selectedHeight[currentLanguage] }}
-					</span>
-					<view class="height-options-container">
-						<div class="height-options">
-							<div class="dot"
-								:class="{ selected: selectedHeight === '低' && !(isHeightRandom && selectedMode === 8) }"
-								@click="selectHeight('低')">
-								<span class="height-text"
-									:class="{ selectedText: selectedHeight === '低' && !(isHeightRandom && selectedMode === 8) }">{{translations.low[currentLanguage]}}</span>
-							</div>
-
-							<div class="dot"
-								:class="{ selected: selectedHeight === '中' && !(isHeightRandom && selectedMode === 8) }"
-								@click="selectHeight('中')">
-								<span class="height-text"
-									:class="{ selectedText: selectedHeight === '中' && !(isHeightRandom && selectedMode === 8) }">{{translations.medium[currentLanguage]}}</span>
-							</div>
-
-							<div class="dot"
-								:class="{ selected: selectedHeight === '高' && !(isHeightRandom && selectedMode === 8) }"
-								@click="selectHeight('高')">
-								<span class="height-text"
-									:class="{ selectedText: selectedHeight === '高' && !(isHeightRandom && selectedMode === 8) }">{{translations.height[currentLanguage]}}</span>
-							</div>
-
-						</div>
-					</view>
-				</view>
-
-				<!-- 选择球功能 -->
-				<view v-if="selectedMode === 2 || selectedMode === 3 || selectedMode === 4" class="ball-selection">
-					<view class="ball-options-container">
-						<button :class="{ selected: selectedBall === 1 }" @click="selectBall(1)"
-							:style="selectedBall === 1 ? selectedBallStyle : unselectedBallStyle">
-							{{ translations.ball1[currentLanguage] }}
-						</button>
-						<button :class="{ selected: selectedBall === 2 }" @click="selectBall(2)"
-							:style="selectedBall === 2 ? selectedBallStyle : unselectedBallStyle">
-							{{ translations.ball2[currentLanguage] }}
-						</button>
-					</view>
-				</view>
-
-				<!-- 随机开关 -->
-				<view v-if="selectedMode == 8" class="switch-container">
-					<text class="random-label">{{ translations.random[currentLanguage] }}</text>
-					<switch :checked="isHeightRandom" @change="toggleHeightRandom" color=" rgba(95, 186, 232, 1)"
-						style="transform:scale(0.9)" />
-				</view>
-
-
-			</view>
-
-			<!-- 第三层: 开始训练按钮和方向控制按钮 -->
-			<view class="controls">
-				<!-- //编程模式时使用的文本框，用于记录选择的球 -->
-				<view v-if="showInputWithClear" class="input-container">
-					<text class="input-label">{{ translations.selectServingOrder[currentLanguage] }}</text>
-					<view class="input-area">
-						<view class="number-container">
-							<!-- Check if inputData is empty -->
-							<div v-if="!inputData" class="placeholder-text">
-								<!-- <text>请选择发球顺序</text> -->
-							</div>
-							<div v-else v-for="item in inputData.split(',')" :key="item" class="number-box">
-								<text class="number-text">{{ item }}</text>
-							</div>
-						</view>
-						<button hover-class="none" class="clear-button" @click="clearInputData">
-							<img :src="images.clearButton" class="clear-icon" />
-						</button>
-					</view>
-				</view>
-
-
-				<!-- 下层按钮（角度调整、方向按钮、启动按钮） -->
-				<view class="lower-controls">
-					<view v-if="showHeightControl" class="height-control">
-						<img @click="adjustHeight(-1)" class="setHeight-top" :src="images.minus" alt="Minus" />
-
-						<view class="height-text-container">
-							<span class="height-label">{{ translations.heights[currentLanguage] }}:</span>
-							<span class="height-value">{{ serveHeight }}</span>
-						</view>
-
-						<img @click="adjustHeight(1)" class="setHeight-bottom" :src="images.add" alt="Add" />
-					</view>
-
-
-					<!-- 方向键 -->
-					<view v-if="showDirectionButtons" class="new-direction-buttons">
-						<view class="new-outer-border">
-							<img :src="upDownButtonsDisabled ? images.up : images.up_dis" alt="上" class="new-up-button"
-								@click="handleDirectionKey('up')" :disabled="upDownButtonsDisabled" />
-
-							<view class="new-middle-row">
-								<img :src="leftRightButtonsDisabled ? images.left : images.left_dis" alt="左"
-									class="new-left-button" @click="handleDirectionKey('left')"
-									:disabled="leftRightButtonsDisabled" />
-								<view class="new-circle">
-									<span>DIR</span>
-								</view>
-								<img :src="leftRightButtonsDisabled ? images.right : images.right_dis" alt="右"
-									class="new-right-button" @click="handleDirectionKey('right')"
-									:disabled="leftRightButtonsDisabled" />
-							</view>
-							<img :src="upDownButtonsDisabled ?images.down : images.down_dis" alt="下"
-								class="new-down-button" @click="handleDirectionKey('down')"
-								:disabled="upDownButtonsDisabled" />
-						</view>
-					</view>
-
-					<!-- 开始训练按钮 -->
-					<button ref="startButton" class="btn-start" :style="{
-								backgroundColor: buttonColor,
-								...((selectedMode === 0  || selectedMode === 8) ? startButtonStyle[1] : startButtonStyle[0]),
-								marginTop: selectedMode === 9 ? '-0.6vh' : '0' // -6px 转换为自适应的 vh
-							}" @click="startTraining">
-						<span class="btn-text">
-							{{ trainingActive ? translations.endTraining[currentLanguage] : translations.startTraining[currentLanguage] }}
-						</span>
-					</button>
-
-				</view>
-
-			</view>
-		</view>
+		<ModeConfig :selectedMode="selectedMode" :selectedDifficulty="selectedDifficulty"
+			:selectedHeight="selectedHeight" :selectedBall="selectedBall" :inputData="inputData"
+			:serveHeight="serveHeight" :isHeightRandom="isHeightRandom" :showInputWithClear="showInputWithClear"
+			:showHeightControl="showHeightControl" :showDirectionButtons="showDirectionButtons"
+			:showHeightSelector="showHeightSelector" :upDownButtonsDisabled="upDownButtonsDisabled"
+			:leftRightButtonsDisabled="leftRightButtonsDisabled" :translations="translations"
+			:currentLanguage="currentLanguage" :modeNames="modeNames" :images="images" :trainingActive="trainingActive"
+			:buttonColor="buttonColor" :startButtonStyle="startButtonStyle" @showModePicker="showModePicker"
+			@selectDifficulty="selectDifficulty" @selectHeight="selectHeight" @selectBall="selectBall"
+			@toggleHeightRandom="toggleHeightRandom" @clearInputData="clearInputData" @adjustHeight="adjustHeight"
+			@handleDirectionKey="handleDirectionKey" @startTraining="startTraining" />
 
 		<!-- 参数滑动区 -->
-		<view class="slider-container">
-			<view class="slider-container-bbox">
-				<!-- 频率 -->
-				<view class="slider frequency-slider">
-					<view class="param-container"
-						style="display: flex; align-items: center;justify-content: space-between;">
-						<view class="param-label">
-							<text class="param-text1">{{ translations.frequency[currentLanguage] }}:</text>
-							<text class="param-value">{{ frequency }}</text>
-						</view>
-
-						<view v-if="selectedMode === 8" class="frequency-slider switch-container"
-							style="margin-left: 10px;">
-							<text class="random-label">{{ translations.random[currentLanguage] }}</text>
-							<switch :checked="isFrequencyRandom" @change="toggleFrequencyRandom"
-								color="rgba(95, 186, 232, 1)" style="transform:scale(0.9)" />
-						</view>
-					</view>
-
-					<slider class="custom-slider" :value="frequency" min="1" max="10" block-size="16"
-						activeColor="rgba(95, 186, 232, 1)" backgroundColor="background: rgba(240, 242, 251, 1);"
-						:disabled="(isFrequencyRandom && selectedMode === 8) || selectedMode === 0 "
-						@changing="handleFrequencyChanging" @change="handleFrequencyChange"
-						:style="{ opacity: (isFrequencyRandom && selectedMode === 8) || selectedMode === 0 ? 0.5 : 1 }" />
-
-					<view class="range-label">
-						<text>1</text>
-						<text>10</text>
-					</view>
-				</view>
-
-
-				<!-- 速度 -->
-				<view v-if="selectedMode != 8" class="slider speed-slider">
-					<view class="param-label">
-						<text class="param-text1">{{ translations.speed[currentLanguage] }}:</text>
-						<text class="param-value">{{ speed }}</text>
-					</view>
-					<slider class="custom-slider" :value="speed" min="20" max="120" block-size="16"
-						activeColor="rgba(95, 186, 232, 1)" backgroundColor="background: rgba(240, 242, 251, 1);"
-						:disabled="(isSpeedRandom && selectedMode === 8) || selectedMode === 0"
-						@changing="handleSpeedChanging" @change="handleSpeedChange"
-						:style="{ opacity: (isSpeedRandom && selectedMode === 8) || selectedMode === 0 ? 0.5 : 1 }" />
-					<view class="range-label">
-						<text>20</text>
-						<text>120</text>
-					</view>
-					<view v-if="selectedMode === 8" class="switch-container" style="margin-left: -10px;">
-						<text class="random-label">{{ translations.random[currentLanguage] }}</text>
-						<switch :checked="isSpeedRandom" @change="toggleSpeedRandom" color=" rgba(95, 186, 232, 1)"
-							style="transform:scale(0.9)" />
-					</view>
-				</view>
-
-				<!-- 旋转角度 -->
-				<view class="slider rotate-slider">
-					<view class="param-container"
-						style="display: flex; align-items:center; justify-content: space-between;">
-						<view class="param-label">
-							<text class="param-text1">{{ translations.rotate[currentLanguage] }}:</text>
-							<text class="param-value">{{ rotate }}</text>
-						</view>
-
-						<view v-if="selectedMode === 8" class="rotate-slider switch-container"
-							style="margin-left: 10px;">
-							<text class="random-label">{{ translations.random[currentLanguage] }}</text>
-							<switch :checked="isRotateRandom" @change="toggleRotateRandom" color="rgba(95, 186, 232, 1)"
-								style="transform:scale(0.9)" />
-						</view>
-					</view>
-
-					<slider class="custom-slider" :value="rotate" min="-5" max="5" block-size="16"
-						activeColor="rgba(95, 186, 232, 1)" backgroundColor="background: rgba(240, 242, 251, 1);"
-						:disabled="(isRotateRandom && selectedMode === 8) || selectedMode === 0 "
-						@changing="handleRotateChanging" @change="handleRotateChange"
-						:style="{ opacity: (isRotateRandom && selectedMode === 8) || selectedMode === 0  ? 0.5 : 1 }" />
-
-					<view class="range-label">
-						<text>-5</text>
-						<text>5</text>
-					</view>
-				</view>
-			</view>
-		</view>
+		<ModeSlider :selectedMode="selectedMode" :translations="translations" :currentLanguage="currentLanguage"
+			:frequency="frequency" :speed="speed" :rotate="rotate" :isFrequencyRandom="isFrequencyRandom"
+			:isSpeedRandom="isSpeedRandom" :isRotateRandom="isRotateRandom" @update:frequency="updateFrequency"
+			@change:frequency="changeFrequency" @toggleFrequencyRandom="toggleFrequencyRandom"
+			@update:speed="updateSpeed" @change:speed="changeSpeed" @toggleSpeedRandom="toggleSpeedRandom"
+			@update:rotate="updateRotate" @change:rotate="changeRotate" @toggleRotateRandom="toggleRotateRandom" />
 	</view>
 </template>
 
@@ -421,11 +56,22 @@
 	import baselineParameters from './js/baselineParameterLookupTable.js';
 	import midlineParameters from './js/midlineParameterLookupTable.js';
 	import midcourtParameters from './js/midcourtParameterLookupTable.js';
+	import HeaderSection from '../../components/HeaderSection.vue';
+	import TennisCourt from '../../components/TennisCourt/TennisCourt.vue';
+	import ModeSlider from '../../components/ModeSlider.vue';
 	import images from '../../static/images.json';
 
 
 
 	export default {
+		components: {
+			HeaderSection,
+			ModeSlider,
+			TennisCourt
+			// BluetoothPopup,
+			// CourtSection,
+			// ModeConfigSection,
+		},
 		data() {
 			return {
 				images: {},
@@ -881,7 +527,7 @@
 					// 初学者练习
 					[{
 						frequency: 3,
-						speed: 10,
+						speed: 30,
 						rotate: 0,
 						heights: '',
 						serveHeight: 5
@@ -1030,7 +676,7 @@
 				},
 				selectedMode: 0,
 				frequency: 5,
-				speed: 10,
+				speed: 30,
 				rotate: 0,
 				ballCount: 1, // 网球个数
 				selectedBalls: [], // 记录被点击的网球索引
@@ -1044,7 +690,7 @@
 				trainingActive: false,
 				initialParams: [{
 					frequency: 3,
-					speed: 10,
+					speed: 30,
 					rotate: 0,
 					heights: '',
 					serveHeight: 2 // 初学者练习，发球角度较低，适合新手
@@ -4037,9 +3683,6 @@
 		/* 使元素中心对齐父元素中心 */
 	}
 
-
-
-
 	.modal-content {
 		background-color: white;
 		border-radius: 2.33vw;
@@ -4737,8 +4380,6 @@
 		margin: 0 1.19vw;
 		/* 使用 vw 单位调整按钮之间的间距 */
 	}
-
-
 
 
 	.new-direction-buttons {
