@@ -30,7 +30,7 @@
 			@closeModal="closeModePicker" @setTemporaryMode="setTemporaryMode" />
 
 		<!-- 模式配置区 -->
-		<ModeConfig :selectedMode="selectedMode" :selectedDifficulty="selectedDifficulty"
+		<ModeConfig :selectedMode="selectedMode" :selectedDifficulty="selectedDifficulty" :realHeight="realHeight"
 			:selectedHeight="selectedHeight" :selectedBall="selectedBall" :inputData="inputData"
 			:serveHeight="serveHeight" :isHeightRandom="isHeightRandom" :showInputWithClear="showInputWithClear"
 			:showHeightControl="showHeightControl" :showDirectionButtons="showDirectionButtons"
@@ -43,12 +43,91 @@
 			@handleDirectionKey="handleDirectionKey" @startTraining="startTraining" />
 
 		<!-- 参数滑动区 -->
-		<ModeSlider :selectedMode="selectedMode" :translations="translations" :currentLanguage="currentLanguage"
+		<!-- <ModeSlider :selectedMode="selectedMode" :translations="translations" :currentLanguage="currentLanguage"
 			:frequency="frequency" :speed="speed" :rotate="rotate" :isFrequencyRandom="isFrequencyRandom"
 			:isSpeedRandom="isSpeedRandom" :isRotateRandom="isRotateRandom" @update:frequency="updateFrequency"
 			@change:frequency="changeFrequency" @toggleFrequencyRandom="toggleFrequencyRandom"
-			@update:speed="updateSpeed" @change:speed="changeSpeed" @toggleSpeedRandom="toggleSpeedRandom"
-			@update:rotate="updateRotate" @change:rotate="changeRotate" @toggleRotateRandom="toggleRotateRandom" />
+			@handleSpeedChange="handleSpeedChange" @update:speed="updateSpeed" @change:speed="changeSpeed"
+			@toggleSpeedRandom="toggleSpeedRandom" @update:rotate="updateRotate" @change:rotate="changeRotate"
+			@toggleRotateRandom="toggleRotateRandom" /> -->
+
+		<view class="slider-container">
+			<view class="slider-container-bbox">
+				<!-- 频率 -->
+				<view class="slider frequency-slider">
+					<view class="param-container"
+						style="display: flex; align-items: center;justify-content: space-between;">
+						<view class="param-label">
+							<text class="param-text1">{{ translations.frequency[currentLanguage] }}:</text>
+							<text class="param-value">{{ frequency }}</text>
+						</view>
+						<view v-if="selectedMode === 8" class="frequency-slider switch-container"
+							style="margin-left: 10px;">
+							<text class="random-label">{{ translations.random[currentLanguage] }}</text>
+							<switch :checked="isFrequencyRandom" @change="toggleFrequencyRandom"
+								color="rgba(95, 186, 232, 1)" style="transform:scale(0.9)" />
+						</view>
+					</view>
+					<slider class="custom-slider" :value="frequency" min="1" max="10" block-size="16"
+						activeColor="rgba(95, 186, 232, 1)" backgroundColor="background: rgba(240, 242, 251, 1);"
+						:disabled="(isFrequencyRandom && selectedMode === 8) || selectedMode === 0 "
+						@changing="handleFrequencyChanging" @change="handleFrequencyChange"
+						:style="{ opacity: (isFrequencyRandom && selectedMode === 8) || selectedMode === 0 ? 0.5 : 1 }" />
+					<view class="range-label">
+						<text>1</text>
+						<text>10</text>
+					</view>
+				</view>
+
+				<!-- 速度 -->
+				<view v-if="selectedMode != 8" class="slider speed-slider">
+					<view class="param-label">
+						<text class="param-text1">{{ translations.speed[currentLanguage] }}:</text>
+						<text class="param-value">{{ speed + ' km/h' }}</text>
+					</view>
+					<slider class="custom-slider" :value="speed" min="20" max="120" block-size="16"
+						activeColor="rgba(95, 186, 232, 1)" backgroundColor="background: rgba(240, 242, 251, 1);"
+						:disabled="(isSpeedRandom && selectedMode === 8) || selectedMode === 0"
+						@changing="handleSpeedChanging" @change="handleSpeedChange"
+						:style="{ opacity: (isSpeedRandom && selectedMode === 8) || selectedMode === 0 ? 0.5 : 1 }" />
+					<view class="range-label">
+						<text>20</text>
+						<text>120</text>
+					</view>
+					<view v-if="selectedMode === 8" class="switch-container" style="margin-left: -10px;">
+						<text class="random-label">{{ translations.random[currentLanguage] }}</text>
+						<switch :checked="isSpeedRandom" @change="toggleSpeedRandom" color=" rgba(95, 186, 232, 1)"
+							style="transform:scale(0.9)" />
+					</view>
+				</view>
+
+				<!-- 旋转角度 -->
+				<view class="slider rotate-slider">
+					<view class="param-container"
+						style="display: flex; align-items:center; justify-content: space-between;">
+						<view class="param-label">
+							<text class="param-text1">{{ translations.rotate[currentLanguage] }}:</text>
+							<text class="param-value">{{ rotate }}</text>
+						</view>
+						<view v-if="selectedMode === 8" class="rotate-slider switch-container"
+							style="margin-left: 10px;">
+							<text class="random-label">{{ translations.random[currentLanguage] }}</text>
+							<switch :checked="isRotateRandom" @change="toggleRotateRandom" color="rgba(95, 186, 232, 1)"
+								style="transform:scale(0.9)" />
+						</view>
+					</view>
+					<slider class="custom-slider" :value="rotate" min="-5" max="5" block-size="16"
+						activeColor="rgba(95, 186, 232, 1)" backgroundColor="background: rgba(240, 242, 251, 1);"
+						:disabled="(isRotateRandom && selectedMode === 8) || selectedMode === 0 "
+						@changing="handleRotateChanging" @change="handleRotateChange"
+						:style="{ opacity: (isRotateRandom && selectedMode === 8) || selectedMode === 0  ? 0.5 : 1 }" />
+					<view class="range-label">
+						<text>-5</text>
+						<text>5</text>
+					</view>
+				</view>
+			</view>
+		</view>
 	</view>
 </template>
 
@@ -74,6 +153,7 @@
 		},
 		data() {
 			return {
+				realHeight: null,
 				images: {},
 				tableMapping: {
 					Baseline: baselineParameters.baselineParameters,
@@ -231,6 +311,10 @@
 							chooseTennisBallFirst: 'chooseTennisBallFirst',
 							connectBluetoothFirst: 'Please connect Bluetooth first'
 						}
+					},
+					meter: {
+						zh: '米',
+						en: 'm'
 					},
 					Baseline: {
 						zh: '底线',
@@ -535,7 +619,7 @@
 					// 定点练习
 					[{
 						frequency: 1,
-						speed: 3,
+						speed: 30,
 						rotate: 0,
 						heights: '',
 						serveHeight: 5
@@ -559,14 +643,14 @@
 					// 水平循环
 					[{
 							frequency: 2,
-							speed: 3,
+							speed: 30,
 							rotate: 0,
 							heights: '',
 							serveHeight: 5
 						},
 						{
 							frequency: 2,
-							speed: 3,
+							speed: 30,
 							rotate: 0,
 							heights: '',
 							serveHeight: 5
@@ -575,14 +659,14 @@
 					// 垂直循环
 					[{
 							frequency: 2,
-							speed: 3,
+							speed: 30,
 							rotate: 0,
 							heights: '',
 							serveHeight: 5
 						},
 						{
 							frequency: 2,
-							speed: 3,
+							speed: 30,
 							rotate: 0,
 							heights: '',
 							serveHeight: 5
@@ -591,7 +675,7 @@
 					// 截击练习
 					[{
 						frequency: 1,
-						speed: 3,
+						speed: 30,
 						rotate: 0,
 						heights: '',
 						serveHeight: 5
@@ -599,7 +683,7 @@
 					// 高压练习
 					[{
 						frequency: 1,
-						speed: 3,
+						speed: 30,
 						rotate: 0,
 						heights: '',
 						serveHeight: 5
@@ -607,7 +691,7 @@
 					// 月亮球
 					[{
 						frequency: 1,
-						speed: 3,
+						speed: 30,
 						rotate: 0,
 						heights: '',
 						serveHeight: 5
@@ -615,7 +699,7 @@
 					// 全场随机
 					[{
 						frequency: 1,
-						speed: 3,
+						speed: 30,
 						rotate: 0,
 						heights: '',
 						serveHeight: 5
@@ -1643,12 +1727,6 @@
 				this.onModeChange(this.selectedMode); // 执行模式变化操作
 			},
 
-			// 点击"Complete"时，确认模式选择
-			// confirmModeSelection() {
-			// 	this.selectedMode = this.temporarySelectedMode; // 确认最终选择的模式
-			// 	this.closeModePicker(); // 关闭模式选择弹窗
-			// 	this.onModeChange(this.selectedMode)
-			// },
 
 			closeModePicker() {
 				this.showModePickerModal = false; // 关闭弹窗
@@ -1965,7 +2043,6 @@
 				// 调整参数后
 				// this.generateDefaultCommand(this.selectedMode); // 生成新的指令
 				this.modifyMachineConfigs('updateSpeed')
-				this.findClosestValue('speed')
 
 				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
@@ -1973,57 +2050,125 @@
 				}
 			},
 
-			// 将速度转换为真实数值并返回相关信息
-			convertSpeedWithIndex(speedRange, speed) {
-				if (!Array.isArray(speedRange) || speedRange.length < 2) {
-					console.error("Invalid speed range data");
-					return {
-						speedArray: [],
-						selectedSpeed: null,
-						index: -1
-					};
+			getCurBallInfo(tableIndex) {
+				const tableMapping = this.tableMapping;
+				const selectedTable = tableMapping[this.selectedLauncherPosition];
+
+				if (!selectedTable) {
+					console.error("选定的位置无效");
+					return;
 				}
 
-				const minSpeed = speedRange[0]; // 最小速度
-				const maxSpeed = speedRange[speedRange.length - 1]; // 最大速度
+				// let tableIndex = this.getCurBallIndex()
 
-				// 将速度范围均分为100份
-				const step = (maxSpeed - minSpeed) / 100;
-				const speedArray = Array.from({
-					length: 100
-				}, (_, i) => minSpeed + i * step);
+				const ballData = selectedTable[tableIndex];
 
-				// 根据 speed 值（1-100），获取对应的真实速度
-				const index = Math.max(0, Math.min(speed - 1, 99)); // 确保索引在有效范围
-				const selectedSpeed = speedArray[index];
-
-				// 返回速度数组、选定速度值和下标
 				return {
-					speedArray, // 完整的速度数组
-					selectedSpeed, // 对应的速度值
-					index // 在速度数组中的下标
+					minH: ballData.minH,
+					maxH: ballData.maxH,
+					launchParams: ballData.launchParams
 				};
 			},
 
-			convertHeight(heightRange, height) {
-				if (!Array.isArray(heightRange) || heightRange.length < 2) {
-					console.error("Invalid height range data");
-					return null;
+			getCurBallIndex() {
+				let tableIndex;
+				if (this.selectedMode === 9) {
+					const ballIndex = this.selectedBalls.length - 1;
+					if (this.balls[ballIndex]) {
+						const row = this.balls[ballIndex].ballIndex[0];
+						const col = this.balls[ballIndex].ballIndex[1];
+						tableIndex = row * 5 + col;
+					}
+				} else if ([2, 3, 4].includes(this.selectedMode)) {
+					const ballIndex = this.selectedBall - 1;
+					if (this.balls[ballIndex]) {
+						const row = this.balls[ballIndex].ballIndex[0];
+						const col = this.balls[ballIndex].ballIndex[1];
+						tableIndex = row * 5 + col;
+					}
+				} else {
+					if (this.balls[0]) {
+						const row = this.balls[0].ballIndex[0];
+						const col = this.balls[0].ballIndex[1];
+						tableIndex = row * 5 + col;
+					}
 				}
 
-				const minHeight = heightRange[0]; // 最小高度
-				const maxHeight = heightRange[heightRange.length - 1]; // 最大高度
-
-				// 将高度范围均分为10份
-				const step = (maxHeight - minHeight) / 10;
-				const splitHeightArray = Array.from({
-					length: 10
-				}, (_, i) => minHeight + i * step);
-
-				// 根据height值（1-10），获取对应的真实高度
-				const index = Math.max(0, Math.min(height - 1, 9)); // 确保索引在有效范围
-				return splitHeightArray[index];
+				return tableIndex
 			},
+
+
+			heightToUI(h, minH, maxH, intervalCounts) {
+				//将真实高度转化成界面高度
+				if (minH == 10000 && maxH == -10000)
+					return null;
+
+				let step = (maxH - minH) / intervalCounts;
+
+				this.serveHeight = Math.floor((h - minH) / step) + 1
+			},
+
+
+			// 调整发球高度
+			adjustHeight(change) {
+				this.serveHeight = Math.min(Math.max(this.serveHeight + change, this.Hmin), this.Hmax);
+
+				this.modeParams[this.selectedMode][this.selectedBall - 1].serveHeight = this.serveHeight
+				// 调整参数后
+				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
+				this.modifyMachineConfigs('updateHeight')
+				// this.UIToHeight()
+
+				// 如果已经开始训练，则发送指令
+				if (this.trainingActive) {
+					this.sendBLEData(this.command); // 发送新的指令
+				}
+			},
+
+			UIToHeight() {
+				//根据档位获取真实高度值
+				const tableIndex = this.getCurBallIndex()
+				const {
+					minH,
+					maxH,
+					launchParams
+				} = this.getCurBallInfo(tableIndex)
+				const intervalCounts = 10
+				const i = this.serveHeight
+
+				if (minH == 10000 && maxH == -10000)
+					return null;
+				let step = (maxH - minH) / intervalCounts;
+				const realHeight = minH + (i - 1) * step
+				this.realHeight = Number(realHeight.toFixed(2));
+				console.log('realHeight', realHeight)
+				//根据真实高度值找到真实速度值
+				this.heightToSpeed(realHeight, launchParams)
+			},
+
+			heightToSpeed(realHeight, launchParams) {
+				//根据真实高度找到真实速度
+				let closestSpeed = null;
+				let closestParam = null;
+				let closestIndex = -1; // 用于记录 closestParam 的索引
+				let epsilon = 100000;
+
+				for (let i = 0; i < launchParams.length; i++) {
+					let curParam = launchParams[i];
+					let delta = Math.abs(realHeight - curParam[3]);
+
+					if (delta < epsilon) {
+						closestSpeed = curParam[2]; //假设下标3是高度
+						closestParam = curParam;
+						closestIndex = i; // 记录当前索引
+						epsilon = delta;
+					}
+				}
+
+				this.speed = closestSpeed
+				this.updateBallConfig(closestParam)
+			},
+
 
 			updateParametersForMode(modeIndex) {
 				// 定义每个模式的默认参数
@@ -2105,8 +2250,6 @@
 				const x = firstBallX + position[1] * spacingX; // 根据列的索引计算 x 坐标
 				const y = halfCourtLength + (position[0] * spacingY) - (ballDiameter / 2); // 根据行的索引计算 y 坐标，并加上球场的半场高度
 
-				// console.log('计算后的坐标 - x:', x, 'y:', y);
-
 				return {
 					x,
 					y
@@ -2134,8 +2277,83 @@
 				// this.updateBallPositions(index);
 				this.resetToInitialValues();
 				this.generateBallConfig()
+				this.generateDefaultBallCommand()
 			},
 
+
+			speedToheight() {
+				const tableIndex = this.getCurBallIndex()
+				const {
+					minH,
+					maxH,
+					launchParams
+				} = this.getCurBallInfo(tableIndex)
+
+				let closestHeight = null;
+				let closestParam = null;
+				let closestIndex = -1; // 用于记录 closestParam 的索引
+				let epsilon = 100000;
+
+				for (let i = 0; i < launchParams.length; i++) {
+					let curParam = launchParams[i];
+					let delta = Math.abs(this.speed - curParam[2]);
+
+					if (delta < epsilon) {
+						closestHeight = curParam[3]; //假设下标3是高度
+						closestParam = curParam;
+						closestIndex = i; // 记录当前索引
+						epsilon = delta;
+					}
+				}
+
+				//将真实高度转化成界面高度
+				this.realHeight = this.realHeight = Number(closestHeight.toFixed(2));
+				this.speed = closestParam[2]
+				this.updateBallConfig(closestParam)
+				this.heightToUI(closestHeight, minH, maxH, 10)
+			},
+
+			updateBallConfig(params) {
+				// 获取当前球在 ballConfig 中的索引
+				let index = -1; // 初始化为 -1
+
+				// 根据模式判断应该使用哪个球的参数
+				if (this.selectedMode === 9) {
+					// 模式 9，获取最后一个选中的球
+					if (this.selectedBalls && this.selectedBalls.length > 0) {
+						index = this.selectedBalls.length - 1;
+					} else {
+						console.error("selectedBalls 未定义或为空");
+					}
+				} else if ([2, 3, 4].includes(this.selectedMode)) {
+					// 模式 2, 3, 4，获取所选的球
+					index = this.selectedBall - 1; // 确保 this.selectedBall 有效
+				} else {
+					index = 0; // 默认情况下取第一个球
+				}
+
+				if (index < 0 || index >= this.machineConfigs.length) {
+					console.error(`无效的球索引: ${index}`);
+					return;
+				}
+
+				const configKeys = ['launchAngle', 'horizontalAngleDeg', 'realSpeed', 'finalMaxHeight']; // 定义按顺序对应的配置键
+				const config = {};
+
+				// 根据 params 动态赋值到 config 对象中
+				for (let i = 0; i < configKeys.length; i++) {
+					if (params[i] !== undefined) {
+						config[configKeys[i]] = params[i];
+					}
+				}
+
+				// 将生成的 config 对象存入 machineConfigs
+				this.machineConfigs[index] = config;
+				console.log('更新后的机器配置参数', this.machineConfigs);
+
+			},
+
+			//生成每个模式每个球的默认机器配置参数
 			async generateBallConfig() {
 				// 1. 获取当前模式的参数
 				const currentModeParams = this.modeParams[this.selectedMode];
@@ -2167,13 +2385,12 @@
 
 					const tableIndex = row * 5 + col; // 转换成一维索引
 
-					// 使用 await 调用 setRealValues
-					const result = await this.setRealValues("speed", this.height, tableIndex);
+					const result = this.getRealParams(tableIndex)
 					const {
-						launchAngle,
-						horizontalAngleDeg,
-						realSpeed,
-						finalMaxHeight
+						launchAngle = result[0],
+							horizontalAngleDeg = result[1],
+							realSpeed = result[2],
+							finalMaxHeight = result[3]
 					} = result;
 
 					// 构造当前球的配置对象
@@ -2182,7 +2399,6 @@
 						horizontalAngleDeg,
 						realSpeed,
 						finalMaxHeight,
-						// serveHeight, // 默认高度也加上
 					};
 
 					// 将配置对象添加到数组
@@ -2191,211 +2407,128 @@
 
 				// 4. 更新到 data 并打印
 				this.machineConfigs = machineConfigs;
-				// console.log("生成的机器配置参数：", machineConfigs);
+				console.log("生成的机器配置参数：", machineConfigs);
 			},
 
-			async setRealValues(type, value, tableIndex) {
-				// 确定表格
-				const tableMapping = this.tableMapping
-				const selectedTable = tableMapping[this.selectedLauncherPosition];
+			getRealParams(tableIndex) {
+				const {
+					minH,
+					maxH,
+					launchParams
+				} = this.getCurBallInfo(tableIndex)
 
-				if (!selectedTable) {
-					console.error("Selected position is not valid");
-					return {};
+				let closestHeight = null;
+				let closestParam = null;
+				let closestIndex = -1; // 用于记录 closestParam 的索引
+				let epsilon = 100000;
+
+				for (let i = 0; i < launchParams.length; i++) {
+					let curParam = launchParams[i];
+					let delta = Math.abs(this.speed - curParam[2]);
+
+					if (delta < epsilon) {
+						closestHeight = curParam[3]; //假设下标3是高度
+						closestParam = curParam;
+						closestIndex = i; // 记录当前索引
+						epsilon = delta;
+					}
+				}
+				this.realHeight = this.realHeight = Number(closestHeight.toFixed(2));
+				return closestParam
+			},
+
+			generateDefaultBallCommand() {
+				//判断当前模式，根据模式编辑指令
+				//获取所有球的机器配置
+				let commandStr = ""; // 最终指令字符串
+
+				console.log('this.machineConfigs', this.machineConfigs)
+				console.log('this.modeParams', this.modeParams[this.selectedMode][0].rotate)
+				const mode = this.selectedMode
+
+				const getRotationPercentage = (index) =>
+					this.convertRotationToPercentage(this.modeParams[this.selectedMode][index].rotate);
+				const getServeInterval = (index) =>
+					this.modeParams[this.selectedMode][index].frequency;
+				const getMachineConfig = (index) => this.machineConfigs[index];
+
+				if ([0, 1, 5, 6, 7].includes(mode)) {
+					// 单球模式
+					const config = getMachineConfig(0);
+					const rotationPercentage = getRotationPercentage(0);
+					const serveInterval = getServeInterval(0);
+					commandStr =
+						`RS_Single=${config.horizontalAngleDeg},${config.launchAngle},${config.realSpeed},${rotationPercentage},${serveInterval}\n`;
+				} else if ([3, 4].includes(mode)) {
+					// 循环模式（水平和垂直）
+					const isVertical = mode === 4 ? "H" : "V"; // 区分水平和垂直模式
+					const firstConfig = getMachineConfig(0);
+					const secondConfig = getMachineConfig(1);
+					const firstRotationPercentage = getRotationPercentage(0);
+					const firstServeInterval = getServeInterval(0);
+					const secondRotationPercentage = getRotationPercentage(1);
+					const secondServeInterval = getServeInterval(1);
+
+					commandStr =
+						`RS_Double=${isVertical},${firstConfig.horizontalAngleDeg},${firstConfig.launchAngle},${firstConfig.realSpeed},${firstRotationPercentage},${firstServeInterval};${secondConfig.horizontalAngleDeg},${secondConfig.launchAngle},${secondConfig.realSpeed},${secondRotationPercentage},${secondServeInterval}\n`;
 				}
 
-				// 获取数据范围的索引
-				const getDataFromBallData = (ballData, index) => {
-					if (index >= 0 && index < ballData.length) {
-						const selectedRow = ballData[index];
-						return {
-							launchAngle: selectedRow[0], // 假设 selectedRow[0] 是 launchAngle
-							horizontalAngleDeg: selectedRow[1], // 假设 selectedRow[1] 是 horizontalAngleDeg
-							realSpeed: selectedRow[2], // 假设 selectedRow[2] 是 speed
-							finalMaxHeight: selectedRow[3] // 假设 selectedRow[3] 是 finalMaxHeight
-						};
-					} else {
-						console.error("下标超出 ballData 的范围");
-						return null;
-					}
-				};
-
-				// 根据传入的 type（speed 或 height）处理数据
-				const results = [];
-
-				const ballData = selectedTable[tableIndex];
-
-				if (type === "speed" || type === "height") {
-					const isSpeed = type === "speed"; // 判断当前是否是速度类型
-					let targetValue = null; // 动态目标值（speed 或 height）
-
-					// 根据模式设置 targetValue
-					if (this.selectedMode === 9) {
-						if (this.selectedBalls.length > 0) {
-							targetValue = isSpeed ?
-								this.modeParams[this.selectedMode][this.selectedBalls.length - 1].speed :
-								this.serveHeight; // 高度直接取 this.serveHeight
-						} else {
-							targetValue = isSpeed ?
-								this.modeParams[this.selectedMode][12].speed :
-								this.serveHeight; // 高度无需特殊处理
+				// 全场随机（模式8）
+				else if (mode === 8) {
+					const command = {
+						horizontalAngleRange: {
+							min: this.AngleHmin,
+							max: this.AngleHMax
+						},
+						launchAngleRange: {
+							min: this.AngleVmin,
+							max: this.AngleVMax
+						},
+						speedRange: {
+							min: this.Vmin,
+							max: this.Vmax
+						},
+						intervalRange: {
+							min: 1,
+							max: 10
+						},
+						rotationRange: {
+							min: -100,
+							max: 100
 						}
-					} else if ([2, 3, 4].includes(this.selectedMode)) {
-						const ballIndex = this.selectedBall - 1;
-						targetValue = isSpeed ?
-							this.modeParams[this.selectedMode][ballIndex].speed :
-							this.serveHeight; // 高度同样取 this.serveHeight
-					} else {
-						targetValue = isSpeed ?
-							this.modeParams[this.selectedMode][0].speed :
-							this.serveHeight;
-					}
-
-					// 根据 type 动态选择对应的数据范围和处理逻辑
-					const valueRange = isSpeed ?
-						ballData.map(row => row[2]) // 假设 [2] 是速度数据
-						:
-						ballData.map(row => row[3]); // 假设 [3] 是高度数据
-
-					const {
-						index
-					} = isSpeed
-						?
-						this.convertSpeedWithIndex(valueRange, targetValue) :
-						this.convertHeightWithIndex(valueRange, targetValue);
-
-					const result = getDataFromBallData(ballData, index);
-
-					if (result) {
-						results.push(result);
-
-						// // 高度速度界面值互相转化
-						// if (isSpeed) {
-						// 	// 如果当前是 speed 类型，同时更新 serveHeight
-						// 	const heightRange = ballData.map(row => row[3]); // 假设 [3] 是高度数据
-						// 	const closestHeightIndex = this.findClosestIndex(heightRange, result.finalMaxHeight);
-						// 	const updatedServeHeight = closestHeightIndex + 1; // 假设 serveHeight 映射为 1-10
-
-						// 	if (this.selectedMode === 9) {
-						// 		const index = this.selectedBalls.length > 0 ? this.selectedBalls.length - 1 : 12;
-						// 		this.modeParams[this.selectedMode][index].serveHeight = updatedServeHeight;
-						// 	} else if ([2, 3, 4].includes(this.selectedMode)) {
-						// 		const index = this.selectedBall - 1;
-						// 		this.modeParams[this.selectedMode][index].serveHeight = updatedServeHeight;
-						// 	} else {
-						// 		this.modeParams[this.selectedMode][0].serveHeight = updatedServeHeight;
-						// 	}
-
-						// 	console.log('当前高度：', this.serveHeight)
-						// 	// 更新界面展示值
-						// 	this.serveHeight = updatedServeHeight;
-						// } else {
-						// 	// 如果当前是 height 类型，同时更新 speed
-						// 	const speedRange = ballData.map(row => row[2]); // 假设 [2] 是速度数据
-						// 	const closestSpeedIndex = this.findClosestIndex(speedRange, result.realSpeed);
-						// 	const updatedSpeed = closestSpeedIndex + 1; // 假设 speed 映射为 1-100
-
-						// 	if (this.selectedMode === 9) {
-						// 		const index = this.selectedBalls.length > 0 ? this.selectedBalls.length - 1 : 12;
-						// 		this.modeParams[this.selectedMode][index].speed = updatedSpeed;
-						// 	} else if ([2, 3, 4].includes(this.selectedMode)) {
-						// 		const index = this.selectedBall - 1;
-						// 		this.modeParams[this.selectedMode][index].speed = updatedSpeed;
-						// 	} else {
-						// 		this.modeParams[this.selectedMode][0].speed = updatedSpeed;
-						// 	}
-
-						// 	console.log('当前高度：', this.speed)
-						// 	// 更新界面展示值
-						// 	this.speed = updatedSpeed;
-						// }
-					}
-				}
-
-
-				return results.length > 0 ? results[0] : undefined;
-			},
-
-
-			// 找到最接近的索引
-			findClosestIndex(arr, target) {
-				return arr.reduce((prev, curr, index) => {
-					return Math.abs(curr - target) < Math.abs(arr[prev] - target) ? index : prev;
-				}, 0);
-			},
-
-			// 转换速度到索引
-			convertSpeedWithIndex(valueRange, targetValue) {
-				const closestIndex = this.findClosestIndex(valueRange, targetValue);
-				return {
-					index: closestIndex
-				};
-			},
-
-			// 转换高度到索引
-			convertHeightWithIndex(valueRange, targetValue) {
-				const closestIndex = this.findClosestIndex(valueRange, targetValue);
-				return {
-					index: closestIndex
-				};
-			},
-
-			// 更新 modeParams 中的某个参数
-			updateModeParams(param, value) {
-				// 假设 modeParams 是一个数组或对象
-				this.modeParams[this.selectedMode][param] = value;
-			},
-
-			// 将速度转换为真实数值并返回相关信息
-			convertSpeedWithIndex(speedRange, speed) {
-				if (!Array.isArray(speedRange) || speedRange.length < 2) {
-					console.error("Invalid speed range data");
-					return {
-						speedArray: [],
-						selectedSpeed: null,
-						index: -1
 					};
+
+					const heightRange = this.isHeightRandom ?
+						`${command.horizontalAngleRange.min},${command.horizontalAngleRange.max}` : '/* 此处添加非随机情况下的逻辑 */';
+					const frequencyRange = this.isFrequencyRandom ?
+						`${command.intervalRange.min},${command.intervalRange.max}` : serveInterval;
+					const rotationRange = this.isRotateRandom ?
+						`${command.rotationRange.min},${command.rotationRange.max}` : rotationPercentage;
+
+					commandStr =
+						`RS_Random=${heightRange},${command.launchAngleRange.min},${command.launchAngleRange.max},${command.speedRange.min},${command.speedRange.max},${frequencyRange},${rotationRange}\n`;
 				}
 
-				const minSpeed = speedRange[0]; // 最小速度
-				const maxSpeed = speedRange[speedRange.length - 1]; // 最大速度
+				// 编程练习（模式2, 9）
+				else if ([2, 9].includes(mode)) {
+					const ballsToUse = mode === 9 ?
+						this.selectedBalls.map(index => this.balls[index - 1]) // 筛选需要写指令的球
+						:
+						this.balls;
 
-				// 将速度范围均分为100份
-				const step = (maxSpeed - minSpeed) / 100;
-				const speedArray = Array.from({
-					length: 100
-				}, (_, i) => minSpeed + i * step);
+					// 遍历所有球，拼接指令
+					const ballCommands = ballsToUse.map((ball, index) => {
+						const config = getMachineConfig(index);
+						const rotationPercentage = getRotationPercentage(index);
+						const serveInterval = getServeInterval(index);
+						return `${config.horizontalAngleDeg},${config.launchAngle},${config.realSpeed},${rotationPercentage},${serveInterval}`;
+					}).join(";"); // 使用分号分隔多个球的参数
 
-				// 根据 speed 值（1-100），获取对应的真实速度
-				const index = Math.max(0, Math.min(speed - 1, 99)); // 确保索引在有效范围
-				const selectedSpeed = speedArray[index];
-
-				// 返回速度数组、选定速度值和下标
-				return {
-					speedArray, // 完整的速度数组
-					selectedSpeed, // 对应的速度值
-					index // 在速度数组中的下标
-				};
-			},
-
-			convertHeightWithIndex(heightRange, height) {
-				if (!Array.isArray(heightRange) || heightRange.length < 2) {
-					console.error("Invalid height range data");
-					return null;
+					commandStr = `RS_Program=${ballCommands}\n`;
 				}
 
-				const minHeight = heightRange[0]; // 最小高度
-				const maxHeight = heightRange[heightRange.length - 1]; // 最大高度
-
-				// 将高度范围均分为10份
-				const step = (maxHeight - minHeight) / 10;
-				const splitHeightArray = Array.from({
-					length: 10
-				}, (_, i) => minHeight + i * step);
-
-				// 根据height值（1-10），获取对应的真实高度
-				const index = Math.max(0, Math.min(height - 1, 9)); // 确保索引在有效范围
-				return splitHeightArray[index];
+				console.log("Generated command:", commandStr);
+				this.command = commandStr;
 			},
 
 			// 节流函数，用于限制移动频率
@@ -2540,7 +2673,7 @@
 				const linearIndex = row * 5 + col; // 7 行 5 列，转换为 1D 索引
 
 				// 判断该索引对应的数组是否存在，并且长度是否大于 0
-				return selectedTable[linearIndex] && selectedTable[linearIndex].length > 0;
+				return selectedTable[linearIndex].launchParams && selectedTable[linearIndex].launchParams.length > 0;
 			},
 
 			// 选择发球高度
@@ -2555,7 +2688,6 @@
 				} else {
 					this.serveHeight = 10;
 				}
-				console.log(this.selectedBall)
 				this.modeParams[this.selectedMode][this.selectedBall - 1].serveHeight = this.serveHeight
 				this.selectedHeight = height;
 				// this.generateDefaultCommand(this.selectedMode);
@@ -2563,23 +2695,7 @@
 				// 调整参数后
 				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
 				this.modifyMachineConfigs('updateHeight')
-
-				// 如果已经开始训练，则发送指令
-				if (this.trainingActive) {
-					this.sendBLEData(this.command); // 发送新的指令
-				}
-			},
-
-			// 调整发球高度
-			adjustHeight(change) {
-				this.serveHeight = Math.min(Math.max(this.serveHeight + change, this.Hmin), this.Hmax);
-
-				this.modeParams[this.selectedMode][this.selectedBall - 1].serveHeight = this.serveHeight
-				// 调整参数后
-				this.generateDefaultCommand(this.selectedMode); // 生成新的指令
-				this.modifyMachineConfigs('updateHeight')
-				this.findClosestValue('height')
-
+				// this.UIToHeight()
 
 				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
@@ -2754,6 +2870,7 @@
 				this.rotate = this.initialParams[this.selectedMode].rotate;
 				this.serveHeight = this.initialParams[this.selectedMode].serveHeight;
 				this.heights = this.initialParams[this.selectedMode].heights;
+				this.realHeight = null
 				this.selectedBall = 1
 				this.restoreDefaultBallPositions()
 			},
@@ -2798,7 +2915,6 @@
 				}
 			},
 
-
 			selectBall(ballNumber) {
 				this.selectedBall = ballNumber; // 选择球
 				const modeParams = this.modeParams[this.selectedMode]; // 获取当前模式的参数
@@ -2832,273 +2948,31 @@
 				// 2. 判断传入的 type 类型
 				switch (type) {
 					case "updateLauncherPosition": // 修改网球机位置√
-					case "updateBallPosition": // 修改网球位置√
 					case "updateDifficulty": // 修改难度√
 						await this.generateBallConfig();
 						break;
-					case "selectBalls": // 添加 selectBalls 的 case
+					case "updateBallPosition": // 添加 selectBalls 的 case
 						// this.modifyBallConfig(); // 调用函数以调整高度
 						break;
 					case "updateSpeed": // 修改速度
-						this.modifyBallConfig('speed'); // 调用函数以调整高度
+						this.speedToheight()
 						break;
 					case "updateHeight": // 修改高度
-						await this.modifyBallConfig('height');
+						this.UIToHeight()
 						break;
 					case "highlightBalls": // 点选网球
-						this.modifyBallConfig();
+						// this.modifyBallConfig();
 						break;
 					default:
 						console.error("Unknown operation type:", type);
 						return;
 				}
-			},
 
-			async modifyBallConfig() {
-				let currentBallParams;
-				let tableIndex;
+				this.generateDefaultBallCommand()
 
-				// 1. 根据模式判断当前球的参数和 tableIndex
-				if (this.selectedMode === 9) {
-					const ballIndex = this.selectedBalls.length - 1;
-					currentBallParams = this.modeParams[this.selectedMode][ballIndex];
-
-					if (this.balls[ballIndex]) {
-						const row = this.balls[ballIndex].ballIndex[0];
-						const col = this.balls[ballIndex].ballIndex[1];
-						tableIndex = row * 5 + col; // 转换成一维索引
-					}
-				} else if ([2, 3, 4].includes(this.selectedMode)) {
-					const ballIndex = this.selectedBall - 1; // 修正为 selectedBall
-					currentBallParams = this.modeParams[this.selectedMode][ballIndex];
-
-					if (this.balls[ballIndex]) {
-						const row = this.balls[ballIndex].ballIndex[0];
-						const col = this.balls[ballIndex].ballIndex[1];
-						tableIndex = row * 5 + col; // 转换成一维索引
-					}
-				} else {
-					currentBallParams = this.modeParams[this.selectedMode][0];
-
-					if (this.balls[0]) {
-						const row = this.balls[0].ballIndex[0];
-						const col = this.balls[0].ballIndex[1];
-						tableIndex = row * 5 + col; // 转换成一维索引
-					}
+				if (this.trainingActive) {
+					this.sendBLEData(this.command); // 发送新的指令
 				}
-
-				// 2. 校验当前球参数和 tableIndex
-				if (!currentBallParams) {
-					console.error("未找到当前球的配置参数");
-					return;
-				}
-				if (tableIndex === undefined) {
-					console.error("无法计算当前球的 tableIndex");
-					return;
-				}
-
-				try {
-					// 3. 调用 setRealValues 修改参数
-					const result = await this.setRealValues("speed", currentBallParams.speed, tableIndex);
-
-					// 4. 更新当前球的 modeParams
-					currentBallParams.launchAngle = result.launchAngle;
-					currentBallParams.horizontalAngleDeg = result.horizontalAngleDeg;
-					currentBallParams.realSpeed = result.realSpeed;
-					currentBallParams.finalMaxHeight = result.finalMaxHeight;
-
-					// 打印更新后的 modeParams
-					// console.log("更新后的当前球 modeParams 配置：", currentBallParams);
-
-					// 5. 更新 machineConfigs 中对应球的配置（根据模式判断）
-					const ballIndex = this.selectedMode === 9 ?
-						this.selectedBalls.length - 1 :
-						this.selectedMode === 2 || this.selectedMode === 3 || this.selectedMode === 4 ?
-						this.selectedBall - 1 :
-						0;
-
-					if (this.machineConfigs[ballIndex]) {
-						this.machineConfigs[ballIndex] = {
-							launchAngle: result.launchAngle,
-							horizontalAngleDeg: result.horizontalAngleDeg,
-							realSpeed: result.realSpeed,
-							finalMaxHeight: result.finalMaxHeight,
-						};
-
-						// 打印更新后的 machineConfigs
-						// console.log("更新后的当前球 machineConfigs 配置：", this.machineConfigs);
-					} else {
-						console.warn(`machineConfigs 中未找到下标为 ${ballIndex} 的配置`);
-					}
-				} catch (error) {
-					console.error("更新当前球配置失败：", error);
-				}
-			},
-
-			findClosestValue(type) {
-				// 1. 判断输入的type
-				if (type !== 'speed' && type !== 'height') {
-					console.error("无效的类型，必须是 'speed' 或 'height'");
-					return;
-				}
-
-				// 2. 获取 selectedTable 和 tableIndex
-				const tableMapping = this.tableMapping;
-				const selectedTable = tableMapping[this.selectedLauncherPosition];
-
-				if (!selectedTable) {
-					console.error("选定的位置无效");
-					return;
-				}
-
-				let tableIndex;
-				if (this.selectedMode === 9) {
-					const ballIndex = this.selectedBalls.length - 1;
-					if (this.balls[ballIndex]) {
-						const row = this.balls[ballIndex].ballIndex[0];
-						const col = this.balls[ballIndex].ballIndex[1];
-						tableIndex = row * 5 + col;
-					}
-				} else if ([2, 3, 4].includes(this.selectedMode)) {
-					const ballIndex = this.selectedBall - 1;
-					if (this.balls[ballIndex]) {
-						const row = this.balls[ballIndex].ballIndex[0];
-						const col = this.balls[ballIndex].ballIndex[1];
-						tableIndex = row * 5 + col;
-					}
-				} else {
-					if (this.balls[0]) {
-						const row = this.balls[0].ballIndex[0];
-						const col = this.balls[0].ballIndex[1];
-						tableIndex = row * 5 + col;
-					}
-				}
-
-				const ballData = selectedTable[tableIndex];
-				if (!ballData) {
-					console.error("未能找到球的数据");
-					return;
-				}
-
-				// 3. 遍历全部机器属性，找到高度和速度的最大值，最小值
-				const machineSpeeds = ballData.map(row => row[2]); // 假设 row[2] 是机器速度
-				const machineHeights = ballData.map(row => row[3]); // 假设 row[3] 是机器高度
-
-				const minMachineSpeed = Math.min(...machineSpeeds);
-				const maxMachineSpeed = Math.max(...machineSpeeds);
-				const minMachineHeight = Math.min(...machineHeights);
-				const maxMachineHeight = Math.max(...machineHeights);
-
-				let realValueForComparison = null;
-				let closestIndex = -1;
-
-				if (type === 'speed') {
-					// 4. 根据传入的type和this.speed值，计算当前的机器速度
-					const normalizedSpeed = (this.speed - 1) / 99; // 假设界面速度是1到100之间
-					const targetMachineSpeed = normalizedSpeed * (maxMachineSpeed - minMachineSpeed) + minMachineSpeed;
-					realValueForComparison = targetMachineSpeed;
-
-					// 打印当前的机器速度
-					console.log(`计算出的目标机器速度: ${realValueForComparison}`);
-
-					// 找到最接近目标机器速度的档位
-					let closestSpeed = null;
-					closestIndex = -1;
-					for (let i = 0; i < ballData.length; i++) {
-						const machineSpeed = ballData[i][2]; //  row[2] 是机器速度
-						if (closestSpeed === null || Math.abs(machineSpeed - realValueForComparison) < Math.abs(
-								closestSpeed - realValueForComparison)) {
-							closestSpeed = machineSpeed;
-							closestIndex = i;
-						}
-					}
-
-					// 5. 将机器高度分为10份，找到最接近目标机器高度的档位
-					const targetHeight = ballData[closestIndex][3]; // 获取与速度最接近的机器高度
-					const normalizedHeight = (targetHeight - minMachineHeight) / (maxMachineHeight -
-						minMachineHeight); // 归一化高度
-					const targetGroup = Math.floor(normalizedHeight * 10); // 将高度分为10份
-
-					console.log(`与目标机器速度最接近的机器高度: ${targetHeight}`);
-					console.log(`最接近的高度所在的档位是: 第 ${targetGroup + 1} 份`);
-
-				} else if (type === 'height') {
-					// 4. 根据传入的type和this.serveHeight值，计算当前的机器高度
-					const normalizedHeight = (this.serveHeight - 1) / 9; // 假设界面高度是1到10之间
-					const targetMachineHeight = normalizedHeight * (maxMachineHeight - minMachineHeight) +
-						minMachineHeight;
-
-					realValueForComparison = targetMachineHeight;
-
-					// 打印当前的机器高度
-					console.log(`计算出的目标机器高度: ${realValueForComparison}`);
-
-					// 找到最接近目标机器高度的档位
-					let closestHeight = null;
-					closestIndex = -1;
-					for (let i = 0; i < ballData.length; i++) {
-						const machineHeight = ballData[i][3]; // 假设 row[3] 是机器高度
-						if (closestHeight === null || Math.abs(machineHeight - realValueForComparison) < Math.abs(
-								closestHeight - realValueForComparison)) {
-							closestHeight = machineHeight;
-							closestIndex = i;
-						}
-					}
-
-					// 5. 将机器速度分为100份，找到最接近目标机器速度的档位
-					const targetSpeed = ballData[closestIndex][2]; // 获取与高度最接近的机器速度
-					const normalizedSpeed = (targetSpeed - minMachineSpeed) / (maxMachineSpeed - minMachineSpeed); // 归一化速度
-					const targetSpeedGroup = Math.floor(normalizedSpeed * 100); // 将速度分为100份
-
-					console.log(`与目标机器高度最接近的机器速度: ${targetSpeed}`);
-					console.log(`最接近的速度所在的档位是: 第 ${targetSpeedGroup + 1} 份`);
-				}
-			},
-
-			getBallIndices(isSpeed, selectedMode, selectedBall, selectedBalls, balls) {
-				let indices = [];
-
-				// 根据模式判断应该使用哪个球的参数
-				if (selectedMode === 9) {
-					// 模式 9，获取最后一个选中的球
-					const ballIndex = selectedBalls.length - 1;
-					if (balls[ballIndex]) {
-						indices = isSpeed ? balls[ballIndex].speedIndices : balls[ballIndex].heightIndices;
-					}
-				} else if ([2, 3, 4].includes(selectedMode)) {
-					// 模式 2, 3, 4，获取所选的球
-					const ballIndex = selectedBall - 1; // 修正为 selectedBall
-					if (balls[ballIndex]) {
-						indices = isSpeed ? balls[ballIndex].speedIndices : balls[ballIndex].heightIndices;
-					}
-				} else {
-					// 默认情况下获取第一个球
-					if (balls[0]) {
-						indices = isSpeed ? balls[0].speedIndices : balls[0].heightIndices;
-					}
-				}
-
-				return indices;
-			},
-
-			getClosestValue(value, valueArray) {
-				let closestIndex = -1;
-				let closestValue = null;
-				let minDifference = Infinity;
-
-				valueArray.forEach((val, index) => {
-					const difference = Math.abs(val - value);
-					if (difference < minDifference) {
-						minDifference = difference;
-						closestValue = val;
-						closestIndex = index;
-					}
-				});
-
-				return {
-					closestRealHeight: closestValue,
-					closestIndex
-				};
 			},
 
 			setLanguage() {
@@ -4782,7 +4656,7 @@
 	}
 
 	.param-value {
-		font-size: 3.5vw;
+		font-size: 2.5vw;
 		/* 根据 17.2px 调整，保持可读性 */
 		font-weight: 600;
 		letter-spacing: 0;
@@ -4797,7 +4671,7 @@
 	/* 媒体查询进行细调 */
 	@media (max-width: 600px) {
 		.param-value {
-			font-size: 4vw;
+			font-size: 3.8vw;
 			/* 小屏幕上使用稍大的字体 */
 			line-height: 5vw;
 			/* 增加行高以改善可读性 */
@@ -4806,7 +4680,7 @@
 
 	@media (min-width: 601px) and (max-width: 768px) {
 		.param-value {
-			font-size: 3.8vw;
+			font-size: 2.8vw;
 			/* 中等屏幕的字体大小 */
 			line-height: 4.8vw;
 			/* 行高 */
