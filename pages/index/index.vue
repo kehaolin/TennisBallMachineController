@@ -831,7 +831,7 @@
 					serveHeight: 6 // 全场随机，适度发球高度，增加变化
 				}, {
 					frequency: 7,
-					speed: 90,
+					speed: 50,
 					rotate: 0,
 					heights: '',
 					serveHeight: 5 // 编程练习，发球高度适中，用户可自行调整
@@ -885,100 +885,6 @@
 				this.updateParametersForMode(this.selectedMode)
 				this.generateDefaultBallCommand()
 				this.modifyMachineConfigs('updateDifficulty')
-			},
-
-			/**
-			 * 计算炮弹的发射角度和初速度
-			 * @param {number} xO - 大炮旋转中心的 x 坐标
-			 * @param {number} yO - 大炮旋转中心的 y 坐标
-			 * @param {number} zO - 大炮旋转中心的 z 坐标
-			 * @param {number} r - 炮口 S 和旋转中心 O 之间的距离
-			 * @param {number} xT - 目标落点的 x 坐标
-			 * @param {number} yT - 目标落点的 y 坐标
-			 * @param {number} Hmax - 炮弹的最大高度
-			 * @returns {Object} 包含水平角度 φ（角度）、仰角 θ（角度）和初速度 v0（公里每小时）的对象
-			 */
-			calculateLaunchParameters(xO, yO, zO, xT, yT, Hmax) {
-				const g = 9.81; // 重力加速度，单位 m/s²
-
-				// 1. 计算水平距离
-				const deltaX = xT - xO;
-				const deltaY = yT - yO;
-				const dHorizontal = Math.sqrt(deltaX ** 2 + deltaY ** 2);
-
-				// 2. 计算有效水平距离
-				const effectiveHorizontalDistance = dHorizontal / 2;
-
-				// 3. 计算仰角 θ
-				const theta = Math.atan((Hmax - zO) / effectiveHorizontalDistance);
-
-				// 4. 计算水平角度 φ
-				const phi = Math.atan2(deltaY, deltaX); // 使用 atan2 处理四象限问题
-
-				// 5. 计算初速度 v0
-				const v0 = Math.sqrt((g * dHorizontal) / Math.sin(2 * theta));
-
-				// 将初速度转换为公里每小时
-				const v0_kmh = v0 * 3.6;
-
-				// 将角度转换为度
-				const thetaDegrees = theta * (180 / Math.PI);
-				const phiDegrees = phi * (180 / Math.PI);
-
-				// 返回结果，保留一位小数
-				return {
-					phi: parseFloat(phiDegrees.toFixed(1)), // 水平角度（度），保留一位小数
-					theta: parseFloat(thetaDegrees.toFixed(1)), // 仰角（度），保留一位小数
-					v0: parseFloat(v0_kmh.toFixed(1)) // 初速度（公里每小时），保留一位小数
-				};
-			},
-
-			/**
-			 * 计算炮弹的发射角度和最大高度
-			 * @param {number} xO - 大炮旋转中心的 x 坐标
-			 * @param {number} yO - 大炮旋转中心的 y 坐标
-			 * @param {number} zO - 大炮旋转中心的 z 坐标
-			 * @param {number} r - 炮口 S 和旋转中心 O 之间的距离
-			 * @param {number} xT - 目标落点的 x 坐标
-			 * @param {number} yT - 目标落点的 y 坐标
-			 * @param {number} v0 - 炮弹的初速度（公里每小时）
-			 * @returns {Object} 包含水平角度 φ（角度）、仰角 θ（角度）和最大高度 Hmax 的对象
-			 */
-			calculateLaunchHeightParameters(xO, yO, zO, xT, yT, v0_kmh) {
-				const g = 9.81; // 重力加速度，单位 m/s²
-
-				// 将初速度转换为米每秒
-				const v0 = v0_kmh / 3.6;
-
-				// 1. 计算水平距离
-				const deltaX = xT - xO;
-				const deltaY = yT - yO;
-				const dHorizontal = Math.sqrt(deltaX ** 2 + deltaY ** 2);
-
-				// 2. 计算仰角 θ
-				const theta = Math.asin((g * dHorizontal) / (2 * v0 ** 2));
-
-				// 3. 计算水平角度 φ
-				const phi = Math.atan2(deltaY, deltaX); // 使用 atan2 处理四象限问题
-
-				// 4. 计算最大高度 Hmax
-				const Hmax = (v0 ** 2 * Math.sin(theta) ** 2) / (2 * g) + zO;
-
-				// 将角度转换为度
-				const thetaDegrees = theta * (180 / Math.PI);
-				const phiDegrees = phi * (180 / Math.PI);
-
-				// 最后保留一位小数
-				const roundedPhi = parseFloat(phiDegrees.toFixed(1)); // 水平角度（度），保留一位小数
-				const roundedTheta = parseFloat(thetaDegrees.toFixed(1)); // 仰角（度），保留一位小数
-				const roundedHmax = parseFloat(Hmax.toFixed(1)); // 最大高度（米），保留一位小数
-
-				// 返回结果
-				return {
-					phi: roundedPhi, // 水平角度（度）
-					theta: roundedTheta, // 仰角（度）
-					Hmax: roundedHmax // 最大高度（米）
-				};
 			},
 
 			async selectLauncherPosition(position) {
@@ -2165,12 +2071,17 @@
 			},
 
 			getRealParams(tableIndex) {
-				console.log(tableIndex)
+				// if (this.selectedMode === 9 && this.selectedBalls.length <= 0) {
+				// 	return
+				// }
 				const {
 					minH,
 					maxH,
 					launchParams
 				} = this.getCurBallInfo(tableIndex)
+
+				if (minH == 10000 && maxH == -10000)
+					return null
 
 				// 初始化最大值和最小值
 				let maxSpeed = -Infinity;
@@ -2332,6 +2243,10 @@
 				// 2. 初始化配置参数数组
 				const machineConfigs = [];
 
+				// if (this.selectedMode === 9 && this.selectedBalls.length <= 0) {
+				// 	return
+				// }
+
 				// 3. 遍历球，生成每个球的配置
 				for (let index = 0; index < this.balls.length; index++) {
 					const ball = this.balls[index];
@@ -2352,13 +2267,23 @@
 
 					const tableIndex = row * 5 + col; // 转换成一维索引
 
-					const result = this.getRealParams(tableIndex)
-					const {
-						launchAngle = result[0],
-							horizontalAngleDeg = result[1],
-							realSpeed = result[2],
-							finalMaxHeight = result[3]
-					} = result;
+					const result = this.getRealParams(tableIndex);
+
+					let launchAngle, horizontalAngleDeg, realSpeed, finalMaxHeight;
+
+					if (result) {
+						// 如果 result 不为 null，则使用 result 的值
+						launchAngle = result[0];
+						horizontalAngleDeg = result[1];
+						realSpeed = result[2];
+						finalMaxHeight = result[3];
+					} else {
+						// 如果 result 为 null，则使用默认值 -1
+						launchAngle = -1;
+						horizontalAngleDeg = -1;
+						realSpeed = -1;
+						finalMaxHeight = -1;
+					}
 
 					// 构造当前球的配置对象
 					const config = {
@@ -2383,8 +2308,6 @@
 				//获取所有球的机器配置
 				let commandStr = ""; // 最终指令字符串
 
-				console.log('this.machineConfigs', this.machineConfigs)
-				console.log('this.modeParams', this.modeParams[this.selectedMode][0].rotate)
 				const mode = this.selectedMode
 
 				const getRotationPercentage = (index) =>
@@ -2452,16 +2375,25 @@
 
 				// 编程练习（模式2, 9）
 				else if ([2, 9].includes(mode)) {
+					// 筛选需要写指令的球
 					const ballsToUse = mode === 9 ?
-						this.selectedBalls.map(index => this.balls[index - 1]) // 筛选需要写指令的球
-						:
+						this.selectedBalls.map(index => this.balls[index]) :
 						this.balls;
+
+					console.log('ballsToUse', ballsToUse);
 
 					// 遍历所有球，拼接指令
 					const ballCommands = ballsToUse.map((ball, index) => {
-						const config = getMachineConfig(index);
-						const rotationPercentage = getRotationPercentage(index);
-						const serveInterval = getServeInterval(index);
+						console.log('index', index);
+
+						// 如果 mode === 9，获取球的原始索引；否则直接使用当前索引
+						const originalIndex = mode === 9 ? this.selectedBalls[index] : index;
+
+						// 使用原始索引获取配置
+						const config = getMachineConfig(originalIndex);
+						const rotationPercentage = getRotationPercentage(originalIndex);
+						const serveInterval = getServeInterval(originalIndex);
+
 						return `${config.horizontalAngleDeg},${config.launchAngle},${config.realSpeed},${rotationPercentage},${serveInterval}`;
 					}).join(";"); // 使用分号分隔多个球的参数
 
@@ -2925,7 +2857,7 @@
 						this.UIToHeight()
 						break;
 					case "highlightBalls": // 点选网球
-						// this.modifyBallConfig();
+						await this.generateBallConfig();
 						break;
 					default:
 						console.error("Unknown operation type:", type);
