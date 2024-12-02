@@ -1,8 +1,40 @@
 {
 	"pages": [{
-		"path": "pages/index/index",
-		"style": {
-			"navigationBarTitleText": "网球发球机控制器"
+			"path": "pages/index/index",
+			"style": {
+				// "navigationBarTitleText": "网球发球机控制器"，
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "components/BluetoothPopup/BluetoothPopup",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "components/TennisCourt/TennisCourt",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "components/ModePickerModal/ModePickerModal",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "components/ModeConfig/ModeConfig",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/webview/webview",
+			"style": {
+				"navigationBarTitleText": "隐私协议"
+			}
 		}
-	}]
+	]
 }

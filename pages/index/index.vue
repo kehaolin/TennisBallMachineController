@@ -1,5 +1,26 @@
 (){
 <template>
+
+	<!-- 隐私协议弹窗 -->
+	<view v-if="showPrivacyModal" class="privacy-modal">
+		<view class="privacy-content">
+			<text class="privacy-title">用户隐私协议</text>
+			<text class="privacy-text">
+				请阅读并同意我们的
+				<text @click="openPrivacyPolicy" class="privacy-link">用户隐私协议</text>
+				后继续使用本软件。
+			</text>
+
+			<view class="privacy-checkbox">
+				<checkbox-group @change="togglePrivacyCheck" class="checkbox-style">
+					<checkbox value="agree" :checked="privacyChecked">我已阅读并同意</checkbox>
+				</checkbox-group>
+			</view>
+
+			<button :disabled="!privacyChecked" @click="acceptPrivacyPolicy" class="confirm-button">确认</button>
+		</view>
+	</view>
+
 	<view class="container">
 		<!-- 顶部占位区域 -->
 		<view
@@ -154,6 +175,8 @@
 		},
 		data() {
 			return {
+				showPrivacyModal: false,
+				privacyChecked: false,
 				minRealSpeed: 20,
 				maxRealSpeed: 120,
 				realHeight: null,
@@ -872,6 +895,24 @@
 			}
 		},
 		methods: {
+			// 勾选复选框时触发的事件
+			togglePrivacyCheck(event) {
+				console.log('event', event)
+				this.privacyChecked = event.detail.value.length > 0; // 更新复选框状态
+			},
+			// 用户点击 "我已阅读并同意" 后
+			acceptPrivacyPolicy() {
+				console.log('点击了确认')
+				this.showPrivacyModal = false; // 隐藏弹窗
+				uni.setStorageSync('privacyAccepted', true); // 记录用户同意隐私协议
+			},
+			// 用户点击隐私协议链接时，打开 WebView 页面
+			openPrivacyPolicy() {
+				const url = 'https://www.baidu.com'; // 临时使用百度链接
+				uni.navigateTo({
+					url: '/pages/webview/webview?url=' + encodeURIComponent(url) // 传递 URL 参数
+				});
+			},
 			selectDifficulty(difficulty) {
 				if (this.trainingActive) {
 					uni.showToast({
@@ -2891,6 +2932,10 @@
 		},
 
 		mounted() {
+			const accepted = uni.getStorageSync('privacyAccepted');
+			if (!accepted) {
+				this.showPrivacyModal = true;
+			}
 			this.images = images
 			this.updateParametersForMode(this.selectedMode);
 			// this.getCourtSize();
@@ -2920,6 +2965,106 @@
 </script>
 
 <style scoped>
+	/* 隐私协议弹窗背景 */
+	.privacy-modal {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, 0.5);
+		/* 半透明背景 */
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 1000;
+		/* 确保在最上层 */
+	}
+
+	/* 弹窗内容区域 */
+	.privacy-content {
+		background-color: #ffffff;
+		/* 背景为白色 */
+		border-radius: 15px;
+		padding: 15px;
+		/* 更紧凑的内边距 */
+		width: 80%;
+		max-width: 360px;
+		/* 最大宽度 */
+		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+		/* 阴影效果 */
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-start;
+		/* 不使用 space-between，避免间距过大 */
+		text-align: left;
+		min-height: 200px;
+		/* 最小高度，防止内容过少时弹窗太小 */
+	}
+
+	/* 标题样式 */
+	.privacy-title {
+		font-size: 20px;
+		font-weight: bold;
+		color: #333333;
+		text-align: center;
+		/* 标题居中 */
+		margin-bottom: 10px;
+		/* 标题和内容之间的间距 */
+	}
+
+	/* 文字内容样式 */
+	.privacy-text {
+		font-size: 14px;
+		color: #555555;
+		line-height: 1.6;
+		/* 调整行高，使内容更紧凑 */
+		margin-bottom: 8px;
+		/* 减少文字和复选框之间的间距 */
+		white-space: pre-wrap;
+		/* 保持换行 */
+	}
+
+	/* 超链接样式 */
+	.privacy-link {
+		color: #007aff;
+		text-decoration: underline;
+		cursor: pointer;
+	}
+
+	/* 复选框区域 */
+	.privacy-checkbox {
+		font-size: 14px;
+		color: #555555;
+		margin-bottom: 15px;
+		/* 调整复选框和按钮之间的间距 */
+		display: flex;
+		justify-content: flex-start;
+	}
+
+	/* 按钮样式 */
+	.confirm-button {
+		background-color: #007aff;
+		/* 按钮背景颜色 */
+		color: white;
+		/* 按钮文字颜色 */
+		border: none;
+		padding: 10px;
+		border-radius: 5px;
+		font-size: 16px;
+		width: 100%;
+		cursor: pointer;
+	}
+
+	/* 按钮禁用状态 */
+	.confirm-button:disabled {
+		background-color: #d3d3d3;
+		/* 禁用按钮背景 */
+		cursor: not-allowed;
+		/* 禁用状态下禁用点击 */
+	}
+
+	/* --------- */
 	.container {
 		display: flex;
 		flex-direction: column;
@@ -3485,11 +3630,11 @@
 
 
 	/* .device-item {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 10px;
-		} */
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 10px;
+} */
 
 	.device-item text {
 		flex: 1;
