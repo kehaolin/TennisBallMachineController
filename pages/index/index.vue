@@ -161,17 +161,14 @@
 	import TennisCourt from '../../components/TennisCourt/TennisCourt.vue';
 	import ModeSlider from '../../components/ModeSlider.vue';
 	import images from '../../static/images.json';
-
-
+	import Bluetooth from './bluetooth.js';
 
 	export default {
+		mixins: [Bluetooth], // 引入蓝牙逻辑
 		components: {
 			HeaderSection,
 			ModeSlider,
 			TennisCourt
-			// BluetoothPopup,
-			// CourtSection,
-			// ModeConfigSection,
 		},
 		data() {
 			return {
@@ -268,10 +265,10 @@
 				Hmax: 10, // 最大高度
 				Vmin: 20, // 最小速度
 				Vmax: 120, // 最大速度
-				AngleVmin: 10, // 最小仰角
+				AngleVmin: 8, // 最小仰角
 				AngleVMax: 45, // 最大仰角
-				AngleHmin: -45, // 最小水平角
-				AngleHMax: 45, // 最大水平角
+				AngleHmin: -27.5, // 最小水平角
+				AngleHMax: 27.5, // 最大水平角
 				ballIndices: [], // 存储转换后的球位置
 				tennisMachineIndices: {}, // 存储网球机器的索引分段
 				launcherPosition: {
@@ -557,15 +554,15 @@
 					3: {
 						ballCount: 2,
 						positions: [
-							[2, 0],
-							[2, 4]
+							[3, 1],
+							[3, 3]
 						]
 					}, // 水平循环
 					4: {
 						ballCount: 2,
 						positions: [
-							[0, 2],
-							[3, 2]
+							[2, 2],
+							[4, 2]
 						]
 					}, // 垂直循环
 					5: {
@@ -734,7 +731,7 @@
 					[
 						...Array(35).fill({
 							frequency: 6, // 默认发球频率
-							speed: 80, // 默认发球速度
+							speed: 50, // 默认发球速度
 							rotate: 0, // 默认旋转
 							heights: '', // 默认高度信息
 							serveHeight: 5 // 默认发球高度
@@ -812,13 +809,13 @@
 					serveHeight: 3 // 定点练习，发球高度适中，便于控制
 				}, {
 					frequency: 5,
-					speed: 20,
+					speed: 50,
 					rotate: 1,
 					heights: '中',
 					serveHeight: 4 // 交叉循环，适当增加发球高度，增加挑战
 				}, {
 					frequency: 7,
-					speed: 80,
+					speed: 70,
 					rotate: 0,
 					heights: '',
 					serveHeight: 5 // 水平循环，发球高度适中，适合节奏训练
@@ -830,13 +827,13 @@
 					serveHeight: 6 // 垂直循环，增加上下移动训练的难度
 				}, {
 					frequency: 9,
-					speed: 130,
+					speed: 70,
 					rotate: 2,
 					heights: '',
 					serveHeight: 7 // 高压练习，适度增加发球高度以提高压力感
 				}, {
 					frequency: 7,
-					speed: 100,
+					speed: 60,
 					rotate: 0,
 					heights: '',
 					serveHeight: 5 // 截击练习，发球高度适中，便于快速反应
@@ -854,7 +851,7 @@
 					serveHeight: 6 // 全场随机，适度发球高度，增加变化
 				}, {
 					frequency: 7,
-					speed: 50,
+					speed: 60,
 					rotate: 0,
 					heights: '',
 					serveHeight: 5 // 编程练习，发球高度适中，用户可自行调整
@@ -913,20 +910,6 @@
 					url: '/pages/webview/webview?url=' + encodeURIComponent(url) // 传递 URL 参数
 				});
 			},
-			selectDifficulty(difficulty) {
-				if (this.trainingActive) {
-					uni.showToast({
-						title: this.getTranslation('endTrainingFirst'), // 使用国际化的提示文字
-						icon: 'none',
-						duration: 1000
-					});
-					return
-				}
-				this.selectedDifficulty = difficulty; // 更新选中的难度
-				this.updateParametersForMode(this.selectedMode)
-				this.generateDefaultBallCommand()
-				this.modifyMachineConfigs('updateDifficulty')
-			},
 
 			async selectLauncherPosition(position) {
 				if (this.trainingActive) {
@@ -954,9 +937,30 @@
 
 				// 调用计算发射器位置的方法
 				this.calculateLauncherPosition();
-				// this.updateBallPositions(this.selectedMode);
 				this.resetToInitialValues();
 				await this.modifyMachineConfigs('updateLauncherPosition')
+			},
+
+			// 计算发球机位置
+			calculateLauncherPosition() {
+				const court = this.courtSizes.find(c => c.type === this.selectedCourtType);
+				if (court) {
+					// 水平方向始终在场地宽度的中间
+					this.cannonX = court.width / 2;
+
+					// 根据 selectedLauncherPosition 设置垂直方向的位置
+					if (this.selectedLauncherPosition === 'Baseline') {
+						this.cannonY = 0; // 底线位置
+					} else if (this.selectedLauncherPosition === 'Midline') {
+						this.cannonY = court.length / 6; // 距离底线1/6处
+					} else if (this.selectedLauncherPosition === 'Midcourt') {
+						this.cannonY = court.length / 2; // 场地正中间
+					}
+				} else {
+					// 如果没有找到对应的场地，默认值
+					this.cannonX = 0;
+					this.cannonY = 0;
+				}
 			},
 
 			/**
@@ -1031,8 +1035,8 @@
 					positions
 				} = config;
 
-				// 调用生成网球机器参数的方法
-				this.tennisMachineIndices = this.generateMachineParams(positions);
+				// // 调用生成网球机器参数的方法
+				// this.tennisMachineIndices = this.generateMachineParams(positions);
 
 				const ballSize = 6.29; // 自适应的球大小，以 vw 为单位
 
@@ -1040,12 +1044,6 @@
 				this.balls = positions.map(([row, col], index) => {
 					// 检查当前球是否可以显示
 					const canDisplay = this.canMoveOrDisplayBall([row, col]);
-
-					// 获取查表内容
-					const machineParams = this.tennisMachineIndices[index] || {
-						speedIndices: [],
-						heightIndices: []
-					};
 
 					const position = this.calculatePosition(row, col);
 
@@ -1057,9 +1055,6 @@
 						left: canDisplay ? `${position.left}px` : '0px', // 保持布局
 						color: mode === 9 ? 'gray' : 'yellow', // 模式9下为灰色，其他模式为黄色
 						canDisplay, // 标记该球是否可显示
-						// 绑定查表内容
-						speedIndices: machineParams.speedIndices,
-						heightIndices: machineParams.heightIndices
 					};
 				});
 
@@ -1073,8 +1068,6 @@
 							top: '0px',
 							left: '0px',
 							color: 'gray', // 模式9下为灰色
-							speedIndices: [], // 默认空的速度索引
-							heightIndices: [] // 默认空的高度索引
 						});
 					}
 				}
@@ -1108,447 +1101,6 @@
 
 			},
 
-			openBluetoothPopup() {
-				this.showBluetoothPopup = true;
-				this.openBluetoothAdapter();
-			},
-			// 关闭蓝牙弹窗
-			closeBluetoothPopup() {
-				this.showBluetoothPopup = false;
-			},
-
-			//初始化蓝牙
-			openBluetoothAdapter() {
-				// 如果当前已连接设备，则不再执行蓝牙初始化
-				if (this.connectedDeviceId) {
-					console.log('设备已连接，跳过蓝牙初始化');
-					return;
-				}
-				uni.openBluetoothAdapter({
-					success: (res) => {
-						console.log('蓝牙模块初始化成功', res);
-						this.checkBluetoothState();
-						this.setupBluetoothListeners();
-					},
-					fail: (err) => {
-						console.log('蓝牙模块初始化失败', err);
-						uni.showToast({
-							title: this.getTranslation('bluetoothInitFailed'), // 使用国际化的提示文字
-							icon: 'none',
-							duration: 2000
-						});
-					}
-				});
-			},
-
-			// 设置蓝牙状态变化和设备连接状态的监听
-			setupBluetoothListeners() {
-				// 蓝牙适配器状态变化监听
-				uni.onBluetoothAdapterStateChange((res) => {
-					if (!res.available) {
-						console.log('蓝牙适配器不可用');
-						uni.showToast({
-							title: this.getTranslation('bluetoothOff'),
-							icon: 'none',
-							duration: 2000
-						});
-						this.disconnectDevice(); // 如果蓝牙关闭，自动断开设备
-					}
-				});
-
-				// 设备连接状态变化监听
-				uni.onBLEConnectionStateChange((res) => {
-
-					// 如果是主动断开，则不做重连
-					if (this.isManualDisconnect) {
-						console.log('主动断开，跳过重连');
-						return;
-					}
-
-					// 如果设备已断开，尝试重连
-					if (!res.connected) {
-						console.log('蓝牙设备已断开');
-						uni.showToast({
-							title: this.getTranslation(
-								'bluetoothDisconnectedReconnecting'), // 使用国际化的提示文本
-							icon: 'none',
-							duration: 2000 // 可选：可以设置持续时间为2000ms（2秒），避免提示框太短时间消失
-						});
-						this.reconnectDevice(res.deviceId); // 断开时自动重连
-					}
-				});
-			},
-
-
-			//检查蓝牙状态
-			checkBluetoothState() {
-				uni.getBluetoothAdapterState({
-					success: (res) => {
-						if (res.available) {
-							console.log('蓝牙模块可用');
-							this.startBluetoothSearch()
-						} else {
-							console.log('蓝牙模块不可用');
-						}
-					},
-					fail: (err) => {
-						console.log('获取蓝牙状态失败', err);
-					}
-				});
-			},
-
-			// 模拟蓝牙设备搜索
-			startBluetoothSearch() {
-				if (this.isAnyDeviceConnected) return;
-				if (!this.showBluetoothPopup) return;
-				this.devices = [];
-				uni.startBluetoothDevicesDiscovery({
-					success: (res) => {
-						console.log('开始搜索附近的蓝牙设备', res);
-						this.onBluetoothDeviceFound();
-					},
-					fail: (err) => {
-						console.log('搜索蓝牙设备失败', err);
-						uni.showToast({
-							title: this.getTranslation('bluetoothSearchFailed'), // 使用国际化的提示文本
-							icon: 'none',
-							duration: 2000
-						});
-					}
-				});
-			},
-
-			onBluetoothDeviceFound() {
-				// 搜索到蓝牙后更新蓝牙设备
-				uni.onBluetoothDeviceFound((res) => {
-					res.devices.forEach(device => {
-						// 只将设备名以 'Vidor' 开头的设备添加到 devices 数组中
-						if (device.name && device.name.startsWith('Vidor')) {
-							// 避免重复添加相同的设备
-							const exists = this.bluetoothDevices.some(d => d.deviceId === device.deviceId);
-							if (!exists) {
-								this.bluetoothDevices.push(device);
-								console.log('这里是发现设备的时候   ', JSON.stringify(device))
-							}
-						}
-					});
-					// 如果需要调试或查看发现的设备，可以取消注释以下行
-					console.log('发现的新设备', this.bluetoothDevices);
-				});
-			},
-
-			bindDevice(device) {
-				// 调用 connectToDevice，并根据返回结果判断是否继续执行
-				this.connectToDevice(device.deviceId)
-					.then((isConnected) => {
-						if (isConnected) {
-							// 如果连接成功，更新设备状态
-							device.isConnected = true; // 更新设备连接状态
-							this.isAnyDeviceConnected = true; // 有设备连接时禁用其他设备的绑定按钮
-							this.$forceUpdate(); // 强制刷新视图
-							setTimeout(() => {
-								this.showBluetoothPopup = false;
-							}, 1500);
-							uni.showToast({
-								title: this.getTranslation('bluetoothConnectSuccess'),
-								icon: 'none',
-								duration: 1500
-							})
-						} else {
-							// 如果连接失败，提示用户
-							uni.showToast({
-								title: this.getTranslation('bluetoothConnectFailed'),
-								icon: 'none',
-								duration: 1000
-							});
-						}
-					});
-			},
-
-			// 连接到蓝牙设备
-			connectToDevice(deviceId) {
-				return new Promise((resolve) => {
-					uni.createBLEConnection({
-						deviceId: deviceId,
-						success: (res) => {
-							console.log('连接成功', res);
-							this.connectedDeviceId = deviceId;
-							this.deviceId = deviceId;
-							this.stopBluetoothDevicesDiscovery(); // 停止设备搜索
-
-							// 设置一个1秒的定时器来启动接收通知功能
-							setTimeout(() => {
-								this.receiveBLEData();
-							}, 1000); // 延迟1秒执行接收通知
-
-							// 立即获取电池电量和设备信息
-							setTimeout(() => {
-								this.getBatteryLevel(deviceId);
-							}, 2000); // 延迟3秒执行接收通知
-
-							setTimeout(() => {
-								this.getDeviceInfo(deviceId)
-							}, 3000); // 延迟3秒执行接收通知
-
-							// 每60秒发送一次电池请求
-							this.batteryTimer = setInterval(() => {
-								this.getBatteryLevel(deviceId);
-							}, 60000); // 每分钟获取一次电池电量
-
-							resolve(true); // 连接成功
-						},
-						fail: (err) => {
-							console.log('连接失败', err);
-							uni.showToast({
-								title: this.getTranslation(
-									'bluetoothConnectFailedRange'),
-								icon: 'none',
-								duration: 2000
-							});
-							resolve(false); // 连接失败
-						}
-					});
-				});
-			},
-
-			// 获取电池电量
-			getBatteryLevel(deviceId) {
-				// 获取电池电量
-				this.sendBLEData('RS_Bat?\r\n', (batteryData) => {
-					// 电池数据格式: RS_Bat=ok,0
-					const batteryLevel = batteryData.split(',')[1]; // 获取'0'这个值
-					console.log('电池电量:', batteryLevel);
-					this.batteryLevel = batteryLevel;
-				});
-			},
-
-			// 获取设备信息
-			getDeviceInfo(deviceId) {
-				// 获取设备信息
-				this.sendBLEData('RS_Info?\r\n', (infoData) => {
-					if (infoData.startsWith('RS_Info=ok')) {
-						// 提取设备信息数据
-						let infoParts = infoData.split(',');
-						if (infoParts.length === 5) {
-							// 解析版本号
-							this.launcherVersion = infoParts[1];
-
-							// 解析位置数据
-							this.launcherPosition = {
-								x0: parseFloat(infoParts[2]),
-								y0: parseFloat(infoParts[3]),
-								z0: parseFloat(infoParts[4])
-							};
-
-							console.log('设备信息:', {
-								version: this.launcherVersion,
-								position: this.launcherPosition
-							});
-						} else {
-							console.log('设备信息数据格式错误:', infoData);
-						}
-					} else {
-						console.log('设备信息数据格式错误:', infoData);
-					}
-				});
-			},
-
-			// 重新连接蓝牙设备
-			reconnectDevice(deviceId) {
-				if (this.isManualDisconnect) return
-				if (!deviceId) {
-					console.log('没有设备 ID，无法重连');
-					return;
-				}
-
-				// 如果设备已经在重连中，避免重复重连
-				if (this.reconnecting) {
-					console.log('正在重连中，跳过');
-					return;
-				}
-
-				this.reconnecting = true; // 标记为正在重连状态
-				console.log('尝试重新连接设备', deviceId);
-
-				// 获取设备对象，假设设备列表是 this.bluetoothDevices
-				const device = this.getDeviceById(deviceId);
-				if (!device) {
-					console.log('设备未找到，无法进行重连');
-					this.reconnecting = false; // 重连状态恢复
-					return;
-				}
-
-				this.connectToDevice(deviceId).then((isConnected) => {
-					if (isConnected) {
-						// 如果连接成功，更新设备状态
-						device.isConnected = true; // 更新设备连接状态
-						this.isAnyDeviceConnected = true; // 有设备连接时禁用其他设备的绑定按钮
-						this.$forceUpdate(); // 强制刷新视图
-						setTimeout(() => {
-							this.showBluetoothPopup = false;
-						}, 1500);
-						uni.showToast({
-							title: this.getTranslation('bluetoothReconnectSuccess'),
-							icon: 'none',
-							duration: 1500
-						})
-					} else {
-						console.log('蓝牙重连失败');
-						uni.showToast({
-							title: this.getTranslation('bluetoothReconnectFailed'),
-							icon: 'none'
-						});
-					}
-					this.reconnecting = false; // 重连完成，重置状态
-				});
-			},
-
-			// 获取设备对象的方法
-			getDeviceById(deviceId) {
-				return this.bluetoothDevices.find(device => device.deviceId === deviceId);
-			},
-
-			// 统一发送蓝牙指令的方法
-			sendBLEData(command, onSuccess) {
-				console.log('command', command)
-				if (!this.connectedDeviceId) {
-					console.log('未找到有效的连接设备');
-					return;
-				}
-
-				const serviceId = '55535343-FE7D-4AE5-8FA9-9FAFD205E455';
-				const characteristicId = '49535343-1E4D-4BD9-BA61-23C647249616';
-
-				// 将字符串命令转换为 ArrayBuffer
-				let buffer = new ArrayBuffer(command.length);
-				let dataview = new DataView(buffer);
-				for (let i = 0; i < command.length; i++) {
-					dataview.setUint8(i, command.charCodeAt(i));
-				}
-
-				uni.writeBLECharacteristicValue({
-					deviceId: this.deviceId,
-					serviceId,
-					characteristicId,
-					value: buffer,
-					success: (res) => {
-						console.log('发送数据成功', res);
-						// 成功发送后，等待回调接收数据
-						this.pendingCommand = {
-							command,
-							onSuccess
-						}; // 保存当前命令和回调
-					},
-					fail: (err) => {
-						console.log('发送数据失败', err);
-						uni.showToast({
-							title: this.getTranslation('bluetoothSendDataFailed'),
-							icon: 'none',
-							duration: 2000
-						});
-					}
-				});
-			},
-
-			// 接收蓝牙数据的方法
-			receiveBLEData() {
-				uni.notifyBLECharacteristicValueChange({
-					state: true,
-					deviceId: this.deviceId,
-					serviceId: '55535343-FE7D-4AE5-8FA9-9FAFD205E455',
-					characteristicId: '49535343-8841-43F4-A8D4-ECBE34729BB3',
-					success: () => {
-						console.log('成功启用接收通知');
-					},
-					fail: (err) => {
-						console.log('启用接收通知失败', err);
-						uni.showToast({
-							title: this.getTranslation('enableReceiveNotifyFailed'),
-							icon: 'none',
-							duration: 2000
-						});
-					}
-				});
-
-				// 监听蓝牙设备数据变化
-				uni.onBLECharacteristicValueChange((res) => {
-					let data = String.fromCharCode.apply(null, new Uint8Array(res.value));
-					console.log('接收到的数据:', data);
-
-					// 如果有待处理的命令且存在对应的成功回调
-					if (this.pendingCommand && this.pendingCommand.onSuccess) {
-						// 执行回调函数并传入接收到的数据
-						this.pendingCommand.onSuccess(data);
-						this.pendingCommand = null; // 清除待处理的命令
-					}
-				});
-			},
-
-			stopBluetoothDevicesDiscovery() {
-				uni.stopBluetoothDevicesDiscovery({
-					success: (res) => {
-						console.log('停止搜索蓝牙设备成功', res);
-					},
-					fail: (err) => {
-						console.log('停止搜索蓝牙设备失败', err);
-						uni.showToast({
-							title: this.getTranslation('stopSearchBluetoothFailed'),
-							icon: 'none',
-							duration: 2000
-						});
-					}
-				});
-			},
-
-			unbindDevice(device) {
-				// 解绑设备
-				device.isConnected = false; // 更新设备连接状态
-				this.isAnyDeviceConnected = false; // 恢复所有设备按钮为可绑定状态
-				this.$forceUpdate(); // 强制刷新视图
-				this.disconnectDevice()
-			},
-
-			// 断开蓝牙连接
-			disconnectDevice() {
-				if (!this.connectedDeviceId) {
-					uni.showToast({
-						title: this.getTranslation('noDeviceConnected'),
-						icon: 'none'
-					});
-					return;
-				}
-
-				// 标记为主动断开
-				this.isManualDisconnect = true;
-
-				if (this.batteryTimer) {
-					clearInterval(this.batteryTimer);
-					this.batteryTimer = null;
-				}
-
-				uni.closeBLEConnection({
-					deviceId: this.connectedDeviceId,
-					success: (res) => {
-						console.log('断开连接成功', res);
-						this.connectedDeviceId = null;
-						this.currentDevice = null;
-						this.batteryLevel = 100;
-						// 清除电池信息定时器
-						if (this.batteryTimer) {
-							clearInterval(this.batteryTimer);
-							this.batteryTimer = null;
-						}
-					},
-					fail: (err) => {
-						console.log('断开连接失败', err);
-						uni.showToast({
-							title: this.getTranslation('bluetoothDisconnectFailed'),
-							icon: 'none',
-							duration: 2000
-						});
-					}
-				});
-			},
 
 			showModePicker() {
 				if (this.trainingActive) {
@@ -1563,13 +1115,15 @@
 				this.showModePickerModal = true; // 显示 modal
 				this.$nextTick(() => {
 					// 等待 DOM 更新后滚动到选中的模式
-					const selectedModeElement = this.$el.querySelector('.mode-item.selected-mode-item');
-					if (selectedModeElement) {
-						selectedModeElement.scrollIntoView({
-							behavior: 'smooth',
-							block: 'nearest'
-						});
-					}
+					// const selectedModeElement = this.$el.querySelector('.mode-item.selected-mode-item');
+					// const modePickerModal = this.$refs.modePickerModal;
+					// const selectedModeElement = modePickerModal.querySelector('.selected-mode-item');
+					// if (selectedModeElement) {
+					// 	selectedModeElement.scrollIntoView({
+					// 		behavior: 'smooth',
+					// 		block: 'nearest'
+					// 	});
+					// }
 				});
 			},
 
@@ -1584,11 +1138,6 @@
 
 			closeModePicker() {
 				this.showModePickerModal = false; // 关闭弹窗
-			},
-
-			// 完成蓝牙连接
-			completeBluetoothConnection() {
-				this.showBluetoothPopup = false;
 			},
 
 			toggleFrequencyRandom(event) {
@@ -1866,43 +1415,6 @@
 				}
 			},
 
-			// 计算发球机位置
-			calculateLauncherPosition() {
-				const court = this.courtSizes.find(c => c.type === this.selectedCourtType);
-				if (court) {
-					// 水平方向始终在场地宽度的中间
-					this.cannonX = court.width / 2;
-
-					// 根据 selectedLauncherPosition 设置垂直方向的位置
-					if (this.selectedLauncherPosition === 'Baseline') {
-						this.cannonY = 0; // 底线位置
-					} else if (this.selectedLauncherPosition === 'Midline') {
-						this.cannonY = court.length / 6; // 距离底线1/6处
-					} else if (this.selectedLauncherPosition === 'Midcourt') {
-						this.cannonY = court.length / 2; // 场地正中间
-					}
-				} else {
-					// 如果没有找到对应的场地，默认值
-					this.cannonX = 0;
-					this.cannonY = 0;
-				}
-				this.generateDefaultBallCommand()
-			},
-
-			//调整速度
-			handleSpeedChange(event) {
-				this.speed = event.detail.value;
-				this.modeParams[this.selectedMode][this.selectedBall - 1].speed = event.detail.value
-
-				// 调整参数后
-				this.modifyMachineConfigs('updateSpeed')
-
-				// 如果已经开始训练，则发送指令
-				if (this.trainingActive) {
-					this.sendBLEData(this.command); // 发送新的指令
-				}
-			},
-
 			getCurBallInfo(tableIndex) {
 				const tableMapping = this.tableMapping;
 				const selectedTable = tableMapping[this.selectedLauncherPosition];
@@ -1950,66 +1462,47 @@
 				return tableIndex
 			},
 
-
-			heightToUI(h, minH, maxH, intervalCounts) {
-				//将真实高度转化成界面高度
-				if (minH == 10000 && maxH == -10000)
-					return null;
-
-				let step = (maxH - minH) / intervalCounts;
-
-				this.serveHeight = Math.floor((h - minH) / step) + 1
-			},
-
-
-			// 调整发球高度
-			adjustHeight(change) {
-				this.serveHeight = Math.min(Math.max(this.serveHeight + change, this.Hmin), this.Hmax);
-
-				this.modeParams[this.selectedMode][this.selectedBall - 1].serveHeight = this.serveHeight
-				// 调整参数后
-				// this.generateDefaultBallCommand() // 生成新的指令
-				this.modifyMachineConfigs('updateHeight')
-				// this.UIToHeight()
-
-				// 如果已经开始训练，则发送指令
-				if (this.trainingActive) {
-					this.sendBLEData(this.command); // 发送新的指令
-				}
-			},
-
-			UIToHeight() {
-				//根据档位获取真实高度值
-				const tableIndex = this.getCurBallIndex()
-				const {
-					minH,
-					maxH,
-					launchParams
-				} = this.getCurBallInfo(tableIndex)
-				const intervalCounts = 10
-				const i = this.serveHeight
-
-				if (minH == 10000 && maxH == -10000)
-					return null;
-				let step = (maxH - minH) / intervalCounts;
-				const realHeight = minH + (i - 1) * step
-				this.realHeight = Number(realHeight.toFixed(2));
-				console.log('realHeight', realHeight)
-				//根据真实高度值找到真实速度值
-				this.heightToSpeed(realHeight, launchParams)
-			},
-
 			updateParametersForMode(modeIndex) {
 				// 定义每个模式的默认参数
 				const modeParams = this.modeParams;
 
-				if (modeIndex === 0 && this.selectedDifficulty === '2.0') {
-					// 如果是模式0，且难度为 '2.0'，单独设置默认参数
-					this.frequency = 6;
-					this.speed = 50;
-					this.rotate = 0;
-					this.heights = '';
-					this.serveHeight = 4; // 初学者练习，发球角度较低，适合新手
+				// 定义每个难度下的默认参数
+				const difficultyParams = {
+					'2.0': {
+						frequency: 6,
+						speed: 70,
+						rotate: 2,
+						heights: '',
+						serveHeight: 4
+					},
+					'1.0': {
+						frequency: 3,
+						speed: 50,
+						rotate: 0,
+						heights: '',
+						serveHeight: 5
+					}
+				};
+
+				// 如果是模式0，根据选定的难度设置参数
+				if (modeIndex === 0 && difficultyParams[this.selectedDifficulty]) {
+					const difficultySetting = difficultyParams[this.selectedDifficulty];
+
+					// 更新参数
+					this.frequency = difficultySetting.frequency;
+					this.speed = difficultySetting.speed;
+					this.rotate = difficultySetting.rotate;
+					this.heights = difficultySetting.heights;
+					this.serveHeight = difficultySetting.serveHeight;
+
+					// 更新 this.modeParams[0] 的参数
+					this.modeParams[0] = [{
+						frequency: difficultySetting.frequency,
+						speed: difficultySetting.speed,
+						rotate: difficultySetting.rotate,
+						heights: difficultySetting.heights,
+						serveHeight: difficultySetting.serveHeight
+					}];
 				} else {
 					// 获取当前模式的第一个球参数
 					const firstBallParams = modeParams[modeIndex]?.[0];
@@ -2085,36 +1578,29 @@
 				};
 			},
 
-			onModeChange(mode) {
-				const index = mode
-				this.selectedMode = index;
-				this.selectedDifficulty = '1.0'
 
-				// 控制 UI 部件显示隐藏
-				this.showBallNumbers = [2, 3, 4, 9].includes(this.selectedMode);
+			UIToHeight() {
+				//根据档位获取真实高度值
+				const tableIndex = this.getCurBallIndex()
+				const {
+					minH,
+					maxH,
+					launchParams
+				} = this.getCurBallInfo(tableIndex)
+				const intervalCounts = 10
+				const i = this.serveHeight
 
-				// 更新模式的默认参数	
-				this.updateParametersForMode(mode);
-
-				this.selectedBalls = []
-
-				// 编程练习显示数字
-				this.toggleDirectionButtons(this.selectedMode); // 控制方向按钮显示
-				this.toggleAngleControl(this.selectedMode); // 控制角度调整显示
-				this.toggleHeightSelector(this.selectedMode); // 控制发球高度选择功能
-				this.showInputWithClear = (this.selectedMode === 9); // 编程练习模式下的输入框
-
-				// 根据模式设置网球个数及默认位置
-				// this.updateBallPositions(index);
-				this.resetToInitialValues();
-				this.generateBallConfig()
-				this.generateDefaultBallCommand()
+				if (minH == 10000 && maxH == -10000)
+					return null;
+				let step = (maxH - minH) / intervalCounts;
+				const realHeight = minH + (i - 1) * step
+				this.realHeight = Math.round(realHeight);
+				console.log('realHeight', realHeight)
+				//根据真实高度值找到真实速度值
+				this.heightToSpeed(realHeight, launchParams)
 			},
 
 			getRealParams(tableIndex) {
-				// if (this.selectedMode === 9 && this.selectedBalls.length <= 0) {
-				// 	return
-				// }
 				const {
 					minH,
 					maxH,
@@ -2148,10 +1634,12 @@
 						epsilon = delta;
 					}
 				}
-				this.minRealSpeed = minSpeed
-				this.maxRealSpeed = maxSpeed
-				this.speed = closestParam[2]
-				this.realHeight = this.realHeight = Number(closestHeight.toFixed(2));
+				this.minRealSpeed = Math.round(minSpeed);
+				this.maxRealSpeed = Math.round(maxSpeed);
+				this.speed = Math.round(closestParam[2]);
+				// this.realHeight = Number(closestHeight.toFixed(2));
+				this.realHeight = Math.round(closestHeight)
+
 				return closestParam
 			},
 
@@ -2184,14 +1672,82 @@
 					}
 				}
 
-				this.speed = closestSpeed
-				this.minRealSpeed = minSpeed
-				this.maxRealSpeed = maxSpeed
+				this.speed = Math.round(closestSpeed);
+				this.minRealSpeed = Math.round(minSpeed);
+				this.maxRealSpeed = Math.round(maxSpeed);
+
+				console.log('closestParam', closestParam)
 				this.updateBallConfig(closestParam)
 			},
 
+			getBallDefaultSpeedAndHeight(tableIndex) {
+				// 获取当前球的参数
+				const {
+					launchParams
+				} = this.getCurBallInfo(tableIndex);
+
+				if (launchParams && launchParams.length > 0) {
+					// 初始化最大值和最小值
+					let maxSpeed = -Infinity;
+					let minSpeed = Infinity;
+					let maxHeight = -Infinity;
+					let minHeight = Infinity;
+
+					// 存储所有的速度和高度
+					let allSpeeds = [];
+					let allHeights = [];
+
+					// 遍历所有的参数，计算最大值和最小值，同时记录速度和高度
+					for (let i = 0; i < launchParams.length; i++) {
+						let curParam = launchParams[i];
+						let speed = curParam[2]; // 假设下标2是速度
+						let height = curParam[3]; // 假设下标3是高度
+
+						// 更新最大值和最小值
+						if (speed > maxSpeed) maxSpeed = speed;
+						if (speed < minSpeed) minSpeed = speed;
+						if (height > maxHeight) maxHeight = height;
+						if (height < minHeight) minHeight = height;
+
+						// 将速度和高度加入数组
+						allSpeeds.push(speed);
+						allHeights.push(height);
+					}
+
+					// 计算速度和高度的中间值
+					let midSpeed = (maxSpeed + minSpeed) / 2;
+					let midHeight = (maxHeight + minHeight) / 2;
+
+					// 找到最接近的速度和高度
+					let closestSpeed = allSpeeds.reduce((prev, curr) => {
+						return Math.abs(curr - midSpeed) < Math.abs(prev - midSpeed) ? curr : prev;
+					});
+					let closestHeight = allHeights.reduce((prev, curr) => {
+						return Math.abs(curr - midHeight) < Math.abs(prev - midHeight) ? curr : prev;
+					});
+
+					// 输出最接近的速度和高度
+					console.log('最接近的速度:', closestSpeed);
+					console.log('最接近的高度:', closestHeight);
+
+					return {
+						speed: closestSpeed, // 返回最接近的速度
+						height: closestHeight // 返回最接近的高度
+					};
+				} else {
+					// 如果没有找到该球的参数，返回默认值
+					console.warn("无法找到对应的球参数，返回默认值");
+					return {
+						speed: 0,
+						height: 0
+					}; // 返回一个默认值
+				}
+			},
+
 			speedToheight() {
+				if (this.selectedMode === 9 && this.selectedBalls.length === 0) return
 				const tableIndex = this.getCurBallIndex()
+				this.getBallDefaultSpeedAndHeight(tableIndex)
 				const {
 					minH,
 					maxH,
@@ -2224,12 +1780,23 @@
 				}
 
 				//将真实高度转化成界面高度
-				this.realHeight = this.realHeight = Number(closestHeight.toFixed(2));
-				this.speed = closestParam[2]
-				this.minRealSpeed = minSpeed
-				this.maxRealSpeed = maxSpeed
+				// this.realHeight = this.realHeight = Number(closestHeight.toFixed(2));
+				this.realHeight = Math.round(closestHeight)
+				this.speed = Math.round(closestParam[2]);
+				this.minRealSpeed = Math.round(minSpeed);
+				this.maxRealSpeed = Math.round(maxSpeed);
 				this.updateBallConfig(closestParam)
-				this.heightToUI(closestHeight, minH, maxH, 10)
+				this.heightToUI(closestParam[2], minH, maxH, 10)
+			},
+
+			heightToUI(h, minH, maxH, intervalCounts) {
+				//将真实高度转化成界面高度
+				if (minH == 10000 && maxH == -10000)
+					return null;
+
+				let step = (maxH - minH) / intervalCounts;
+
+				this.serveHeight = Math.floor((h - minH) / step) + 1
 			},
 
 			updateBallConfig(params) {
@@ -2268,181 +1835,6 @@
 
 				// 将生成的 config 对象存入 machineConfigs
 				this.machineConfigs[index] = config;
-				console.log('更新后的机器配置参数', this.machineConfigs);
-
-			},
-
-			//生成每个模式每个球的默认机器配置参数
-			async generateBallConfig() {
-				// 1. 获取当前模式的参数
-				const currentModeParams = this.modeParams[this.selectedMode];
-				if (!currentModeParams) {
-					console.error("未找到当前模式的配置参数");
-					return;
-				}
-
-				// 2. 初始化配置参数数组
-				const machineConfigs = [];
-
-				// if (this.selectedMode === 9 && this.selectedBalls.length <= 0) {
-				// 	return
-				// }
-
-				// 3. 遍历球，生成每个球的配置
-				for (let index = 0; index < this.balls.length; index++) {
-					const ball = this.balls[index];
-					const ballIndex = index;
-
-					if (!currentModeParams[ballIndex]) {
-						console.log(`未找到下标为 ${ballIndex} 的默认参数`);
-						continue;
-					}
-
-					const {
-						speed,
-						serveHeight
-					} = currentModeParams[ballIndex];
-
-					const row = ball.ballIndex[0];
-					const col = ball.ballIndex[1];
-
-					const tableIndex = row * 5 + col; // 转换成一维索引
-
-					const result = this.getRealParams(tableIndex);
-
-					let launchAngle, horizontalAngleDeg, realSpeed, finalMaxHeight;
-
-					if (result) {
-						// 如果 result 不为 null，则使用 result 的值
-						launchAngle = result[0];
-						horizontalAngleDeg = result[1];
-						realSpeed = result[2];
-						finalMaxHeight = result[3];
-					} else {
-						// 如果 result 为 null，则使用默认值 -1
-						launchAngle = -1;
-						horizontalAngleDeg = -1;
-						realSpeed = -1;
-						finalMaxHeight = -1;
-					}
-
-					// 构造当前球的配置对象
-					const config = {
-						launchAngle,
-						horizontalAngleDeg,
-						realSpeed,
-						finalMaxHeight,
-					};
-
-					// 将配置对象添加到数组
-					machineConfigs.push(config);
-				}
-
-				// 4. 更新到 data 并打印
-				this.machineConfigs = machineConfigs;
-				console.log("生成的机器配置参数：", machineConfigs);
-			},
-
-
-			generateDefaultBallCommand() {
-				//判断当前模式，根据模式编辑指令
-				//获取所有球的机器配置
-				let commandStr = ""; // 最终指令字符串
-
-				const mode = this.selectedMode
-
-				const getRotationPercentage = (index) =>
-					this.convertRotationToPercentage(this.modeParams[this.selectedMode][index].rotate);
-				const getServeInterval = (index) =>
-					this.modeParams[this.selectedMode][index].frequency;
-				const getMachineConfig = (index) => this.machineConfigs[index];
-
-				if ([0, 1, 5, 6, 7].includes(mode)) {
-					// 单球模式
-					const config = getMachineConfig(0);
-					const rotationPercentage = getRotationPercentage(0);
-					const serveInterval = getServeInterval(0);
-					commandStr =
-						`RS_Single=${config.horizontalAngleDeg},${config.launchAngle},${config.realSpeed},${rotationPercentage},${serveInterval}\n`;
-				} else if ([3, 4].includes(mode)) {
-					// 循环模式（水平和垂直）
-					const isVertical = mode === 4 ? "H" : "V"; // 区分水平和垂直模式
-					const firstConfig = getMachineConfig(0);
-					const secondConfig = getMachineConfig(1);
-					const firstRotationPercentage = getRotationPercentage(0);
-					const firstServeInterval = getServeInterval(0);
-					const secondRotationPercentage = getRotationPercentage(1);
-					const secondServeInterval = getServeInterval(1);
-
-					commandStr =
-						`RS_Double=${isVertical},${firstConfig.horizontalAngleDeg},${firstConfig.launchAngle},${firstConfig.realSpeed},${firstRotationPercentage},${firstServeInterval};${secondConfig.horizontalAngleDeg},${secondConfig.launchAngle},${secondConfig.realSpeed},${secondRotationPercentage},${secondServeInterval}\n`;
-				}
-
-				// 全场随机（模式8）
-				else if (mode === 8) {
-					const command = {
-						horizontalAngleRange: {
-							min: this.AngleHmin,
-							max: this.AngleHMax
-						},
-						launchAngleRange: {
-							min: this.AngleVmin,
-							max: this.AngleVMax
-						},
-						speedRange: {
-							min: this.Vmin,
-							max: this.Vmax
-						},
-						intervalRange: {
-							min: 1,
-							max: 10
-						},
-						rotationRange: {
-							min: -100,
-							max: 100
-						}
-					};
-
-					const heightRange = this.isHeightRandom ?
-						`${command.horizontalAngleRange.min},${command.horizontalAngleRange.max}` : '/* 此处添加非随机情况下的逻辑 */';
-					const frequencyRange = this.isFrequencyRandom ?
-						`${command.intervalRange.min},${command.intervalRange.max}` : serveInterval;
-					const rotationRange = this.isRotateRandom ?
-						`${command.rotationRange.min},${command.rotationRange.max}` : rotationPercentage;
-
-					commandStr =
-						`RS_Random=${heightRange},${command.launchAngleRange.min},${command.launchAngleRange.max},${command.speedRange.min},${command.speedRange.max},${frequencyRange},${rotationRange}\n`;
-				}
-
-				// 编程练习（模式2, 9）
-				else if ([2, 9].includes(mode)) {
-					// 筛选需要写指令的球
-					const ballsToUse = mode === 9 ?
-						this.selectedBalls.map(index => this.balls[index]) :
-						this.balls;
-
-					console.log('ballsToUse', ballsToUse);
-
-					// 遍历所有球，拼接指令
-					const ballCommands = ballsToUse.map((ball, index) => {
-						console.log('index', index);
-
-						// 如果 mode === 9，获取球的原始索引；否则直接使用当前索引
-						const originalIndex = mode === 9 ? this.selectedBalls[index] : index;
-
-						// 使用原始索引获取配置
-						const config = getMachineConfig(originalIndex);
-						const rotationPercentage = getRotationPercentage(originalIndex);
-						const serveInterval = getServeInterval(originalIndex);
-
-						return `${config.horizontalAngleDeg},${config.launchAngle},${config.realSpeed},${rotationPercentage},${serveInterval}`;
-					}).join(";"); // 使用分号分隔多个球的参数
-
-					commandStr = `RS_Program=${ballCommands}\n`;
-				}
-
-				console.log("Generated command:", commandStr);
-				this.command = commandStr;
 			},
 
 			// 节流函数，用于限制移动频率
@@ -2572,18 +1964,7 @@
 				// 更新球在界面上的显示位置
 				this.updateBallPositions(this.selectedMode);
 
-				// 更新球的参数
-				// this.updateParametersForMode(this.selectedMode);
-
-				// 调整参数后
-				// t	this.generateDefaultBallCommand() // 生成新的指令
-
 				this.modifyMachineConfigs('updateBallPosition')
-
-				// // 如果已经开始训练，则发送指令
-				// if (this.trainingActive) {
-				// 	this.sendBLEData(this.command); // 发送新的指令
-				// }
 			},
 
 			canMoveOrDisplayBall(ballIndex) {
@@ -2623,12 +2004,7 @@
 				// 调整参数后
 				// this.generateDefaultBallCommand() // 生成新的指令
 				this.modifyMachineConfigs('updateHeight')
-				// this.UIToHeight()
 
-				// // 如果已经开始训练，则发送指令
-				// if (this.trainingActive) {
-				// 	this.sendBLEData(this.command); // 发送新的指令
-				// }
 			},
 
 			// 辅助函数：将旋转程度转换为百分比
@@ -2639,6 +2015,40 @@
 			getTranslation(key) {
 				return this.translations.Toast[this.currentLanguage][key] || key;
 			},
+
+			// startTraining() {
+			// 	if (this.selectedMode === 9 && this.inputData === '') {
+			// 		uni.showToast({
+			// 			title: this.getTranslation('chooseTennisBallFirst'),
+			// 			icon: 'none',
+			// 			duration: 1000
+			// 		});
+			// 		return;
+			// 	}
+			// 	if (!this.isAnyDeviceConnected) {
+			// 		uni.showToast({
+			// 			title: this.getTranslation('connectBluetoothFirst'),
+			// 			icon: 'none',
+			// 			duration: 1000
+			// 		});
+			// 		return;
+			// 	}
+
+			// 	if (!this.trainingActive) {
+			// 		// 发送训练参数
+			// 		this.sendBLEData(this.command);
+
+			// 		this.trainingActive = true;
+			// 		this.buttonText = this.translations.endTraining[this.currentLanguage];
+			// 		this.buttonColor = 'rgba(232, 95, 95, 1)'; // 训练中按钮颜色
+			// 		this.modeSelectable = false; // 禁用模式选择			
+			// 		// 确定发球顺序
+			// 		this.determineServingOrder();
+
+			// 	} else {
+			// 		this.endTraining()
+			// 	}
+			// },
 
 			startTraining() {
 				if (this.selectedMode === 9 && this.inputData === '') {
@@ -2659,17 +2069,40 @@
 				}
 
 				if (!this.trainingActive) {
-					this.trainingActive = true;
-					this.buttonText = this.translations.endTraining[this.currentLanguage];
-					this.buttonColor = 'rgba(232, 95, 95, 1)'; // 训练中按钮颜色
-					this.modeSelectable = false; // 禁用模式选择
-
-					// this.generateDefaultBallCommand()
 					// 发送训练参数
-					this.sendBLEData(this.command);
+					this.sendBLEData(this.command, (response) => {
+						// 检查返回的响应是否包含 "ok"
+						if (response.includes('ok')) {
+							console.log('成功收到确认响应');
+							// 继续进行后续操作
+							this.trainingActive = true;
+							this.buttonText = this.translations.endTraining[this.currentLanguage];
+							this.buttonColor = 'rgba(232, 95, 95, 1)'; // 训练中按钮颜色
+							this.modeSelectable = false; // 禁用模式选择
+							// 确定发球顺序
+							this.determineServingOrder();
+						} else {
+							// 如果返回的数据不包含 "ok"，显示提示
+							uni.showToast({
+								title: this.getTranslation('bluetoothResponseError'),
+								icon: 'none',
+								duration: 1000
+							});
+							this.trainingActive = false;
+						}
+					});
 
-					// 确定发球顺序
-					this.determineServingOrder();
+					// 设置一个超时机制，防止长时间未收到响应
+					this.timeoutId = setTimeout(() => {
+						if (this.trainingActive) {
+							uni.showToast({
+								title: this.getTranslation('bluetoothTimeout'),
+								icon: 'none',
+								duration: 1000
+							});
+							this.trainingActive = false; // 停止训练
+						}
+					}, 5000); // 设定超时为5秒
 
 				} else {
 					this.endTraining()
@@ -2687,6 +2120,31 @@
 					this.clearInputData()
 				}
 				this.sendBLEData('RS_Stop=1\n')
+			},
+
+			onModeChange(mode) {
+				const index = mode
+				this.selectedMode = index;
+				this.selectedDifficulty = '1.0'
+
+				// 控制 UI 部件显示隐藏
+				this.showBallNumbers = [2, 3, 4, 9].includes(this.selectedMode);
+
+				// 更新模式的默认参数	
+				this.updateParametersForMode(mode);
+
+				this.selectedBalls = []
+
+				// 编程练习显示数字
+				this.toggleDirectionButtons(this.selectedMode); // 控制方向按钮显示
+				this.toggleAngleControl(this.selectedMode); // 控制角度调整显示
+				this.toggleHeightSelector(this.selectedMode); // 控制发球高度选择功能
+				this.showInputWithClear = (this.selectedMode === 9); // 编程练习模式下的输入框
+
+				// 根据模式设置网球个数及默认位置
+				this.resetToInitialValues();
+				this.generateBallConfig();
+				this.generateDefaultBallCommand()
 			},
 
 			resetToInitialValues() {
@@ -2708,21 +2166,21 @@
 						ballCount: 2,
 						positions: [
 							[2, 2],
-							[3, 4]
+							[3, 3]
 						]
 					}, // 交叉循环
 					3: {
 						ballCount: 2,
 						positions: [
-							[2, 0],
-							[2, 4]
+							[3, 1],
+							[3, 3]
 						]
 					}, // 水平循环
 					4: {
 						ballCount: 2,
 						positions: [
-							[0, 2],
-							[3, 2]
+							[2, 2],
+							[4, 2]
 						]
 					}, // 垂直循环
 					5: {
@@ -2788,9 +2246,8 @@
 							[6, 3],
 							[6, 4]
 						]
-					} // 编程练习	
+					} // 编程练习
 				}
-
 				const modeParams = this.modeParams[this.selectedMode] || {};
 				this.modeConfig = modeconfig
 				this.frequency = this.initialParams[this.selectedMode].frequency;
@@ -2805,9 +2262,211 @@
 				this.restoreDefaultBallPositions()
 			},
 
+			restoreDefaultBallPositions() {
+				const selectedModeConfig = this.modeConfig[this.selectedMode];
+
+				// 检查是否存在默认位置
+				if (selectedModeConfig && selectedModeConfig.positions) {
+					// 重新设置球的位置为 modeConfig 中的初始位置
+					selectedModeConfig.positions = selectedModeConfig.positions.map(position => [...position]);
+
+					// 更新球的位置显示
+					this.updateBallPositions(this.selectedMode);
+				} else {
+					console.error("未找到默认位置！");
+				}
+			},
+
+			//生成每个模式每个球的默认机器配置参数
+			generateBallConfig() {
+				// 1. 获取当前模式的参数
+				const currentModeParams = this.modeParams[this.selectedMode];
+				if (!currentModeParams) {
+					console.error("未找到当前模式的配置参数");
+					return;
+				}
+
+				// 2. 初始化配置参数数组
+				const machineConfigs = [];
+
+				// 3. 遍历球，生成每个球的配置
+				for (let index = 0; index < this.balls.length; index++) {
+					const ball = this.balls[index];
+					const ballIndex = index;
+
+					if (!currentModeParams[ballIndex]) {
+						console.log(`未找到下标为 ${ballIndex} 的默认参数`);
+						continue;
+					}
+
+					const {
+						speed,
+						serveHeight
+					} = currentModeParams[ballIndex];
+
+					const row = ball.ballIndex[0];
+					const col = ball.ballIndex[1];
+
+					const tableIndex = row * 5 + col; // 转换成一维索引
+
+					const result = this.getRealParams(tableIndex);
+
+					let launchAngle, horizontalAngleDeg, realSpeed, finalMaxHeight;
+
+					if (result) {
+						// 如果 result 不为 null，则使用 result 的值
+						launchAngle = result[0];
+						horizontalAngleDeg = result[1];
+						realSpeed = result[2];
+						finalMaxHeight = result[3];
+					} else {
+						// 如果 result 为 null，则使用默认值 -1
+						launchAngle = -1;
+						horizontalAngleDeg = -1;
+						realSpeed = -1;
+						finalMaxHeight = -1;
+					}
+
+					// 构造当前球的配置对象
+					const config = {
+						launchAngle,
+						horizontalAngleDeg,
+						realSpeed,
+						finalMaxHeight,
+					};
+
+					// 将配置对象添加到数组
+					machineConfigs.push(config);
+				}
+
+				// 4. 更新到 data 并打印
+				this.machineConfigs = machineConfigs;
+			},
+
+			selectDifficulty(difficulty) {
+				if (this.trainingActive) {
+					uni.showToast({
+						title: this.getTranslation('endTrainingFirst'), // 使用国际化的提示文字
+						icon: 'none',
+						duration: 1000
+					});
+					return
+				}
+				this.selectedDifficulty = difficulty; // 更新选中的难度
+				this.updateParametersForMode(this.selectedMode)
+				this.modifyMachineConfigs('updateDifficulty')
+			},
+
+			generateDefaultBallCommand() {
+				// 判断当前模式，根据模式编辑指令
+				// 获取所有球的机器配置
+				let commandStr = ""; // 最终指令字符串
+
+				const mode = this.selectedMode;
+
+				const getServeInterval = (index) =>
+					this.modeParams[this.selectedMode][index].frequency;
+
+				const getMachineConfig = (index) => {
+					const config = this.machineConfigs[index];
+					return {
+						...config,
+						horizontalAngleDeg: Math.round(config.horizontalAngleDeg), // 取整
+						launchAngle: Math.round(config.launchAngle), // 取整
+						realSpeed: Math.round(config.realSpeed), // 取整
+						rotate: this.modeParams[this.selectedMode][index].rotate // 使用原始的 rotate 值
+					};
+				};
+
+				if ([0, 1, 5, 6, 7].includes(mode)) {
+					// 单球模式
+					const config = getMachineConfig(0);
+					const serveInterval = getServeInterval(0);
+					commandStr =
+						`RS_Single=${config.horizontalAngleDeg},${config.launchAngle},${config.realSpeed},${config.rotate},${serveInterval}\n`;
+				}
+
+				// 编程练习（模式2, 3, 4, 9）
+				else if ([2, 3, 4, 9].includes(mode)) {
+					// 筛选需要写指令的球
+					const ballsToUse =
+						mode === 9 ?
+						this.selectedBalls.map((index) => this.balls[index]) :
+						this.balls;
+
+					console.log("ballsToUse", ballsToUse);
+
+					// 遍历所有球，拼接指令
+					const ballCommands = ballsToUse
+						.map((ball, index) => {
+							console.log("index", index);
+
+							// 如果 mode === 9，获取球的原始索引；否则直接使用当前索引
+							const originalIndex = mode === 9 ? this.selectedBalls[index] : index;
+
+							// 使用原始索引获取配置
+							const config = getMachineConfig(originalIndex);
+							const serveInterval = getServeInterval(originalIndex);
+
+							return `${config.horizontalAngleDeg},${config.launchAngle},${config.realSpeed},${config.rotate},${serveInterval}`;
+						})
+						.join(";"); // 使用分号分隔多个球的参数
+
+					commandStr = `RS_Multi=${ballCommands}\n`;
+				}
+
+				// 全场随机（模式8）
+				else if (mode === 8) {
+					const command = {
+						horizontalAngleRange: {
+							min: Math.round(this.AngleHmin), // 取整
+							max: Math.round(this.AngleHMax), // 取整
+						},
+						launchAngleRange: {
+							min: Math.round(this.AngleVmin), // 取整
+							max: Math.round(this.AngleVMax), // 取整
+						},
+						speedRange: {
+							min: this.Vmin,
+							max: this.Vmax,
+						},
+						intervalRange: {
+							min: 1,
+							max: 10,
+						},
+						rotationRange: {
+							min: -100,
+							max: 100,
+						},
+					};
+
+					const heightRange = this.isHeightRandom ?
+						`${command.horizontalAngleRange.min},${command.horizontalAngleRange.max}` :
+						"/* 此处添加非随机情况下的逻辑 */";
+					const frequencyRange = this.isFrequencyRandom ?
+						`${command.intervalRange.min},${command.intervalRange.max}` :
+						serveInterval;
+					const rotationRange = this.isRotateRandom ?
+						`${command.rotationRange.min},${command.rotationRange.max}` :
+						config.rotate;
+
+					commandStr =
+						`RS_Random=${heightRange},${command.launchAngleRange.min},${command.launchAngleRange.max},${command.speedRange.min},${command.speedRange.max},${frequencyRange},${rotationRange}\n`;
+				}
+
+				console.log("Generated command:", commandStr);
+				this.command = commandStr;
+			},
+
+
 			handleFrequencyChange(event) {
 				this.frequency = event.detail.value;
-				this.modeParams[this.selectedMode][this.selectedBall - 1].frequency = event.detail.value
+
+				// 遍历 this.modeParams[this.selectedMode] 中的每个球，并更新其 frequency
+				this.modeParams[this.selectedMode].forEach((ball, index) => {
+					ball.frequency = event.detail.value;
+				});
+
 				// 调整参数后
 				this.generateDefaultBallCommand() // 生成新的指令
 
@@ -2886,7 +2545,7 @@
 				switch (type) {
 					case "updateLauncherPosition": // 修改网球机位置√
 					case "updateDifficulty": // 修改难度√
-						await this.generateBallConfig();
+						this.generateBallConfig();
 						break;
 					case "updateBallPosition": // 添加 selectBalls 的 case
 						// this.modifyBallConfig(); // 调用函数以调整高度
@@ -2898,7 +2557,7 @@
 						this.UIToHeight()
 						break;
 					case "highlightBalls": // 点选网球
-						await this.generateBallConfig();
+						this.generateBallConfig();
 						break;
 					default:
 						console.error("Unknown operation type:", type);
@@ -2907,6 +2566,33 @@
 
 				this.generateDefaultBallCommand()
 
+				if (this.trainingActive) {
+					this.sendBLEData(this.command); // 发送新的指令
+				}
+			},
+
+			// 调整发球高度
+			adjustHeight(change) {
+				this.serveHeight = Math.min(Math.max(this.serveHeight + change, this.Hmin), this.Hmax);
+
+				this.modeParams[this.selectedMode][this.selectedBall - 1].serveHeight = this.serveHeight
+				this.modifyMachineConfigs('updateHeight')
+
+				// 如果已经开始训练，则发送指令
+				if (this.trainingActive) {
+					this.sendBLEData(this.command); // 发送新的指令
+				}
+			},
+
+			//调整速度
+			handleSpeedChange(event) {
+				this.speed = event.detail.value;
+				this.modeParams[this.selectedMode][this.selectedBall - 1].speed = event.detail.value
+
+				// 调整参数后
+				this.modifyMachineConfigs('updateSpeed')
+
+				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
 					this.sendBLEData(this.command); // 发送新的指令
 				}
@@ -2924,11 +2610,77 @@
 					this.currentLanguage = 'zh'; // 中文
 				}
 			},
+			//生成每个模式每个球的默认机器配置参数
+			async generateBallConfig() {
+				// 1. 获取当前模式的参数
+				const currentModeParams = this.modeParams[this.selectedMode];
+				console.log('currentModeParams', currentModeParams)
+				if (!currentModeParams) {
+					console.error("未找到当前模式的配置参数");
+					return;
+				}
+
+				// 2. 初始化配置参数数组
+				const machineConfigs = [];
+
+				// 3. 遍历球，生成每个球的配置
+				for (let index = 0; index < this.balls.length; index++) {
+					const ball = this.balls[index];
+					const ballIndex = index;
+
+					if (!currentModeParams[ballIndex]) {
+						console.log(`未找到下标为 ${ballIndex} 的默认参数`);
+						continue;
+					}
+
+					const {
+						speed,
+						serveHeight
+					} = currentModeParams[ballIndex];
+
+					const row = ball.ballIndex[0];
+					const col = ball.ballIndex[1];
+
+					const tableIndex = row * 5 + col; // 转换成一维索引
+
+					const result = this.getRealParams(tableIndex);
+
+					let launchAngle, horizontalAngleDeg, realSpeed, finalMaxHeight;
+
+					if (result) {
+						// 如果 result 不为 null，则使用 result 的值
+						launchAngle = result[0];
+						horizontalAngleDeg = result[1];
+						realSpeed = result[2];
+						finalMaxHeight = result[3];
+					} else {
+						// 如果 result 为 null，则使用默认值 -1
+						launchAngle = -1;
+						horizontalAngleDeg = -1;
+						realSpeed = -1;
+						finalMaxHeight = -1;
+					}
+
+					// 构造当前球的配置对象
+					const config = {
+						launchAngle,
+						horizontalAngleDeg,
+						realSpeed,
+						finalMaxHeight,
+					};
+
+					// 将配置对象添加到数组
+					machineConfigs.push(config);
+				}
+
+				// 4. 更新到 data 并打印
+				this.machineConfigs = machineConfigs;
+				console.log('machineConfigs', machineConfigs)
+			},
 		},
 
 		onReady() {
 			this.getCourtSize();
-			this.generateBallConfig()
 		},
 
 		mounted() {
@@ -2938,8 +2690,7 @@
 			}
 			this.images = images
 			this.updateParametersForMode(this.selectedMode);
-			// this.getCourtSize();
-			// this.updateBallPositions(0)
+			this.onModeChange(0)
 			this.calculateLauncherPosition()
 			this.setLanguage();
 			// 在组件加载后，确保 DOM 可用
