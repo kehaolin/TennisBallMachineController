@@ -35,8 +35,8 @@ const midlineParameters = {
 			"launchParams": []
 		},
 		{
-			"minH": 20.02,
-			"maxH": 31.89,
+			"minH": 0.27,
+			"maxH": 0.41,
 			"launchParams": [
 				[
 					8,
@@ -919,8 +919,8 @@ const midlineParameters = {
 			"launchParams": []
 		},
 		{
-			"minH": 23.04,
-			"maxH": 43.89,
+			"minH": 0.34,
+			"maxH": 1.23,
 			"launchParams": [
 				[
 					8,
@@ -3166,8 +3166,8 @@ const midlineParameters = {
 			"launchParams": []
 		},
 		{
-			"minH": 29.21,
-			"maxH": 55.64,
+			"minH": 0.43,
+			"maxH": 1.87,
 			"launchParams": [
 				[
 					8,
@@ -5398,8 +5398,8 @@ const midlineParameters = {
 			]
 		},
 		{
-			"minH": 27.95,
-			"maxH": 53.25,
+			"minH": 0.41,
+			"maxH": 1.73,
 			"launchParams": [
 				[
 					8,
@@ -7630,8 +7630,8 @@ const midlineParameters = {
 			]
 		},
 		{
-			"minH": 29.22,
-			"maxH": 55.66,
+			"minH": 0.43,
+			"maxH": 1.87,
 			"launchParams": [
 				[
 					8,
@@ -9872,8 +9872,8 @@ const midlineParameters = {
 			"launchParams": []
 		},
 		{
-			"minH": 32.98,
-			"maxH": 62.81,
+			"minH": 0.49,
+			"maxH": 2.33,
 			"launchParams": [
 				[
 					8,
@@ -12104,8 +12104,8 @@ const midlineParameters = {
 			]
 		},
 		{
-			"minH": 32.12,
-			"maxH": 61.19,
+			"minH": 0.47,
+			"maxH": 2.22,
 			"launchParams": [
 				[
 					8,
@@ -14336,8 +14336,8 @@ const midlineParameters = {
 			]
 		},
 		{
-			"minH": 32.98,
-			"maxH": 62.83,
+			"minH": 0.49,
+			"maxH": 2.33,
 			"launchParams": [
 				[
 					8,
@@ -16578,8 +16578,8 @@ const midlineParameters = {
 			"launchParams": []
 		},
 		{
-			"minH": 36.44,
-			"maxH": 69.4,
+			"minH": 0.56,
+			"maxH": 2.8,
 			"launchParams": [
 				[
 					8,
@@ -18810,8 +18810,8 @@ const midlineParameters = {
 			]
 		},
 		{
-			"minH": 35.81,
-			"maxH": 68.21,
+			"minH": 0.54,
+			"maxH": 2.71,
 			"launchParams": [
 				[
 					8,
@@ -21042,8 +21042,8 @@ const midlineParameters = {
 			]
 		},
 		{
-			"minH": 36.44,
-			"maxH": 69.41,
+			"minH": 0.56,
+			"maxH": 2.8,
 			"launchParams": [
 				[
 					8,
@@ -23279,8 +23279,8 @@ const midlineParameters = {
 			"launchParams": []
 		},
 		{
-			"minH": 41.03,
-			"maxH": 78.15,
+			"minH": 0.65,
+			"maxH": 3.5,
 			"launchParams": [
 				[
 					8,
@@ -25511,8 +25511,8 @@ const midlineParameters = {
 			]
 		},
 		{
-			"minH": 39.68,
-			"maxH": 75.58,
+			"minH": 0.62,
+			"maxH": 3.29,
 			"launchParams": [
 				[
 					8,
@@ -27743,8 +27743,8 @@ const midlineParameters = {
 			]
 		},
 		{
-			"minH": 39.2,
-			"maxH": 74.67,
+			"minH": 0.61,
+			"maxH": 3.21,
 			"launchParams": [
 				[
 					8,
@@ -29975,8 +29975,8 @@ const midlineParameters = {
 			]
 		},
 		{
-			"minH": 39.69,
-			"maxH": 75.59,
+			"minH": 0.63,
+			"maxH": 3.29,
 			"launchParams": [
 				[
 					8,
@@ -32207,8 +32207,8 @@ const midlineParameters = {
 			]
 		},
 		{
-			"minH": 41.04,
-			"maxH": 78.16,
+			"minH": 0.66,
+			"maxH": 3.5,
 			"launchParams": [
 				[
 					8,

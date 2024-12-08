@@ -172,6 +172,7 @@
 		},
 		data() {
 			return {
+				isTrainingInProgress: false,
 				showPrivacyModal: false,
 				privacyChecked: false,
 				minRealSpeed: 20,
@@ -312,7 +313,8 @@
 							endTrainingFirstAgain: '请先结束训练',
 							chooseTennisBallFirst: '请先选择网球',
 							connectBluetoothFirst: '请先连接蓝牙',
-							bluetoothOff: '蓝牙已关闭，请重新打开'
+							bluetoothOff: '蓝牙已关闭，请重新打开',
+							bluetoothOperationFailed: '操作失败，请检查蓝牙' // 新增中文提示
 						},
 						en: {
 							endTrainingFirst: 'Please end the current training first',
@@ -332,7 +334,8 @@
 							bluetoothDisconnectFailed: 'Bluetooth disconnection failed',
 							endTrainingFirstAgain: 'Please end the training first',
 							chooseTennisBallFirst: 'chooseTennisBallFirst',
-							connectBluetoothFirst: 'Please connect Bluetooth first'
+							connectBluetoothFirst: 'Please connect Bluetooth first',
+							bluetoothOperationFailed: 'Operation failed, please check Bluetooth' // 新增英文提示
 						}
 					},
 					meter: {
@@ -905,7 +908,7 @@
 			},
 			// 用户点击隐私协议链接时，打开 WebView 页面
 			openPrivacyPolicy() {
-				const url = 'https://www.baidu.com'; // 临时使用百度链接
+				const url = 'http://app.tenniserve.net/privacyPolicy.html'; // 临时使用百度链接
 				uni.navigateTo({
 					url: '/pages/webview/webview?url=' + encodeURIComponent(url) // 传递 URL 参数
 				});
@@ -1154,7 +1157,20 @@
 
 				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
-					this.sendBLEData(this.command); // 发送新的指令
+					this.sendBLEData(this.command, (responseData) => {
+						// 判断蓝牙返回的数据是否包含 'ok'
+						if (responseData.includes('ok')) {
+							console.log('指令发送成功');
+						} else {
+							// 如果返回的数据不包含 'ok'，弹出提示框
+							uni.showToast({
+								title: this.getTranslation('bluetoothOperationFailed'),
+								icon: 'none',
+								duration: 2000
+							});
+							console.log('指令发送失败，返回数据格式错误:', responseData);
+						}
+					});
 				}
 			},
 
@@ -1172,7 +1188,20 @@
 
 				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
-					this.sendBLEData(this.command); // 发送新的指令
+					this.sendBLEData(this.command, (responseData) => {
+						// 判断蓝牙返回的数据是否包含 'ok'
+						if (responseData.includes('ok')) {
+							console.log('指令发送成功');
+						} else {
+							// 如果返回的数据不包含 'ok'，弹出提示框
+							uni.showToast({
+								title: this.getTranslation('bluetoothOperationFailed'),
+								icon: 'none',
+								duration: 2000
+							});
+							console.log('指令发送失败，返回数据格式错误:', responseData);
+						}
+					});
 				}
 			},
 
@@ -1190,7 +1219,20 @@
 
 				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
-					this.sendBLEData(this.command); // 发送新的指令
+					this.sendBLEData(this.command, (responseData) => {
+						// 判断蓝牙返回的数据是否包含 'ok'
+						if (responseData.includes('ok')) {
+							console.log('指令发送成功');
+						} else {
+							// 如果返回的数据不包含 'ok'，弹出提示框
+							uni.showToast({
+								title: this.getTranslation('bluetoothOperationFailed'),
+								icon: 'none',
+								duration: 2000
+							});
+							console.log('指令发送失败，返回数据格式错误:', responseData);
+						}
+					});
 				}
 			},
 
@@ -1415,53 +1457,6 @@
 				}
 			},
 
-			getCurBallInfo(tableIndex) {
-				const tableMapping = this.tableMapping;
-				const selectedTable = tableMapping[this.selectedLauncherPosition];
-
-				if (!selectedTable) {
-					console.error("选定的位置无效");
-					return;
-				}
-
-				// let tableIndex = this.getCurBallIndex()
-
-				const ballData = selectedTable[tableIndex];
-
-				return {
-					minH: ballData.minH,
-					maxH: ballData.maxH,
-					launchParams: ballData.launchParams
-				};
-			},
-
-			getCurBallIndex() {
-				let tableIndex;
-				if (this.selectedMode === 9) {
-					const ballIndex = this.selectedBalls.length - 1;
-					if (this.balls[ballIndex]) {
-						const row = this.balls[ballIndex].ballIndex[0];
-						const col = this.balls[ballIndex].ballIndex[1];
-						tableIndex = row * 5 + col;
-					}
-				} else if ([2, 3, 4].includes(this.selectedMode)) {
-					const ballIndex = this.selectedBall - 1;
-					if (this.balls[ballIndex]) {
-						const row = this.balls[ballIndex].ballIndex[0];
-						const col = this.balls[ballIndex].ballIndex[1];
-						tableIndex = row * 5 + col;
-					}
-				} else {
-					if (this.balls[0]) {
-						const row = this.balls[0].ballIndex[0];
-						const col = this.balls[0].ballIndex[1];
-						tableIndex = row * 5 + col;
-					}
-				}
-
-				return tableIndex
-			},
-
 			updateParametersForMode(modeIndex) {
 				// 定义每个模式的默认参数
 				const modeParams = this.modeParams;
@@ -1590,6 +1585,9 @@
 				const intervalCounts = 10
 				const i = this.serveHeight
 
+				console.log('最小高度', minH)
+				console.log('最大高度', maxH)
+
 				if (minH == 10000 && maxH == -10000)
 					return null;
 				let step = (maxH - minH) / intervalCounts;
@@ -1598,6 +1596,88 @@
 				console.log('realHeight', realHeight)
 				//根据真实高度值找到真实速度值
 				this.heightToSpeed(realHeight, launchParams)
+			},
+
+			heightToSpeed(realHeight, launchParams) {
+				//根据真实高度找到真实速度
+				let closestSpeed = null;
+				let closestParam = null;
+
+				// 初始化最大值和最小值
+				let maxSpeed = -Infinity;
+				let minSpeed = Infinity;
+
+				let closestIndex = -1; // 用于记录 closestParam 的索引
+				let epsilon = 100000;
+
+				for (let i = 0; i < launchParams.length; i++) {
+					let curParam = launchParams[i];
+					let delta = Math.abs(realHeight - curParam[3]);
+
+
+					// 更新最大值和最小值
+					if (curParam[2] > maxSpeed) maxSpeed = curParam[2];
+					if (curParam[2] < minSpeed) minSpeed = curParam[2];
+
+					if (delta < epsilon) {
+						closestSpeed = curParam[2]; //假设下标3是高度
+						closestParam = curParam;
+						closestIndex = i; // 记录当前索引
+						epsilon = delta;
+					}
+				}
+
+				this.speed = Math.round(closestSpeed);
+				this.minRealSpeed = Math.round(minSpeed);
+				this.maxRealSpeed = Math.round(maxSpeed);
+
+				console.log('closestParam', closestParam)
+				this.updateBallConfig(closestParam)
+			},
+
+			getCurBallIndex() {
+				let tableIndex;
+				if (this.selectedMode === 9) {
+					const ballIndex = this.selectedBalls.length - 1;
+					if (this.balls[ballIndex]) {
+						const row = this.balls[ballIndex].ballIndex[0];
+						const col = this.balls[ballIndex].ballIndex[1];
+						tableIndex = row * 5 + col;
+					}
+				} else if ([2, 3, 4].includes(this.selectedMode)) {
+					const ballIndex = this.selectedBall - 1;
+					if (this.balls[ballIndex]) {
+						const row = this.balls[ballIndex].ballIndex[0];
+						const col = this.balls[ballIndex].ballIndex[1];
+						tableIndex = row * 5 + col;
+					}
+				} else {
+					if (this.balls[0]) {
+						const row = this.balls[0].ballIndex[0];
+						const col = this.balls[0].ballIndex[1];
+						tableIndex = row * 5 + col;
+					}
+				}
+
+				return tableIndex
+			},
+
+			getCurBallInfo(tableIndex) {
+				const tableMapping = this.tableMapping;
+				const selectedTable = tableMapping[this.selectedLauncherPosition];
+
+				if (!selectedTable) {
+					console.error("选定的位置无效");
+					return;
+				}
+
+				const ballData = selectedTable[tableIndex];
+
+				return {
+					minH: ballData.minH,
+					maxH: ballData.maxH,
+					launchParams: ballData.launchParams
+				};
 			},
 
 			getRealParams(tableIndex) {
@@ -1641,43 +1721,6 @@
 				this.realHeight = Math.round(closestHeight)
 
 				return closestParam
-			},
-
-			heightToSpeed(realHeight, launchParams) {
-				//根据真实高度找到真实速度
-				let closestSpeed = null;
-				let closestParam = null;
-
-				// 初始化最大值和最小值
-				let maxSpeed = -Infinity;
-				let minSpeed = Infinity;
-
-				let closestIndex = -1; // 用于记录 closestParam 的索引
-				let epsilon = 100000;
-
-				for (let i = 0; i < launchParams.length; i++) {
-					let curParam = launchParams[i];
-					let delta = Math.abs(realHeight - curParam[3]);
-
-
-					// 更新最大值和最小值
-					if (curParam[2] > maxSpeed) maxSpeed = curParam[2];
-					if (curParam[2] < minSpeed) minSpeed = curParam[2];
-
-					if (delta < epsilon) {
-						closestSpeed = curParam[2]; //假设下标3是高度
-						closestParam = curParam;
-						closestIndex = i; // 记录当前索引
-						epsilon = delta;
-					}
-				}
-
-				this.speed = Math.round(closestSpeed);
-				this.minRealSpeed = Math.round(minSpeed);
-				this.maxRealSpeed = Math.round(maxSpeed);
-
-				console.log('closestParam', closestParam)
-				this.updateBallConfig(closestParam)
 			},
 
 			getBallDefaultSpeedAndHeight(tableIndex) {
@@ -1796,7 +1839,8 @@
 
 				let step = (maxH - minH) / intervalCounts;
 
-				this.serveHeight = Math.floor((h - minH) / step) + 1
+				// this.serveHeight = Math.floor((h - minH) / step) + 1
+				this.serveHeight = Math.min(Math.floor((h - minH) / step) + 1, 10);
 			},
 
 			updateBallConfig(params) {
@@ -2069,20 +2113,29 @@
 				}
 
 				if (!this.trainingActive) {
+					// 如果当前有训练正在进行，不允许再次启动
+					if (this.isTrainingInProgress) {
+						uni.showToast({
+							title: this.getTranslation('operationInProgress'),
+							icon: 'none',
+							duration: 1000
+						});
+						return;
+					}
+
+					// 设置当前操作为进行中
+					this.isTrainingInProgress = true;
+
 					// 发送训练参数
 					this.sendBLEData(this.command, (response) => {
 						// 检查返回的响应是否包含 "ok"
 						if (response.includes('ok')) {
-							console.log('成功收到确认响应');
-							// 继续进行后续操作
 							this.trainingActive = true;
 							this.buttonText = this.translations.endTraining[this.currentLanguage];
 							this.buttonColor = 'rgba(232, 95, 95, 1)'; // 训练中按钮颜色
 							this.modeSelectable = false; // 禁用模式选择
-							// 确定发球顺序
-							this.determineServingOrder();
+							this.determineServingOrder(); // 确定发球顺序
 						} else {
-							// 如果返回的数据不包含 "ok"，显示提示
 							uni.showToast({
 								title: this.getTranslation('bluetoothResponseError'),
 								icon: 'none',
@@ -2090,37 +2143,53 @@
 							});
 							this.trainingActive = false;
 						}
+
+						// 结束时，重置操作标志
+						this.isTrainingInProgress = false;
 					});
-
-					// 设置一个超时机制，防止长时间未收到响应
-					this.timeoutId = setTimeout(() => {
-						if (this.trainingActive) {
-							uni.showToast({
-								title: this.getTranslation('bluetoothTimeout'),
-								icon: 'none',
-								duration: 1000
-							});
-							this.trainingActive = false; // 停止训练
-						}
-					}, 5000); // 设定超时为5秒
-
 				} else {
-					this.endTraining()
+					this.endTraining();
 				}
 			},
+
+			// endTraining() {
+			// 	this.trainingActive = false;
+			// 	this.buttonText = this.translations.startTraining[this.currentLanguage];
+			// 	this.buttonColor = '#87ceeb'; // 结束训练按钮颜色
+			// 	this.modeSelectable = true; // 启用模式选择		
+			// 	this.resetToInitialValues(); // 恢复初始值
+			// 	// this.generateDefaultBallCommand() // 发送结束参数
+			// 	if (this.selectedMode === 9) {
+			// 		this.clearInputData()
+			// 	}
+			// 	this.sendBLEData('RS_Stop=1\n')
+			// },
 
 			endTraining() {
-				this.trainingActive = false;
-				this.buttonText = this.translations.startTraining[this.currentLanguage];
-				this.buttonColor = '#87ceeb'; // 结束训练按钮颜色
-				this.modeSelectable = true; // 启用模式选择		
-				this.resetToInitialValues(); // 恢复初始值
-				// this.generateDefaultBallCommand() // 发送结束参数
-				if (this.selectedMode === 9) {
-					this.clearInputData()
-				}
-				this.sendBLEData('RS_Stop=1\n')
+				// 发送停止训练指令
+				this.sendBLEData('RS_Stop=1\n', (responseData) => {
+					// 判断蓝牙返回的数据是否包含 'ok'
+					if (responseData.includes('ok')) {
+						// 停止训练成功，执行后续操作
+						this.trainingActive = false;
+						this.buttonText = this.translations.startTraining[this.currentLanguage];
+						this.buttonColor = '#87ceeb'; // 结束训练按钮颜色
+						this.modeSelectable = true; // 启用模式选择		
+						this.resetToInitialValues(); // 恢复初始值
+
+						// 如果是入门练习模式（模式 9），清除输入数据
+						if (this.selectedMode === 9) {
+							this.clearInputData();
+						}
+
+						console.log('训练已成功停止');
+					} else {
+						// 如果返回数据不包含 'ok'，打印错误
+						console.log('停止训练失败，返回数据格式错误:', responseData);
+					}
+				});
 			},
+
 
 			onModeChange(mode) {
 				const index = mode
@@ -2472,8 +2541,22 @@
 
 				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
-					this.sendBLEData(this.command); // 发送新的指令
+					this.sendBLEData(this.command, (responseData) => {
+						// 判断蓝牙返回的数据是否包含 'ok'
+						if (responseData.includes('ok')) {
+							console.log('指令发送成功');
+						} else {
+							// 如果返回的数据不包含 'ok'，弹出提示框
+							uni.showToast({
+								title: this.getTranslation('bluetoothOperationFailed'),
+								icon: 'none',
+								duration: 2000
+							});
+							console.log('指令发送失败，返回数据格式错误:', responseData);
+						}
+					});
 				}
+
 			},
 			handleRotateChange(event) {
 				this.rotate = event.detail.value;
@@ -2483,7 +2566,20 @@
 
 				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
-					this.sendBLEData(this.command); // 发送新的指令
+					this.sendBLEData(this.command, (responseData) => {
+						// 判断蓝牙返回的数据是否包含 'ok'
+						if (responseData.includes('ok')) {
+							console.log('指令发送成功');
+						} else {
+							// 如果返回的数据不包含 'ok'，弹出提示框
+							uni.showToast({
+								title: this.getTranslation('bluetoothOperationFailed'),
+								icon: 'none',
+								duration: 2000
+							});
+							console.log('指令发送失败，返回数据格式错误:', responseData);
+						}
+					});
 				}
 			},
 
@@ -2566,9 +2662,25 @@
 
 				this.generateDefaultBallCommand()
 
+				// 如果已经开始训练，则发送指令
 				if (this.trainingActive) {
-					this.sendBLEData(this.command); // 发送新的指令
+					this.sendBLEData(this.command, (responseData) => {
+						// 判断蓝牙返回的数据是否包含 'ok'
+						if (responseData.includes('ok')) {
+							console.log('指令发送成功');
+						} else {
+							// 如果返回的数据不包含 'ok'，弹出提示框
+							uni.showToast({
+								title: this.getTranslation('bluetoothOperationFailed'),
+								icon: 'none',
+								duration: 2000
+							});
+
+							console.log('指令发送失败，返回数据格式错误:', responseData);
+						}
+					});
 				}
+
 			},
 
 			// 调整发球高度
@@ -2577,11 +2689,6 @@
 
 				this.modeParams[this.selectedMode][this.selectedBall - 1].serveHeight = this.serveHeight
 				this.modifyMachineConfigs('updateHeight')
-
-				// 如果已经开始训练，则发送指令
-				if (this.trainingActive) {
-					this.sendBLEData(this.command); // 发送新的指令
-				}
 			},
 
 			//调整速度
@@ -2591,11 +2698,6 @@
 
 				// 调整参数后
 				this.modifyMachineConfigs('updateSpeed')
-
-				// 如果已经开始训练，则发送指令
-				if (this.trainingActive) {
-					this.sendBLEData(this.command); // 发送新的指令
-				}
 			},
 
 			setLanguage() {

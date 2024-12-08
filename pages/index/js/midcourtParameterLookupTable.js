@@ -5,8 +5,8 @@ const midcourtParameters = {
 			"launchParams": []
 		},
 		{
-			"minH": 33.05,
-			"maxH": 42.51,
+			"minH": 0.91,
+			"maxH": 2.34,
 			"launchParams": [
 				[
 					18.6,
@@ -1601,8 +1601,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 32.21,
-			"maxH": 40.6,
+			"minH": 0.91,
+			"maxH": 2.23,
 			"launchParams": [
 				[
 					19.5,
@@ -3143,8 +3143,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 33.06,
-			"maxH": 42.52,
+			"minH": 0.91,
+			"maxH": 2.34,
 			"launchParams": [
 				[
 					18.6,
@@ -4749,8 +4749,8 @@ const midcourtParameters = {
 			"launchParams": []
 		},
 		{
-			"minH": 36.51,
-			"maxH": 50.29,
+			"minH": 0.94,
+			"maxH": 2.81,
 			"launchParams": [
 				[
 					15.9,
@@ -6507,8 +6507,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 35.89,
-			"maxH": 48.76,
+			"minH": 0.94,
+			"maxH": 2.72,
 			"launchParams": [
 				[
 					16.4,
@@ -8235,8 +8235,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 36.51,
-			"maxH": 50.3,
+			"minH": 0.94,
+			"maxH": 2.81,
 			"launchParams": [
 				[
 					15.9,
@@ -9998,8 +9998,8 @@ const midcourtParameters = {
 			"launchParams": []
 		},
 		{
-			"minH": 41.04,
-			"maxH": 60.92,
+			"minH": 0.99,
+			"maxH": 3.5,
 			"launchParams": [
 				[
 					13.5,
@@ -11900,8 +11900,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 39.7,
-			"maxH": 57.2,
+			"minH": 0.99,
+			"maxH": 3.29,
 			"launchParams": [
 				[
 					14.4,
@@ -13748,8 +13748,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 39.22,
-			"maxH": 55.81,
+			"minH": 0.99,
+			"maxH": 3.21,
 			"launchParams": [
 				[
 					14.8,
@@ -15572,8 +15572,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 39.7,
-			"maxH": 57.2,
+			"minH": 0.99,
+			"maxH": 3.29,
 			"launchParams": [
 				[
 					14.4,
@@ -17420,8 +17420,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 41.05,
-			"maxH": 60.93,
+			"minH": 0.99,
+			"maxH": 3.5,
 			"launchParams": [
 				[
 					13.5,
@@ -19322,8 +19322,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 43.77,
-			"maxH": 66.35,
+			"minH": 1.05,
+			"maxH": 3.96,
 			"launchParams": [
 				[
 					12.9,
@@ -21260,8 +21260,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 42.68,
-			"maxH": 63.12,
+			"minH": 1.06,
+			"maxH": 3.77,
 			"launchParams": [
 				[
 					13.6,
@@ -23156,8 +23156,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 42.29,
-			"maxH": 62.14,
+			"minH": 1.05,
+			"maxH": 3.71,
 			"launchParams": [
 				[
 					13.8,
@@ -25040,8 +25040,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 42.68,
-			"maxH": 63.13,
+			"minH": 1.06,
+			"maxH": 3.77,
 			"launchParams": [
 				[
 					13.6,
@@ -26936,8 +26936,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 43.78,
-			"maxH": 66.36,
+			"minH": 1.05,
+			"maxH": 3.96,
 			"launchParams": [
 				[
 					12.9,
@@ -28874,8 +28874,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 46.39,
-			"maxH": 71.36,
+			"minH": 1.13,
+			"maxH": 4.42,
 			"launchParams": [
 				[
 					12.5,
@@ -30836,8 +30836,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 45.47,
-			"maxH": 68.68,
+			"minH": 1.13,
+			"maxH": 4.26,
 			"launchParams": [
 				[
 					13,
@@ -32768,8 +32768,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 45.16,
-			"maxH": 67.96,
+			"minH": 1.12,
+			"maxH": 4.2,
 			"launchParams": [
 				[
 					13.1,
@@ -34694,8 +34694,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 45.48,
-			"maxH": 68.69,
+			"minH": 1.13,
+			"maxH": 4.26,
 			"launchParams": [
 				[
 					13,
@@ -36626,8 +36626,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 46.39,
-			"maxH": 71.36,
+			"minH": 1.13,
+			"maxH": 4.42,
 			"launchParams": [
 				[
 					12.5,
@@ -38588,8 +38588,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 48.89,
-			"maxH": 76.37,
+			"minH": 1.2,
+			"maxH": 4.89,
 			"launchParams": [
 				[
 					12.1,
@@ -40574,8 +40574,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 48.12,
-			"maxH": 74.02,
+			"minH": 1.2,
+			"maxH": 4.74,
 			"launchParams": [
 				[
 					12.5,
@@ -42536,8 +42536,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 47.85,
-			"maxH": 73.06,
+			"minH": 1.2,
+			"maxH": 4.69,
 			"launchParams": [
 				[
 					12.7,
@@ -44486,8 +44486,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 48.12,
-			"maxH": 74.02,
+			"minH": 1.2,
+			"maxH": 4.74,
 			"launchParams": [
 				[
 					12.5,
@@ -46448,8 +46448,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 48.9,
-			"maxH": 76.37,
+			"minH": 1.2,
+			"maxH": 4.89,
 			"launchParams": [
 				[
 					12.1,
@@ -48434,8 +48434,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 51.33,
-			"maxH": 80.81,
+			"minH": 1.28,
+			"maxH": 5.37,
 			"launchParams": [
 				[
 					11.9,
@@ -50432,8 +50432,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 50.67,
-			"maxH": 78.83,
+			"minH": 1.28,
+			"maxH": 5.24,
 			"launchParams": [
 				[
 					12.2,
@@ -52412,8 +52412,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 50.44,
-			"maxH": 78.18,
+			"minH": 1.28,
+			"maxH": 5.19,
 			"launchParams": [
 				[
 					12.3,
@@ -54386,8 +54386,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 50.67,
-			"maxH": 78.84,
+			"minH": 1.28,
+			"maxH": 5.24,
 			"launchParams": [
 				[
 					12.2,
@@ -56366,8 +56366,8 @@ const midcourtParameters = {
 			]
 		},
 		{
-			"minH": 51.34,
-			"maxH": 80.82,
+			"minH": 1.28,
+			"maxH": 5.37,
 			"launchParams": [
 				[
 					11.9,
