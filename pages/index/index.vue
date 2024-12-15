@@ -732,14 +732,15 @@
 					}],
 					// 编程练习
 					[
-						...Array(35).fill({
+						...Array(35).fill(null).map(() => ({
 							frequency: 6, // 默认发球频率
 							speed: 50, // 默认发球速度
 							rotate: 0, // 默认旋转
 							heights: '', // 默认高度信息
 							serveHeight: 5 // 默认发球高度
-						})
+						}))
 					]
+
 				],
 				machineConfigs: {},
 				modeSettings: {
@@ -1331,58 +1332,46 @@
 				return displayableBalls.findIndex(ball => ball === this.balls[index]);
 			},
 
-			handleBallInteraction(index) {
-				console.log('被点击的球序号', index);
+			getRealParams(tableIndex) {
+				const {
+					minH,
+					maxH,
+					launchParams
+				} = this.getCurBallInfo(tableIndex)
 
-				// 如果训练正在进行中，则禁止操作
-				if (this.trainingActive) {
-					uni.showToast({
-						title: this.getTranslation('endTrainingFirstAgain'),
-						icon: 'none',
-						duration: 1000
-					});
-					return;
+				if (minH == 10000 && maxH == -10000)
+					return null
+
+				// 初始化最大值和最小值
+				let maxSpeed = -Infinity;
+				let minSpeed = Infinity;
+
+				let closestHeight = null;
+				let closestParam = null;
+				let closestIndex = -1; // 用于记录 closestParam 的索引
+				let epsilon = 100000;
+
+				for (let i = 0; i < launchParams.length; i++) {
+					let curParam = launchParams[i];
+					let delta = Math.abs(this.speed - curParam[2]);
+
+					// 更新最大值和最小值
+					if (curParam[2] > maxSpeed) maxSpeed = curParam[2];
+					if (curParam[2] < minSpeed) minSpeed = curParam[2];
+
+					if (delta < epsilon) {
+						closestHeight = curParam[3]; //假设下标3是高度
+						closestParam = curParam;
+						closestIndex = i; // 记录当前索引
+						epsilon = delta;
+					}
 				}
-
-				// 确保只有在模式9下生效
-				if (this.selectedMode !== 9) return;
-
-				// 获取当前点击的球
-				const ball = this.balls[index];
-
-				// 仅当球可以展示时才进行交互
-				if (!ball.canDisplay) {
-					console.log('该球不可交互');
-					return; // 如果球不可交互，直接返回
-				}
-
-				// 如果球是灰色，点击后变为黄色
-				if (ball.color === 'gray') {
-					this.$set(this.balls, index, {
-						...ball,
-						color: 'yellow'
-					});
-					// 将球的真实下标存入 selectedBalls
-					this.selectedBalls.push(index); // 使用原始 index
-				} else {
-					// 如果球是黄色，点击后变为灰色
-					this.$set(this.balls, index, {
-						...ball,
-						color: 'gray'
-					});
-					// 从 selectedBalls 中移除该球的真实下标
-					this.selectedBalls = this.selectedBalls.filter(ballIndex => ballIndex !== index);
-				}
-
-				// 使用 getDisplayableIndex 获取展示序号并加1
-				this.inputData = this.selectedBalls
-					.map(realIndex => this.getDisplayableIndex(realIndex) + 1) // 获取展示序号
-					.join(',');
-
-				this.updateParametersForMode(this.selectedMode)
-				this.modifyMachineConfigs('highlightBalls')
+				this.minRealSpeed = Math.round(minSpeed);
+				this.maxRealSpeed = Math.round(maxSpeed);
+				this.speed = Math.round(closestParam[2]);
+				this.realHeight = Math.round(closestHeight)
+				return closestParam
 			},
-
 
 			clearInputData() {
 				if (this.trainingActive) {
@@ -1680,48 +1669,7 @@
 				};
 			},
 
-			getRealParams(tableIndex) {
-				const {
-					minH,
-					maxH,
-					launchParams
-				} = this.getCurBallInfo(tableIndex)
 
-				if (minH == 10000 && maxH == -10000)
-					return null
-
-				// 初始化最大值和最小值
-				let maxSpeed = -Infinity;
-				let minSpeed = Infinity;
-
-				let closestHeight = null;
-				let closestParam = null;
-				let closestIndex = -1; // 用于记录 closestParam 的索引
-				let epsilon = 100000;
-
-				for (let i = 0; i < launchParams.length; i++) {
-					let curParam = launchParams[i];
-					let delta = Math.abs(this.speed - curParam[2]);
-
-					// 更新最大值和最小值
-					if (curParam[2] > maxSpeed) maxSpeed = curParam[2];
-					if (curParam[2] < minSpeed) minSpeed = curParam[2];
-
-					if (delta < epsilon) {
-						closestHeight = curParam[3]; //假设下标3是高度
-						closestParam = curParam;
-						closestIndex = i; // 记录当前索引
-						epsilon = delta;
-					}
-				}
-				this.minRealSpeed = Math.round(minSpeed);
-				this.maxRealSpeed = Math.round(maxSpeed);
-				this.speed = Math.round(closestParam[2]);
-				// this.realHeight = Number(closestHeight.toFixed(2));
-				this.realHeight = Math.round(closestHeight)
-
-				return closestParam
-			},
 
 			getBallDefaultSpeedAndHeight(tableIndex) {
 				// 获取当前球的参数
@@ -2346,72 +2294,6 @@
 				}
 			},
 
-			//生成每个模式每个球的默认机器配置参数
-			generateBallConfig() {
-				// 1. 获取当前模式的参数
-				const currentModeParams = this.modeParams[this.selectedMode];
-				if (!currentModeParams) {
-					console.error("未找到当前模式的配置参数");
-					return;
-				}
-
-				// 2. 初始化配置参数数组
-				const machineConfigs = [];
-
-				// 3. 遍历球，生成每个球的配置
-				for (let index = 0; index < this.balls.length; index++) {
-					const ball = this.balls[index];
-					const ballIndex = index;
-
-					if (!currentModeParams[ballIndex]) {
-						console.log(`未找到下标为 ${ballIndex} 的默认参数`);
-						continue;
-					}
-
-					const {
-						speed,
-						serveHeight
-					} = currentModeParams[ballIndex];
-
-					const row = ball.ballIndex[0];
-					const col = ball.ballIndex[1];
-
-					const tableIndex = row * 5 + col; // 转换成一维索引
-
-					const result = this.getRealParams(tableIndex);
-
-					let launchAngle, horizontalAngleDeg, realSpeed, finalMaxHeight;
-
-					if (result) {
-						// 如果 result 不为 null，则使用 result 的值
-						launchAngle = result[0];
-						horizontalAngleDeg = result[1];
-						realSpeed = result[2];
-						finalMaxHeight = result[3];
-					} else {
-						// 如果 result 为 null，则使用默认值 -1
-						launchAngle = -1;
-						horizontalAngleDeg = -1;
-						realSpeed = -1;
-						finalMaxHeight = -1;
-					}
-
-					// 构造当前球的配置对象
-					const config = {
-						launchAngle,
-						horizontalAngleDeg,
-						realSpeed,
-						finalMaxHeight,
-					};
-
-					// 将配置对象添加到数组
-					machineConfigs.push(config);
-				}
-
-				// 4. 更新到 data 并打印
-				this.machineConfigs = machineConfigs;
-			},
-
 			selectDifficulty(difficulty) {
 				if (this.trainingActive) {
 					uni.showToast({
@@ -2433,8 +2315,10 @@
 
 				const mode = this.selectedMode;
 
-				const getServeInterval = (index) =>
-					this.modeParams[this.selectedMode][index].frequency;
+				const getServeInterval = (index) => {
+					const frequency = this.modeParams[this.selectedMode][index].frequency;
+					return frequency; // 返回 frequency
+				};
 
 				const getMachineConfig = (index) => {
 					const config = this.machineConfigs[index];
@@ -2463,12 +2347,9 @@
 						this.selectedBalls.map((index) => this.balls[index]) :
 						this.balls;
 
-					console.log("ballsToUse", ballsToUse);
-
 					// 遍历所有球，拼接指令
 					const ballCommands = ballsToUse
 						.map((ball, index) => {
-							console.log("index", index);
 
 							// 如果 mode === 9，获取球的原始索引；否则直接使用当前索引
 							const originalIndex = mode === 9 ? this.selectedBalls[index] : index;
@@ -2556,11 +2437,76 @@
 						}
 					});
 				}
-
 			},
+
+			handleBallInteraction(index) {
+				this.getRealParams(index)
+
+				// 如果训练正在进行中，则禁止操作
+				if (this.trainingActive) {
+					uni.showToast({
+						title: this.getTranslation('endTrainingFirstAgain'),
+						icon: 'none',
+						duration: 1000
+					});
+					return;
+				}
+
+				// 确保只有在模式9下生效
+				if (this.selectedMode !== 9) return;
+
+				// 获取当前点击的球
+				const ball = this.balls[index];
+
+				// 仅当球可以展示时才进行交互
+				if (!ball.canDisplay) {
+					console.log('该球不可交互');
+					return; // 如果球不可交互，直接返回
+				}
+
+				// 如果球是灰色，点击后变为黄色
+				if (ball.color === 'gray') {
+					this.$set(this.balls, index, {
+						...ball,
+						color: 'yellow'
+					});
+					// 将球的真实下标存入 selectedBalls
+					this.selectedBalls.push(index); // 使用原始 index
+				} else {
+					// 如果球是黄色，点击后变为灰色
+					this.$set(this.balls, index, {
+						...ball,
+						color: 'gray'
+					});
+					// 从 selectedBalls 中移除该球的真实下标
+					this.selectedBalls = this.selectedBalls.filter(ballIndex => ballIndex !== index);
+				}
+
+				// 使用 getDisplayableIndex 获取展示序号并加1
+				this.inputData = this.selectedBalls
+					.map(realIndex => this.getDisplayableIndex(realIndex) + 1) // 获取展示序号
+					.join(',');
+
+				// this.updateParametersForMode(this.selectedMode)
+				// this.modifyMachineConfigs('highlightBalls')
+			},
+
 			handleRotateChange(event) {
 				this.rotate = event.detail.value;
-				this.modeParams[this.selectedMode][this.selectedBall - 1].rotate = event.detail.value
+
+				if (this.selectedMode === 9) {
+					// 获取最后一个选中的球的序号
+					let lastSelectedBallIndex = this.selectedBalls[this.selectedBalls.length - 1];
+					if (lastSelectedBallIndex !== undefined) {
+						this.modeParams[this.selectedMode][lastSelectedBallIndex].rotate = event.detail.value;
+					}
+				} else {
+					// 对其他模式，更新指定球的 rotate 属性
+					this.modeParams[this.selectedMode][this.selectedBall - 1].rotate = event.detail.value;
+				}
+
+				console.log(this.modeParams[this.selectedMode])
+
 				// 调整参数后
 				this.generateDefaultBallCommand() // 生成新的指令
 
@@ -2653,7 +2599,7 @@
 						this.UIToHeight()
 						break;
 					case "highlightBalls": // 点选网球
-						this.generateBallConfig();
+						// this.generateBallConfig();
 						break;
 					default:
 						console.error("Unknown operation type:", type);
@@ -2694,7 +2640,11 @@
 			//调整速度
 			handleSpeedChange(event) {
 				this.speed = event.detail.value;
-				this.modeParams[this.selectedMode][this.selectedBall - 1].speed = event.detail.value
+				if (this.selectedMode === 9) {
+					this.modeParams[this.selectedMode][this.selectedBalls.length - 1].speed = event.detail.value
+				} else {
+					this.modeParams[this.selectedMode][this.selectedBall - 1].speed = event.detail.value
+				}
 
 				// 调整参数后
 				this.modifyMachineConfigs('updateSpeed')
@@ -2716,7 +2666,6 @@
 			async generateBallConfig() {
 				// 1. 获取当前模式的参数
 				const currentModeParams = this.modeParams[this.selectedMode];
-				console.log('currentModeParams', currentModeParams)
 				if (!currentModeParams) {
 					console.error("未找到当前模式的配置参数");
 					return;
@@ -2777,7 +2726,6 @@
 
 				// 4. 更新到 data 并打印
 				this.machineConfigs = machineConfigs;
-				console.log('machineConfigs', machineConfigs)
 			},
 		},
 
