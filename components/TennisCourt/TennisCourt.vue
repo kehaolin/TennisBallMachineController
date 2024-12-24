@@ -9,7 +9,10 @@
 			</div>
 		</div>
 
-		<img ref="courtImage" class="tennis-court2" :src="images.tennisCourt2" alt="Tennis Court" />
+		<img ref="courtImage" class="tennis-court2" :src="selectedLauncherPosition === 'Baseline' ? images.tennisCourt2_1 
+	       : selectedLauncherPosition === 'Midline' ? images.tennisCourt2_2 
+	       : images.tennisCourt2_3" alt="Tennis Court" />
+
 
 		<!-- 网球容器 -->
 		<view class="ball" v-for="(ball, index) in balls" :key="index" :style="getBallPosition(index)"
@@ -30,6 +33,7 @@
 			images: Object, // 图片资源
 			launcherTop: String, // 发球机的位置
 			showBallNumbers: Boolean, // 是否显示球的序号
+			selectedLauncherPosition: String
 		},
 		methods: {
 			getBallPosition(index) {

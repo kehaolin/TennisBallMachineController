@@ -12,22 +12,32 @@ export default {
 			isManualDisconnect: false,
 			reconnecting: false,
 			pendingCommand: null,
-			batteryTimer: null
+			batteryTimer: null,
+			hasShownPermissionDialog: false
 		};
 	},
 	methods: {
 		openBluetoothPopup() {
-			this.showBluetoothPopup = true;
-			this.openBluetoothAdapter();
+			this.showBluetoothPopup = true; // 显示蓝牙弹窗
+			if (!this.hasShownPermissionDialog) {
+				// 如果未展示过权限声明弹窗，则显示并设置标记
+				this.showLocationPermissionDialog(() => {
+					this.hasShownPermissionDialog = true; // 标记为已展示
+					this.openBluetoothAdapter();
+				});
+			} else {
+				// 已展示过权限声明弹窗，直接初始化蓝牙
+				this.openBluetoothAdapter();
+			}
 		},
 
-		//初始化蓝牙
+		// 初始化蓝牙
 		openBluetoothAdapter() {
-			// 如果当前已连接设备，则不再执行蓝牙初始化
 			if (this.connectedDeviceId) {
 				console.log('设备已连接，跳过蓝牙初始化');
 				return;
 			}
+
 			uni.openBluetoothAdapter({
 				success: (res) => {
 					console.log('蓝牙模块初始化成功', res);
@@ -37,13 +47,91 @@ export default {
 				fail: (err) => {
 					console.log('蓝牙模块初始化失败', err);
 					uni.showToast({
-						title: this.getTranslation('bluetoothInitFailed'), // 使用国际化的提示文字
+						title: '蓝牙初始化失败，请检查设备设置',
 						icon: 'none',
 						duration: 2000
 					});
 				}
 			});
 		},
+
+		// 显示位置权限声明弹窗
+		showLocationPermissionDialog(callback) {
+			uni.showModal({
+				title: '权限说明',
+				content: '蓝牙功能需要获取您的位置信息权限，以便扫描并连接附近的蓝牙设备。该信息仅用于蓝牙功能，不会保存或上传您的位置信息。',
+				confirmText: '同意',
+				cancelText: '拒绝',
+				success: (res) => {
+					if (res.confirm) {
+						console.log('用户同意位置权限声明');
+						if (typeof callback === 'function') callback(); // 执行回调
+					} else {
+						console.log('用户拒绝位置权限声明');
+						uni.showToast({
+							title: '需要位置信息权限以使用蓝牙功能',
+							icon: 'none',
+							duration: 2000
+						});
+					}
+				}
+			});
+		},
+
+		// ------
+
+		// 提示用户开启蓝牙权限
+		promptBluetoothPermission() {
+			uni.showModal({
+				title: '蓝牙权限请求失败',
+				content: '请开启蓝牙权限后重试。',
+				success: (res) => {
+					if (res.confirm) {
+						// 提示用户前往设置页面手动授权
+						this.openAppSettings();
+					}
+				}
+			});
+		},
+
+		// 打开应用设置页面，引导用户手动授权
+		openAppSettings() {
+			uni.openSetting({
+				success: (res) => {
+					console.log('用户授权设置：', res);
+					if (res.authSetting['scope.bluetooth']) {
+						// 用户已授权，重新初始化蓝牙
+						this.reopenBluetoothAdapter();
+					} else {
+						uni.showToast({
+							title: '未授权蓝牙权限',
+							icon: 'none',
+							duration: 2000
+						});
+					}
+				}
+			});
+		},
+
+		// 重新拉起蓝牙授权
+		reopenBluetoothAdapter() {
+			uni.openBluetoothAdapter({
+				success: (res) => {
+					console.log('蓝牙模块初始化成功', res);
+					this.checkBluetoothState();
+					this.setupBluetoothListeners();
+				},
+				fail: (err) => {
+					console.log('蓝牙模块初始化失败', err);
+					uni.showToast({
+						title: this.getTranslation('bluetoothInitFailed'),
+						icon: 'none',
+						duration: 2000
+					});
+				}
+			});
+		},
+
 
 		// 关闭蓝牙弹窗
 		closeBluetoothPopup() {

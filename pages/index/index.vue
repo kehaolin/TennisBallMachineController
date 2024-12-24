@@ -1,38 +1,47 @@
 (){
 <template>
+	<view
+		style="font-size: 12px; z-index: 9999; color:#5fbae8; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); line-height: normal; white-space: nowrap; text-decoration: underline;"
+		@click="openPrivacyPolicyPage">
+		隐私政策
+	</view>
 
 	<!-- 隐私协议弹窗 -->
-	<view v-if="showPrivacyModal" class="privacy-modal">
+	<!-- 	<view v-if="showPrivacyModal" class="privacy-modal">
 		<view class="privacy-content">
-			<text class="privacy-title">用户隐私协议</text>
-			<text class="privacy-text">
-				请阅读并同意我们的
-				<text @click="openPrivacyPolicy" class="privacy-link">用户隐私协议</text>
-				后继续使用本软件。
-			</text>
-
-			<view class="privacy-checkbox">
-				<checkbox-group @change="togglePrivacyCheck" class="checkbox-style">
-					<checkbox value="agree" :checked="privacyChecked">我已阅读并同意</checkbox>
-				</checkbox-group>
+			<text class="privacy-title">隐私政策</text><br /><br />
+			<view class="privacy-details">
+				(1) 关于《隐私政策》中对个人设备用户信息的收集与使用说明。
+			</view>
+			<view class="privacy-details">
+				(2) 关于《隐私政策》中与第三方 SDK 服务商的数据共享及相关信息的收集与使用说明。
+			</view>
+			<view class="privacy-note">
+				请阅读完整的
+				<text @click="openPrivacyPolicy" class="privacy-link">《隐私政策》</text> 了解更多详情。
 			</view>
 
-			<button :disabled="!privacyChecked" @click="acceptPrivacyPolicy" class="confirm-button">确认</button>
+
+			<view class="button-group">
+				<button @click="declinePrivacyPolicy" class="decline-button">不同意</button>
+				<button @click="acceptPrivacyPolicy" class="agree-button">同意并继续</button>
+			</view>
 		</view>
-	</view>
+	</view> -->
 
 	<view class="container">
 		<!-- 顶部占位区域 -->
 		<view
 			:style="{ height: statusBarHeight + 'px', backgroundColor: 'linear-gradient(180deg, rgba(206, 230, 249, 1) 0%, rgba(196, 230, 255, 1) 100%)' }">
 		</view>
+
 		<!-- 第一层: 蓝牙功能，电量显示 -->
 		<HeaderSection :statusBarHeight="statusBarHeight" :batteryLevel="batteryLevel"
 			:isAnyDeviceConnected="isAnyDeviceConnected" :selectedLauncherPosition="selectedLauncherPosition"
 			:currentLanguage="currentLanguage" :translations="translations" :images="images"
 			@openBluetoothPopup="openBluetoothPopup" @selectLauncherPosition="selectLauncherPosition" />
-
 		<view>
+
 			<!-- 在父组件中监听子组件的事件 -->
 			<BluetoothPopup :showBluetoothPopup="showBluetoothPopup" :bluetoothDevices="bluetoothDevices"
 				:isAnyDeviceConnected="isAnyDeviceConnected" :translations="translations" :images="images"
@@ -896,11 +905,24 @@
 			}
 		},
 		methods: {
-			// 勾选复选框时触发的事件
-			togglePrivacyCheck(event) {
-				console.log('event', event)
-				this.privacyChecked = event.detail.value.length > 0; // 更新复选框状态
+			// 打开隐私政策页面
+			openPrivacyPolicyPage() {
+				const url = 'http://app.tenniserve.net/privacyPolicy.html';
+				uni.navigateTo({
+					url: '/pages/webview/webview?url=' + encodeURIComponent(url) // 传递 URL 参数
+				});
 			},
+
+			declinePrivacyPolicy() {
+				// 在uniapp中调用
+				if (typeof plus !== 'undefined') {
+					console.log('plus 对象可用');
+					plus.runtime.quit();
+				} else {
+					console.log('plus 对象不可用');
+				}
+			},
+
 			// 用户点击 "我已阅读并同意" 后
 			acceptPrivacyPolicy() {
 				console.log('点击了确认')
@@ -909,7 +931,7 @@
 			},
 			// 用户点击隐私协议链接时，打开 WebView 页面
 			openPrivacyPolicy() {
-				const url = 'http://app.tenniserve.net/privacyPolicy.html'; // 临时使用百度链接
+				const url = 'http://app.tenniserve.net/privacyPolicy.html';
 				uni.navigateTo({
 					url: '/pages/webview/webview?url=' + encodeURIComponent(url) // 传递 URL 参数
 				});
@@ -2771,99 +2793,121 @@
 		position: fixed;
 		top: 0;
 		left: 0;
-		width: 100%;
-		height: 100%;
+		right: 0;
+		bottom: 0;
 		background-color: rgba(0, 0, 0, 0.5);
-		/* 半透明背景 */
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		z-index: 1000;
-		/* 确保在最上层 */
+		z-index: 999;
 	}
 
-	/* 弹窗内容区域 */
 	.privacy-content {
-		background-color: #ffffff;
-		/* 背景为白色 */
-		border-radius: 15px;
-		padding: 15px;
-		/* 更紧凑的内边距 */
-		width: 80%;
-		max-width: 360px;
-		/* 最大宽度 */
-		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-		/* 阴影效果 */
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-start;
-		/* 不使用 space-between，避免间距过大 */
-		text-align: left;
-		min-height: 200px;
-		/* 最小高度，防止内容过少时弹窗太小 */
-	}
-
-	/* 标题样式 */
-	.privacy-title {
-		font-size: 20px;
-		font-weight: bold;
-		color: #333333;
+		background-color: #fff;
+		border-radius: 12px;
+		width: 70%;
+		padding: 20px 16px;
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 		text-align: center;
-		/* 标题居中 */
+	}
+
+	.privacy-title {
+		font-size: 18px;
+		font-weight: bold;
+		color: #333;
 		margin-bottom: 10px;
-		/* 标题和内容之间的间距 */
 	}
 
-	/* 文字内容样式 */
-	.privacy-text {
+	.privacy-details,
+	.privacy-note {
+		display: block;
+		/* 使用块级元素以强制换行 */
+		margin-bottom: 10px;
+		/* 设置每段文字之间的间隔 */
+		text-align: left;
+		/* 左对齐 */
+		white-space: normal;
+		/* 强制文本换行 */
+		word-break: break-word;
+		/* 超长单词换行 */
 		font-size: 14px;
-		color: #555555;
-		line-height: 1.6;
-		/* 调整行高，使内容更紧凑 */
-		margin-bottom: 8px;
-		/* 减少文字和复选框之间的间距 */
-		white-space: pre-wrap;
-		/* 保持换行 */
+		color: #333;
 	}
 
-	/* 超链接样式 */
 	.privacy-link {
-		color: #007aff;
+		color: #1E88E5;
+		/* 链接颜色 */
 		text-decoration: underline;
+		/* 添加下划线 */
 		cursor: pointer;
+		/* 鼠标样式 */
 	}
 
-	/* 复选框区域 */
-	.privacy-checkbox {
-		font-size: 14px;
-		color: #555555;
-		margin-bottom: 15px;
-		/* 调整复选框和按钮之间的间距 */
+	.privacy-link:hover {
+		color: #0056b3;
+		/* 鼠标悬停时改变颜色 */
+		border-bottom-color: #0056b3;
+		/* 同步下划线颜色 */
+	}
+
+
+
+	.button-group {
 		display: flex;
-		justify-content: flex-start;
+		justify-content: space-between;
+		margin-top: 10px;
 	}
 
-	/* 按钮样式 */
-	.confirm-button {
-		background-color: #007aff;
-		/* 按钮背景颜色 */
-		color: white;
-		/* 按钮文字颜色 */
+	.decline-button:active,
+	.agree-button:active {
+		transform: scale(0.95);
+		/* 点击时缩小 5% */
+		background-color: #fff;
+		/* 保持背景颜色不变 */
+		border-color: #ccc;
+		/* 保持边框颜色不变 */
+		color: #333;
+		/* 保持文字颜色不变 */
+		transition: transform 0.1s ease;
+		/* 平滑过渡 */
+	}
+
+	.decline-button:focus,
+	.agree-button:focus {
+		outline: none;
+		/* 移除聚焦高亮 */
+		box-shadow: none;
+		/* 移除默认阴影 */
+	}
+
+
+	.decline-button,
+	.agree-button {
+		display: flex;
+		/* 启用 Flexbox 布局 */
+		align-items: center;
+		/* 垂直居中 */
+		justify-content: center;
+		/* 水平居中 */
+		background-color: #fff;
+		border: 1px solid #ccc;
+		color: #333;
+		flex: 1;
+		margin: 0 5px;
+		/* 调整左右边距，统一样式 */
+		border-radius: 4px;
+		height: 36px;
+		text-align: center;
+		font-size: 14px;
+		/* 文字大小 */
+	}
+
+	.agree-button {
+		background-color: #1E88E5;
+		color: #fff;
 		border: none;
-		padding: 10px;
-		border-radius: 5px;
-		font-size: 16px;
-		width: 100%;
-		cursor: pointer;
 	}
 
-	/* 按钮禁用状态 */
-	.confirm-button:disabled {
-		background-color: #d3d3d3;
-		/* 禁用按钮背景 */
-		cursor: not-allowed;
-		/* 禁用状态下禁用点击 */
-	}
 
 	/* --------- */
 	.container {

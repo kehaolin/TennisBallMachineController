@@ -8,9 +8,9 @@
 	export default {
 		mounted() {
 			// 在应用启动时，默认跳转到蓝牙页面
-			uni.navigateTo({
-				url: '/pages/bluetooth/bluetooth'
-			});
+			// uni.navigateTo({
+			// 	url: '/pages/index/index'
+			// });
 		}
 	}
 </script>

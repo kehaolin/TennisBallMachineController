@@ -45,6 +45,8 @@
 				<view class="battery-percentage">{{ batteryLevel }}%</view>
 			</view>
 		</view>
+
+
 	</view>
 </template>
 

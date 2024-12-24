@@ -109,6 +109,8 @@
 						<span class="height-label">{{ translations.heights[currentLanguage] }}:</span>
 						<span class="height-value">{{ serveHeight }}</span>
 					</view>
+					<span v-if="realHeight"
+						class="height-value">{{ realHeight + translations.meter[currentLanguage] }}</span>
 					<img @click="adjustHeight(1)" class="setHeight-bottom" :src="images.add" alt="Add" />
 				</view>
 
@@ -150,6 +152,7 @@
 <script>
 	export default {
 		props: {
+			realHeight: Number,
 			selectedMode: Number,
 			selectedDifficulty: String,
 			selectedHeight: String,
@@ -166,6 +169,7 @@
 			translations: Object,
 			currentLanguage: String,
 			modeNames: Array,
+			selectedBalls: Array,
 			images: Object,
 			trainingActive: Boolean,
 			buttonColor: String,

@@ -11,7 +11,7 @@
 			<view class="modeSelect-line"></view>
 
 			<!-- 模式选项列表 -->
-			<view class="mode-item-container">
+			<view class="mode-item-container" ref="modeItemContainer">
 				<view v-for="(mode, index) in modeNames" :key="index"
 					:class="['mode-item', { 'selected-mode-item': index === temporarySelectedMode }]"
 					@click="setTemporaryMode(index)">
