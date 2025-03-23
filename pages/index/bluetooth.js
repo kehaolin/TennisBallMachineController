@@ -13,7 +13,8 @@ export default {
 			reconnecting: false,
 			pendingCommand: null,
 			batteryTimer: null,
-			hasShownPermissionDialog: false
+			hasShownPermissionDialog: false,
+			 _state: 0x01,
 		};
 	},
 	methods: {
@@ -77,8 +78,6 @@ export default {
 				}
 			});
 		},
-
-		// ------
 
 		// 提示用户开启蓝牙权限
 		promptBluetoothPermission() {
@@ -266,50 +265,175 @@ export default {
 				});
 		},
 
+		// // 连接到蓝牙设备
+		// connectToDevice(deviceId) {
+		// 	return new Promise((resolve) => {
+		// 		uni.createBLEConnection({
+		// 			deviceId: deviceId,
+		// 			success: (res) => {
+		// 				console.log('连接成功', res);
+		// 				this.connectedDeviceId = deviceId;
+		// 				this.deviceId = deviceId;
+		// 				this.stopBluetoothDevicesDiscovery(); // 停止设备搜索
+
+		// 				// 设置一个1秒的定时器来启动接收通知功能
+		// 				setTimeout(() => {
+		// 					this.receiveBLEData();
+		// 				}, 1000); // 延迟1秒执行接收通知
+
+		// 				// 立即获取电池电量和设备信息
+		// 				setTimeout(() => {
+		// 					this.getBatteryLevel(deviceId);
+		// 				}, 2000); // 延迟3秒执行接收通知
+
+		// 				setTimeout(() => {
+		// 					this.getDeviceInfo(deviceId)
+		// 				}, 3000); // 延迟3秒执行接收通知
+
+		// 				// 每60秒发送一次电池请求
+		// 				this.batteryTimer = setInterval(() => {
+		// 					this.getBatteryLevel(deviceId);
+		// 				}, 60000); // 每分钟获取一次电池电量
+
+		// 				resolve(true); // 连接成功
+		// 			},
+		// 			fail: (err) => {
+		// 				console.log('连接失败', err);
+		// 				uni.showToast({
+		// 					title: this.getTranslation(
+		// 						'bluetoothConnectFailedRange'),
+		// 					icon: 'none',
+		// 					duration: 2000
+		// 				});
+		// 				resolve(false); // 连接失败
+		// 			}
+		// 		});
+		// 	});
+		// },
+		
 		// 连接到蓝牙设备
 		connectToDevice(deviceId) {
-			return new Promise((resolve) => {
-				uni.createBLEConnection({
-					deviceId: deviceId,
-					success: (res) => {
-						console.log('连接成功', res);
-						this.connectedDeviceId = deviceId;
-						this.deviceId = deviceId;
-						this.stopBluetoothDevicesDiscovery(); // 停止设备搜索
-
-						// 设置一个1秒的定时器来启动接收通知功能
-						setTimeout(() => {
-							this.receiveBLEData();
-						}, 1000); // 延迟1秒执行接收通知
-
-						// 立即获取电池电量和设备信息
-						setTimeout(() => {
-							this.getBatteryLevel(deviceId);
-						}, 2000); // 延迟3秒执行接收通知
-
-						setTimeout(() => {
-							this.getDeviceInfo(deviceId)
-						}, 3000); // 延迟3秒执行接收通知
-
-						// 每60秒发送一次电池请求
-						this.batteryTimer = setInterval(() => {
-							this.getBatteryLevel(deviceId);
-						}, 60000); // 每分钟获取一次电池电量
-
-						resolve(true); // 连接成功
-					},
-					fail: (err) => {
-						console.log('连接失败', err);
-						uni.showToast({
-							title: this.getTranslation(
-								'bluetoothConnectFailedRange'),
-							icon: 'none',
-							duration: 2000
-						});
-						resolve(false); // 连接失败
-					}
-				});
-			});
+		  return new Promise((resolve) => {
+		    uni.createBLEConnection({
+		      deviceId: deviceId,
+		      success: (res) => {
+		        console.log('连接成功', res);
+		        this.connectedDeviceId = deviceId;
+		        this.deviceId = deviceId;
+		        this.stopBluetoothDevicesDiscovery(); // 停止设备搜索
+		
+		        // 设置一个1秒的定时器来启动接收通知功能
+		        setTimeout(() => {
+		          this.receiveBLEData(); // 启动接收蓝牙数据
+		        }, 1000); // 延迟1秒执行接收通知
+		
+		        // 立即获取电池电量和设备信息
+		        setTimeout(() => {
+		          this.getBatteryLevel(deviceId);
+		        }, 2000); // 延迟2秒执行接收通知
+		
+		        setTimeout(() => {
+		          this.getDeviceInfo(deviceId);
+		        }, 3000); // 延迟3秒执行接收通知
+		
+		        // 每60秒发送一次电池请求
+		        this.batteryTimer = setInterval(() => {
+		          this.getBatteryLevel(deviceId);
+		        }, 60000); // 每分钟获取一次电池电量
+		
+		        // 连接成功后，检查 RS_State
+		        this.checkRSState(deviceId).then((rsStateValue) => {
+		          // 检查 RS_State 值
+		          this.handleRSState(rsStateValue);
+		        });
+		
+		        resolve(true); // 连接成功
+		      },
+		      fail: (err) => {
+		        console.log('连接失败', err);
+		        uni.showToast({
+		          title: this.getTranslation('bluetoothConnectFailedRange'),
+		          icon: 'none',
+		          duration: 2000
+		        });
+		        resolve(false); // 连接失败
+		      }
+		    });
+		  });
+		},
+		
+		// 获取并检查 RS_State 状态
+		checkRSState(deviceId) {
+		  return new Promise((resolve, reject) => {
+		    uni.readBLECharacteristicValue({
+		      deviceId: deviceId,
+		      serviceId: '55535343-FE7D-4AE5-8FA9-9FAFD205E455', // 你的服务ID
+		      characteristicId: '49535343-8841-43F4-A8D4-ECBE34729BB3', // 你的特征ID
+		      success: (res) => {
+		        const rsStateValue = this.parseRSStateValue(res.value); // 解析返回的 RS_State 值
+		        resolve(rsStateValue); // 返回 RS_State 值
+		      },
+		      fail: (err) => {
+		        console.log('获取 RS_State 失败', err);
+		        uni.showToast({
+		          title: this.getTranslation('bluetoothRSStateFetchFailed'),
+		          icon: 'none',
+		          duration: 2000
+		        });
+		        reject(err); // 如果获取失败，拒绝 Promise
+		      }
+		    });
+		  });
+		},
+		
+		// 解析 RS_State 的值
+		parseRSStateValue(value) {
+		  // 这里根据实际数据格式解析 RS_State 值
+		  // 假设返回值是二进制数据，可以用 DataView 或其他方式解析
+		  const state = new DataView(value.buffer).getUint16(0, true); // 假设值是16位无符号整数
+		  return state;
+		},
+		
+		// 根据 RS_State 判断异常并弹窗提示
+		handleRSState(rsStateValue) {
+		  const abnormalStates = [
+		    0x0100, // 高温
+		    0x0200, // 过流
+		    0x0400, // 低电压
+		    0x0800, // 低电量
+		    0x0F00  // 关机
+		  ];
+		
+		  if (abnormalStates.includes(rsStateValue)) {
+		    let errorMessage = '';
+		
+		    switch (rsStateValue) {
+		      case 0x0100:
+		        errorMessage = '设备高温，请冷却后重试';
+		        break;
+		      case 0x0200:
+		        errorMessage = '设备过流，请检查电流';
+		        break;
+		      case 0x0400:
+		        errorMessage = '设备低电压，请充电';
+		        break;
+		      case 0x0800:
+		        errorMessage = '设备电量低，请充电';
+		        break;
+		      case 0x0F00:
+		        errorMessage = '设备已关机，请检查电量';
+		        break;
+		      default:
+		        errorMessage = '未知异常，请检查设备';
+		        break;
+		    }
+		
+		    uni.showToast({
+		      title: errorMessage,
+		      icon: 'none',
+		      duration: 3000
+		    });
+		  }
 		},
 
 		// 获取电池电量
@@ -358,84 +482,189 @@ export default {
 			});
 		},
 
+		// // 统一发送蓝牙指令的方法
+		// sendBLEData(command, onSuccess) {
+		// 	if (!this.connectedDeviceId) {
+		// 		console.log('未找到有效的连接设备');
+		// 		return;
+		// 	}
 
+		// 	const serviceId = '55535343-FE7D-4AE5-8FA9-9FAFD205E455';
+		// 	const characteristicId = '49535343-1E4D-4BD9-BA61-23C647249616';
 
+		// 	// 将字符串命令转换为 ArrayBuffer
+		// 	let buffer = new ArrayBuffer(command.length);
+		// 	let dataview = new DataView(buffer);
+		// 	for (let i = 0; i < command.length; i++) {
+		// 		dataview.setUint8(i, command.charCodeAt(i));
+		// 	}
 
+		// 	uni.writeBLECharacteristicValue({
+		// 		deviceId: this.deviceId,
+		// 		serviceId,
+		// 		characteristicId,
+		// 		value: buffer,
+		// 		success: (res) => {
+		// 			console.log('发送数据成功', res);
+		// 			// 成功发送后，等待回调接收数据
+		// 			this.pendingCommand = {
+		// 				command,
+		// 				onSuccess
+		// 			}; // 保存当前命令和回调
+		// 		},
+		// 		fail: (err) => {
+		// 			console.log('发送数据失败', err);
+		// 			uni.showToast({
+		// 				title: this.getTranslation('bluetoothSendDataFailed'),
+		// 				icon: 'none',
+		// 				duration: 2000
+		// 			});
+		// 		}
+		// 	});
+		// },
+		
 		// 统一发送蓝牙指令的方法
 		sendBLEData(command, onSuccess) {
-			if (!this.connectedDeviceId) {
-				console.log('未找到有效的连接设备');
-				return;
-			}
-
-			const serviceId = '55535343-FE7D-4AE5-8FA9-9FAFD205E455';
-			const characteristicId = '49535343-1E4D-4BD9-BA61-23C647249616';
-
-			// 将字符串命令转换为 ArrayBuffer
-			let buffer = new ArrayBuffer(command.length);
-			let dataview = new DataView(buffer);
-			for (let i = 0; i < command.length; i++) {
-				dataview.setUint8(i, command.charCodeAt(i));
-			}
-
-			uni.writeBLECharacteristicValue({
-				deviceId: this.deviceId,
-				serviceId,
-				characteristicId,
-				value: buffer,
-				success: (res) => {
-					console.log('发送数据成功', res);
-					// 成功发送后，等待回调接收数据
-					this.pendingCommand = {
-						command,
-						onSuccess
-					}; // 保存当前命令和回调
-				},
-				fail: (err) => {
-					console.log('发送数据失败', err);
-					uni.showToast({
-						title: this.getTranslation('bluetoothSendDataFailed'),
-						icon: 'none',
-						duration: 2000
-					});
-				}
-			});
+		  if (!this.connectedDeviceId) {
+		    console.log('未找到有效的连接设备');
+		    return;
+		  }
+		
+		  // 先检查设备状态
+		  this.checkRSState(this.deviceId).then((rsStateValue) => {
+		    // 如果设备状态异常，返回错误码 -3 并提示异常信息
+		    if (this.isAbnormalState(rsStateValue)) {
+		      const errorMessage = this.getErrorMessage(rsStateValue);
+		      console.log('设备状态异常:', errorMessage);
+		      
+		      // 弹窗提示异常
+		      uni.showToast({
+		        title: errorMessage,
+		        icon: 'none',
+		        duration: 3000
+		      });
+		
+		      // 返回错误码 -3 和状态值
+		      if (onSuccess) {
+		        onSuccess({ code: -3, state: rsStateValue.toString() });
+		      }
+		      return;
+		    }
+		
+		    // 正常情况下，继续发送指令
+		    const serviceId = '55535343-FE7D-4AE5-8FA9-9FAFD205E455';
+		    const characteristicId = '49535343-1E4D-4BD9-BA61-23C647249616';
+		
+		    // 将字符串命令转换为 ArrayBuffer
+		    let buffer = new ArrayBuffer(command.length);
+		    let dataview = new DataView(buffer);
+		    for (let i = 0; i < command.length; i++) {
+		      dataview.setUint8(i, command.charCodeAt(i));
+		    }
+		
+		    uni.writeBLECharacteristicValue({
+		      deviceId: this.deviceId,
+		      serviceId,
+		      characteristicId,
+		      value: buffer,
+		      success: (res) => {
+		        console.log('发送数据成功', res);
+		        // 成功发送后，等待回调接收数据
+		        this.pendingCommand = {
+		          command,
+		          onSuccess
+		        }; // 保存当前命令和回调
+		      },
+		      fail: (err) => {
+		        console.log('发送数据失败', err);
+		        uni.showToast({
+		          title: this.getTranslation('bluetoothSendDataFailed'),
+		          icon: 'none',
+		          duration: 2000
+		        });
+		      }
+		    });
+		  }).catch((err) => {
+		    console.log('获取 RS_State 失败', err);
+		    uni.showToast({
+		      title: this.getTranslation('bluetoothRSStateFetchFailed'),
+		      icon: 'none',
+		      duration: 2000
+		    });
+		  });
 		},
 
-		// 接收蓝牙数据的方法
-		receiveBLEData() {
-			uni.notifyBLECharacteristicValueChange({
-				state: true,
-				deviceId: this.deviceId,
-				serviceId: '55535343-FE7D-4AE5-8FA9-9FAFD205E455',
-				characteristicId: '49535343-8841-43F4-A8D4-ECBE34729BB3',
-				success: () => {
-					console.log('成功启用接收通知');
-				},
-				fail: (err) => {
-					console.log('启用接收通知失败', err);
-					uni.showToast({
-						title: this.getTranslation('enableReceiveNotifyFailed'),
-						icon: 'none',
-						duration: 2000
-					});
-				}
-			});
+		// // 接收蓝牙数据的方法
+		// receiveBLEData() {
+		// 	uni.notifyBLECharacteristicValueChange({
+		// 		state: true,
+		// 		deviceId: this.deviceId,
+		// 		serviceId: '55535343-FE7D-4AE5-8FA9-9FAFD205E455',
+		// 		characteristicId: '49535343-8841-43F4-A8D4-ECBE34729BB3',
+		// 		success: () => {
+		// 			console.log('成功启用接收通知');
+		// 		},
+		// 		fail: (err) => {
+		// 			console.log('启用接收通知失败', err);
+		// 			uni.showToast({
+		// 				title: this.getTranslation('enableReceiveNotifyFailed'),
+		// 				icon: 'none',
+		// 				duration: 2000
+		// 			});
+		// 		}
+		// 	});
 
-			// 监听蓝牙设备数据变化
-			uni.onBLECharacteristicValueChange((res) => {
-				let data = String.fromCharCode.apply(null, new Uint8Array(res.value));
-				console.log('接收到的数据:', data);
+		// 	// 监听蓝牙设备数据变化
+		// 	uni.onBLECharacteristicValueChange((res) => {
+		// 		let data = String.fromCharCode.apply(null, new Uint8Array(res.value));
+		// 		console.log('接收到的数据:', data);
 
-				// 如果有待处理的命令且存在对应的成功回调
-				if (this.pendingCommand && this.pendingCommand.onSuccess) {
-					// 执行回调函数并传入接收到的数据
-					this.pendingCommand.onSuccess(data);
-					this.pendingCommand = null; // 清除待处理的命令
-				}
-			});
+		// 		// 如果有待处理的命令且存在对应的成功回调
+		// 		if (this.pendingCommand && this.pendingCommand.onSuccess) {
+		// 			// 执行回调函数并传入接收到的数据
+		// 			this.pendingCommand.onSuccess(data);
+		// 			this.pendingCommand = null; // 清除待处理的命令
+		// 		}
+		// 	});
+		// },
+
+// 接收蓝牙数据的方法
+	receiveBLEData() {
+	  uni.notifyBLECharacteristicValueChange({
+		state: true,
+		deviceId: this.deviceId,
+		serviceId: '55535343-FE7D-4AE5-8FA9-9FAFD205E455', // 你的服务ID
+		characteristicId: '49535343-8841-43F4-A8D4-ECBE34729BB3', // 你的特征ID
+		success: () => {
+		  console.log('成功启用接收通知');
 		},
+		fail: (err) => {
+		  console.log('启用接收通知失败', err);
+		  uni.showToast({
+			title: this.getTranslation('enableReceiveNotifyFailed'),
+			icon: 'none',
+			duration: 2000
+		  });
+		}
+	  });
 
+	  // 监听蓝牙设备数据变化
+	  uni.onBLECharacteristicValueChange((res) => {
+		let data = String.fromCharCode.apply(null, new Uint8Array(res.value));
+		console.log('接收到的数据:', data);
+
+		// 如果有待处理的命令且存在对应的成功回调
+		if (this.pendingCommand && this.pendingCommand.onSuccess) {
+		  // 执行回调函数并传入接收到的数据
+		  this.pendingCommand.onSuccess(data);
+		  this.pendingCommand = null; // 清除待处理的命令
+		}
+
+		// 解析接收到的数据中的 RS_State 并检查是否异常
+		const rsStateValue = this.parseRSStateValue(res.value);
+		this.handleRSState(rsStateValue);
+	  });
+	},
 		// 重新连接蓝牙设备
 		reconnectDevice(deviceId) {
 			if (this.isManualDisconnect) return
