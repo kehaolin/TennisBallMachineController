@@ -393,7 +393,10 @@ export default {
 					icon: 'none',
 					duration: 3000
 				});
-				this.$emit('endTraining'); // 调用父组件的 endTraining 方法
+				// 判断父组件是否处于训练状态，如果是，则终止训练
+				if (this.$parent && this.$parent.isTrainingActive) {
+					this.$emit('endTraining');
+				}
 			}
 		},
 
