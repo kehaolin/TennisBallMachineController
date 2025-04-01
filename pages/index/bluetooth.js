@@ -15,8 +15,7 @@ export default {
 			batteryTimer: null,
 			hasShownPermissionDialog: false,
 			hasShownPermissionDialog: false,
-			_state: 0 // 设备状态,
-			
+			_state: 0,// 设备状态,
 		};
 	},
 	methods: {
@@ -370,11 +369,11 @@ export default {
 		// 状态码对应的错误提示
 		getErrorMessage(state) {
 			const errors = [];
-			if (!(state & 0x01)) errors.push('转盘异常');
-			if (!(state & 0x02)) errors.push('方位角传感器异常');
-			if (!(state & 0x04)) errors.push('仰角传感器异常');
-			if (!(state & 0x08)) errors.push('上发球轮异常');
-			if (!(state & 0x0f)) errors.push('下发球轮异常');
+			if (state & 0x01) errors.push('转盘异常');
+			if (state & 0x02) errors.push('方位角传感器异常');
+			if (state & 0x04) errors.push('仰角传感器异常');
+			if (state & 0x08) errors.push('上发球轮异常');
+			if (state & 0x0f) errors.push('下发球轮异常');
 			if (state & 0x0100) errors.push('电池高温');
 			if (state & 0x0200) errors.push('电池过流');
 			if (state & 0x0400) errors.push('电池低电压');
@@ -384,21 +383,27 @@ export default {
 		},
 				
 		// 监听并处理异常状态
-		handleDeviceState(state) {
-			this._state = state;
-			const errorMessage = this.getErrorMessage(state);
-			if (errorMessage) {
-				uni.showToast({
-					title: `设备异常: ${errorMessage}`,
-					icon: 'none',
-					duration: 3000
-				});
-				// 判断父组件是否处于训练状态，如果是，则终止训练
-				if (this.$parent && this.$parent.isTrainingActive) {
-					this.$emit('endTraining');
-				}
-			}
-		},
+	// 监听并处理异常状态
+	handleDeviceState(state) {
+	  console.log('state:', state);
+	  console.log(this.trainingActive); // 检查 isTrainingActive 的状态
+	  
+	  this._state = state;
+	  const errorMessage = this.getErrorMessage(state);
+	
+	  if (errorMessage) {
+	    uni.showToast({
+	      title: `设备异常: ${errorMessage}`,
+	      icon: 'none',
+	      duration: 3000
+	    });
+	
+	    // 判断父组件是否处于训练状态，如果是，则终止训练
+	    if (this.trainingActive) {  // 使用 this 直接访问 isTrainingActive
+	      this.endTraining(); // 触发父组件事件
+	    }
+	  }
+	},
 
 		
 		// 发送蓝牙指令
