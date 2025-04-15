@@ -5,7 +5,7 @@
 		@click="openPrivacyPolicyPage">
 		隐私政策
 	</view>
-	 
+
 	<!-- 隐私协议弹窗 -->
 	<!-- 	<view v-if="showPrivacyModal" class="privacy-modal">
 		<view class="privacy-content">
@@ -52,7 +52,12 @@
 		<!-- 第二层: 网球场和网球图片 -->
 		<TennisCourt :images="images" :balls="balls" :launcherTop="launcherTop" :showBallNumbers="showBallNumbers"
 			:selectedLauncherPosition="selectedLauncherPosition" @ball-interacted="handleBallInteraction" />
-		 <button @click="triggerRandomError">模拟异常</button>
+
+		<!-- 直接触发硬件异常 -->
+		<button @click="triggerHardwareError">触发硬件异常</button>
+
+		<!-- 直接触发指令响应异常 -->
+		<button @click="triggerCommandError">触发指令异常</button>
 
 		<!-- 自定义模式选择弹窗 -->
 		<ModePickerModal :showModal="showModePickerModal" :modeNames="modeNames" :translations="translations"
@@ -905,32 +910,6 @@
 			}
 		},
 		methods: {
-			triggerRandomError() {
-			  // 定义所有异常状态
-			  const errorCodes = [
-			    0x01,  // 转盘异常
-			    0x02,  // 方位角传感器异常
-			    0x04,  // 仰角传感器异常
-			    0x08,  // 上发球轮异常
-			    0x0f,  // 下发球轮异常
-			    0x0100, // 电池高温
-			    0x0200, // 电池过流
-			    0x0800  // 电池低电量
-			  ];
-			
-			  // 随机选择一个异常状态
-			  const randomIndex = Math.floor(Math.random() * errorCodes.length);
-			  const state = errorCodes[randomIndex];
-			
-			  console.log('随机异常状态:', state);
-			
-			  // 调用 handleDeviceState 方法
-			  if (typeof this.handleDeviceState === 'function') {
-			    this.handleDeviceState(state); // 通过 this 来调用
-			  } else {
-			    console.error('handleDeviceState 方法未找到');
-			  }
-			},
 			// 打开隐私政策页面
 			openPrivacyPolicyPage() {
 				const url = 'http://app.tenniserve.net/privacyPolicy.html';
