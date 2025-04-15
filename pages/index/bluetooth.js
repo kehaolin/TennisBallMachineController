@@ -324,20 +324,20 @@ export default {
 
 		triggerHardwareError() {
 			const fakeState = 0x0100; // 电池高温
-			const fakeData = `RS_State=-3,${fakeState}`;
+			const fakeData = `RS_State=${fakeState}`;
 			console.log('模拟被动接收:', fakeData);
 			this.handleDeviceState(fakeState);
 		},
 		triggerCommandError() {
 			const fakeState = 0x1000; // 上发球轮异常
-			const fakeData = `RS_State=-3,${fakeState}`; // 模拟异常格式
+			const fakeData = `RS_State=${fakeState}`; // 模拟异常格式
 
 			// 模拟回调函数处理异常响应数据（不调用 sendBLEData）
 			setTimeout(() => {
 				console.log('模拟指令响应:', fakeData);
 
-				if (fakeData.startsWith('RS_State=-3')) {
-					const value = parseInt(fakeData.split(',')[1], 10);
+				if (fakeData.startsWith('RS_State=')) {
+					const value = parseInt(fakeData.split('=')[1], 10);
 					this.handleDeviceState(value); // 使用正常路径解析异常状态
 				}
 			}, 300);
@@ -401,8 +401,8 @@ export default {
 		handleResponse(data) {
 			if (typeof data !== 'string') return;
 
-			if (data.startsWith('RS_State=-3')) {
-				const parts = data.split(',');
+			if (data.startsWith('RS_State=')) {
+				const parts = data.split('=');
 				if (parts.length > 1) {
 					const state = parseInt(parts[1], 10);
 					console.log('检测到设备异常状态码:', state);
@@ -416,60 +416,42 @@ export default {
 		},
 
 		sendBLEData(command, onSuccess) {
-			if (!this.isConnected) {
-				uni.showToast({
-					title: '蓝牙未连接',
-					icon: 'none'
-				});
+			if (!this.connectedDeviceId) {
+				console.log('未找到有效的连接设备');
 				return;
 			}
 
-			// 清除之前的超时计时器
-			if (this.commandTimer) {
-				clearTimeout(this.commandTimer);
+			const serviceId = '55535343-FE7D-4AE5-8FA9-9FAFD205E455';
+			const characteristicId = '49535343-1E4D-4BD9-BA61-23C647249616';
+
+			let buffer = new ArrayBuffer(command.length);
+			let dataview = new DataView(buffer);
+			for (let i = 0; i < command.length; i++) {
+				dataview.setUint8(i, command.charCodeAt(i));
 			}
 
-			// 发送指令
-			const buffer = this._createCommandBuffer(command);
 			uni.writeBLECharacteristicValue({
 				deviceId: this.deviceId,
-				serviceId: '55535343-FE7D-4AE5-8FA9-9FAFD205E455',
-				characteristicId: '49535343-1E4D-4BD9-BA61-23C647249616',
+				serviceId,
+				characteristicId,
 				value: buffer,
-				success: () => {
-					console.log(`指令发送成功: ${command}`);
-					this.lastCommand = command;
-					this.pendingResponse = true;
-
-					// 记录 pendingCommand，供模拟或真实回调使用
+				success: (res) => {
+					console.log('发送数据成功', res);
 					this.pendingCommand = {
 						command,
 						onSuccess
 					};
-
-					// 设置超时检测
-					this.commandTimer = setTimeout(() => {
-						if (this.pendingResponse) {
-							console.log(`指令超时: ${command}`);
-							uni.showToast({
-								title: '设备响应超时',
-								icon: 'none'
-							});
-							this.pendingResponse = false;
-							this.pendingCommand = null;
-						}
-					}, this.commandTimeout);
 				},
 				fail: (err) => {
-					console.log('发送失败', err);
+					console.log('发送数据失败', err);
 					uni.showToast({
-						title: '发送失败',
-						icon: 'none'
+						title: '蓝牙发送失败',
+						icon: 'none',
+						duration: 2000
 					});
 				}
 			});
 		},
-
 		// 监听设备状态变化并处理异常
 		startStateMonitor() {
 			this.stateMonitorTimer = setInterval(() => {
@@ -508,8 +490,8 @@ export default {
 					console.log('接收到设备状态数据:', data);
 
 					// 假设状态码是类似 RS_State=0 或 RS_State=1 的数据格式
-					if (data.startsWith('RS_State=-3,')) {
-						const state = parseInt(data.split(',')[1], 10); // 提取状态码
+					if (data.startsWith('RS_State=,')) {
+						const state = parseInt(data.split('=')[1], 10); // 提取状态码
 						this.handleDeviceState(state); // 处理设备状态
 					}
 				},
@@ -543,8 +525,8 @@ export default {
 				let data = String.fromCharCode.apply(null, new Uint8Array(res.value));
 				console.log('接收到的数据:', data);
 
-				if (data.startsWith('RS_State=-3')) {
-					let value = parseInt(data.split(',')[1], 10);
+				if (data.startsWith('RS_State=')) {
+					let value = parseInt(data.split('=')[1], 10);
 					this.handleDeviceState(value); // ✅ 解析并处理状态
 				}
 
