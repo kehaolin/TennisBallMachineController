@@ -88,8 +88,6 @@ export default {
 			});
 		},
 
-		// ------
-
 		// 提示用户开启蓝牙权限
 		promptBluetoothPermission() {
 			uni.showModal({
@@ -285,12 +283,13 @@ export default {
 					// 电池数据格式: RS_Bat=ok,0
 					const batteryLevel = batteryData.split(',')[1]; // 获取'0'这个值
 					console.log('电池电量:', batteryLevel);
-					this.batteryLevel = batteryLevel;
+					this.batteryLevel = Math.ceil(batteryLevel / 10);
 				} else {
 					console.log('获取电池电量失败，返回数据格式错误:', batteryData);
 				}
 			});
 		},
+
 		// 获取设备信息
 		getDeviceInfo(deviceId) {
 			// 获取设备信息
@@ -329,16 +328,16 @@ export default {
 			this.handleDeviceState(fakeState);
 		},
 		triggerCommandError() {
-			const fakeState = 0x1000; // 上发球轮异常
-			const fakeData = `RS_State=${fakeState}`; // 模拟异常格式
+			const fakeState = 0x1000; // 上发球轮故障
+			const fakeData = `RS_State=${fakeState}`; // 模拟故障格式
 
-			// 模拟回调函数处理异常响应数据（不调用 sendBLEData）
+			// 模拟回调函数处理故障响应数据（不调用 sendBLEData）
 			setTimeout(() => {
 				console.log('模拟指令响应:', fakeData);
 
 				if (fakeData.startsWith('RS_State=')) {
 					const value = parseInt(fakeData.split('=')[1], 10);
-					this.handleDeviceState(value); // 使用正常路径解析异常状态
+					this.handleDeviceState(value); // 使用正常路径解析故障状态
 				}
 			}, 300);
 		},
@@ -403,15 +402,38 @@ export default {
 
 			if (data.startsWith('RS_State=')) {
 				const parts = data.split('=');
-				if (parts.length > 1) {
-					const state = parseInt(parts[1], 10);
-					console.log('检测到设备异常状态码:', state);
-					this.handleDeviceState(state);
+				if (data.startsWith('RS_State=')) {
+					const value = data.split('=')[1];
+					console.log('检测到设备状态:', value); // 注意日志变化（不再是"状态码"）
+					this.handleDeviceState(value); // 直接传字符串
+				} else if (
+					data.startsWith('RS_Single=err,-3,') ||
+					data.startsWith('RS_Multi=err,-3,') ||
+					data.startsWith('RS_Random=err,-3,')
+				) {
+					// 情况2：截取 `,` 后面的内容（如 `RS_Single=err,1001` → `1001`）
+					const value = data.split(',')[2];
+					console.log('检测到设备错误码:', value);
+					this.handleDeviceError(value); // 可自定义错误处理方法
 				} else {
-					console.warn('异常格式不正确:', data);
+					console.warn('故障格式不正确:', data);
 				}
 			} else {
 				console.log('收到正常响应:', data);
+			}
+		},
+
+		handleDeviceError(state) {
+			const message = this.getErrorMessage(state);
+			if (message !== '设备状态正常') {
+				console.warn('设备故障：', message);
+				uni.showModal({
+					title: '设备状态故障',
+					content: message,
+					showCancel: false,
+				});
+			} else {
+				console.log('设备状态正常');
 			}
 		},
 
@@ -452,31 +474,12 @@ export default {
 				}
 			});
 		},
-		// 监听设备状态变化并处理异常
+		// 监听设备状态变化并处理故障
 		startStateMonitor() {
 			this.stateMonitorTimer = setInterval(() => {
 				this.getDeviceState();
 			}, 5000);
 		},
-
-
-		getErrorMessage(state) {
-			const errors = [];
-			// 电机状态（低8位，1=异常）
-			if (state & 0x01) errors.push('转盘异常');
-			if (state & 0x02) errors.push('方位角传感器异常');
-			if (state & 0x04) errors.push('仰角传感器异常');
-			if (state & 0x08) errors.push('上发球轮异常');
-			if (state & 0x10) errors.push('下发球轮异常');
-			// 电池状态（高8位，1=异常）
-			if (state & 0x0100) errors.push('电池高温');
-			if (state & 0x0200) errors.push('电池过流');
-			if (state & 0x0400) errors.push('电池低电压');
-			if (state & 0x0800) errors.push('电池低电量');
-			if (state & 0x1000) errors.push('电池关机');
-			return errors.length ? errors.join('，') : '设备状态正常';
-		},
-
 
 		// 获取设备当前的状态
 		getDeviceState() {
@@ -490,9 +493,21 @@ export default {
 					console.log('接收到设备状态数据:', data);
 
 					// 假设状态码是类似 RS_State=0 或 RS_State=1 的数据格式
-					if (data.startsWith('RS_State=,')) {
-						const state = parseInt(data.split('=')[1], 10); // 提取状态码
-						this.handleDeviceState(state); // 处理设备状态
+					// 1. 处理 RS_State=xxx（保持原逻辑）
+					if (data.startsWith('RS_State=')) {
+						const value = data.split('=')[1]; // 直接取 `=` 后面的内容（不转数字）
+						console.log('检测到设备状态:', value); // 注意日志变化（不再是"状态码"）
+						this.handleDeviceState(value); // 直接传字符串
+					}
+					// 2. 处理 RS_Single=err,xxx | RS_Multi=err,xxx | RS_Random=err,xxx
+					else if (
+						data.startsWith('RS_Single=err,-3') ||
+						data.startsWith('RS_Multi=err,-3') ||
+						data.startsWith('RS_Random=err,-3')
+					) {
+						const errorCode = data.split(',')[2]; // 提取逗号后的错误码
+						console.log('检测到设备错误码:', errorCode);
+						this.handleDeviceError(errorCode); // 处理错误码
 					}
 				},
 				fail: (err) => {
@@ -526,8 +541,18 @@ export default {
 				console.log('接收到的数据:', data);
 
 				if (data.startsWith('RS_State=')) {
-					let value = parseInt(data.split('=')[1], 10);
-					this.handleDeviceState(value); // ✅ 解析并处理状态
+					// 直接获取=后面的内容，保持为字符串
+					let value = data.split('=')[1];
+					this.handleDeviceState(value); // 处理状态字符串
+				} else if (
+					data.startsWith('RS_Single=err,-3') ||
+					data.startsWith('RS_Multi=err,-3') ||
+					data.startsWith('RS_Random=err,-3')
+				) {
+					// ✅ 新逻辑：用 , 分割，取第二部分（错误码）
+					let errorCode = data.split(',')[2];
+					console.log('errorCode', errorCode)
+					this.handleDeviceError(errorCode); // 处理错误码
 				}
 
 				if (this.pendingCommand && this.pendingCommand.onSuccess) {
@@ -535,6 +560,23 @@ export default {
 					this.pendingCommand = null;
 				}
 			});
+		},
+
+		getErrorMessage(state) {
+			const errors = [];
+			// 电机状态（低8位，1=故障）
+			if (state & 0x01) errors.push('转盘故障');
+			if (state & 0x02) errors.push('方位角传感器故障');
+			if (state & 0x04) errors.push('仰角传感器故障');
+			if (state & 0x08) errors.push('上发球轮故障');
+			if (state & 0x10) errors.push('下发球轮故障');
+			// 电池状态（高8位，1=故障）
+			if (state & 0x0100) errors.push('电池高温');
+			if (state & 0x0200) errors.push('电池过流');
+			if (state & 0x0400) errors.push('电池低电压');
+			if (state & 0x0800) errors.push('电池低电量');
+			if (state & 0x1000) errors.push('电池关机');
+			return errors.length ? errors.join('，') : '设备状态正常';
 		},
 
 		// 处理设备状态
@@ -548,9 +590,9 @@ export default {
 			if (!this.isOK()) {
 				const errorMessage = this.getErrorMessage(state); // 获取错误信息
 
-				// 如果设备异常，则执行相应处理
+				// 如果设备故障，则执行相应处理
 				uni.showToast({
-					title: `设备异常: ${errorMessage}`,
+					title: `设备故障: ${errorMessage}`,
 					icon: 'none',
 					duration: 3000
 				});

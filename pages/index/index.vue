@@ -54,10 +54,10 @@
 			:selectedLauncherPosition="selectedLauncherPosition" @ball-interacted="handleBallInteraction" />
 
 		<!-- 直接触发硬件异常 -->
-		<button @click="triggerHardwareError">触发硬件异常</button>
+		<!-- <button @click="triggerHardwareError">触发硬件异常</button> -->
 
 		<!-- 直接触发指令响应异常 -->
-		<button @click="triggerCommandError">触发指令异常</button>
+		<!-- <button @click="triggerCommandError">触发指令异常</button> -->
 
 		<!-- 自定义模式选择弹窗 -->
 		<ModePickerModal :showModal="showModePickerModal" :modeNames="modeNames" :translations="translations"
@@ -2035,40 +2035,6 @@
 				return this.translations.Toast[this.currentLanguage][key] || key;
 			},
 
-			// startTraining() {
-			// 	if (this.selectedMode === 9 && this.inputData === '') {
-			// 		uni.showToast({
-			// 			title: this.getTranslation('chooseTennisBallFirst'),
-			// 			icon: 'none',
-			// 			duration: 1000
-			// 		});
-			// 		return;
-			// 	}
-			// 	if (!this.isAnyDeviceConnected) {
-			// 		uni.showToast({
-			// 			title: this.getTranslation('connectBluetoothFirst'),
-			// 			icon: 'none',
-			// 			duration: 1000
-			// 		});
-			// 		return;
-			// 	}
-
-			// 	if (!this.trainingActive) {
-			// 		// 发送训练参数
-			// 		this.sendBLEData(this.command);
-
-			// 		this.trainingActive = true;
-			// 		this.buttonText = this.translations.endTraining[this.currentLanguage];
-			// 		this.buttonColor = 'rgba(232, 95, 95, 1)'; // 训练中按钮颜色
-			// 		this.modeSelectable = false; // 禁用模式选择			
-			// 		// 确定发球顺序
-			// 		this.determineServingOrder();
-
-			// 	} else {
-			// 		this.endTraining()
-			// 	}
-			// },
-
 			startTraining() {
 				if (this.selectedMode === 9 && this.inputData === '') {
 					uni.showToast({
@@ -2087,58 +2053,34 @@
 					return;
 				}
 
-				if (!this.trainingActive) {
-					// 如果当前有训练正在进行，不允许再次启动
-					if (this.isTrainingInProgress) {
+				if (this.trainingActive) {
+					this.endTraining(); // 结束训练
+					return;
+				}
+
+				// 发起训练
+				this.trainingActive = true; // 设置为训练中，防止重复点击
+				this.buttonText = this.translations.endTraining[this.currentLanguage];
+				this.buttonColor = 'rgba(232, 95, 95, 1)';
+				this.modeSelectable = false;
+
+				this.sendBLEData(this.command, (response) => {
+					if (response.includes('ok')) {
+						this.determineServingOrder(); // 确定发球顺序
+					} else {
 						uni.showToast({
-							title: this.getTranslation('operationInProgress'),
+							title: this.getTranslation('bluetoothResponseError'),
 							icon: 'none',
 							duration: 1000
 						});
-						return;
+						this.trainingActive = false;
+						this.buttonText = this.translations.startTraining[this.currentLanguage];
+						this.buttonColor = 'rgba(95, 159, 232, 1)';
+						this.modeSelectable = true;
 					}
-
-					// 设置当前操作为进行中
-					this.isTrainingInProgress = true;
-
-					// 发送训练参数
-					this.sendBLEData(this.command, (response) => {
-						// 检查返回的响应是否包含 "ok"
-						if (response.includes('ok')) {
-							this.trainingActive = true;
-							this.buttonText = this.translations.endTraining[this.currentLanguage];
-							this.buttonColor = 'rgba(232, 95, 95, 1)'; // 训练中按钮颜色
-							this.modeSelectable = false; // 禁用模式选择
-							this.determineServingOrder(); // 确定发球顺序
-						} else {
-							uni.showToast({
-								title: this.getTranslation('bluetoothResponseError'),
-								icon: 'none',
-								duration: 1000
-							});
-							this.trainingActive = false;
-						}
-
-						// 结束时，重置操作标志
-						this.isTrainingInProgress = false;
-					});
-				} else {
-					this.endTraining();
-				}
+				});
 			},
 
-			// endTraining() {
-			// 	this.trainingActive = false;
-			// 	this.buttonText = this.translations.startTraining[this.currentLanguage];
-			// 	this.buttonColor = '#87ceeb'; // 结束训练按钮颜色
-			// 	this.modeSelectable = true; // 启用模式选择		
-			// 	this.resetToInitialValues(); // 恢复初始值
-			// 	// this.generateDefaultBallCommand() // 发送结束参数
-			// 	if (this.selectedMode === 9) {
-			// 		this.clearInputData()
-			// 	}
-			// 	this.sendBLEData('RS_Stop=1\n')
-			// },
 
 			endTraining() {
 				// 发送停止训练指令
